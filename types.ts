@@ -47,11 +47,16 @@ export interface KeywordSuggestion {
     maxCpc: number;
 }
 
-export type AspectRatio = '1:1' | '16:9' | '9:16' | '3:4';
+export type AspectRatio = '1:1' | '16:9' | '9:16' | '3:4' | '4:3';
 
 export interface GeneratedImage {
     base64: string;
     aspectRatio: AspectRatio;
+}
+
+export interface GeneratedVideo {
+    url: string;
+    aspectRatio: string;
 }
 
 export interface AdGroup {
@@ -294,6 +299,10 @@ export interface KeywordBuilderPageProps {
 }
 
 export interface CreativeBuilderPageProps {
+    planData: PlanData;
+}
+
+export interface VideoBuilderPageProps {
     planData: PlanData;
 }
 

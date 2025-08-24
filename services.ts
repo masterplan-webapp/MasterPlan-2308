@@ -1,6 +1,6 @@
 
 
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeTextData, AdGroup, UTMLink, GeneratedImage, AspectRatio, SummaryData, MonthlySummary } from './types';
@@ -976,4 +976,129 @@ export const generateAIImages = async (prompt: string): Promise<GeneratedImage[]
    }
 
    return validImages;
+};
+
+export const generateAIVideos = async (prompt: string, aspectRatio: string, image?: { base64: string; mimeType: string }): Promise<string | null> => {
+    // Step 1: Pre-process the user's prompt with a text model to structure it.
+    const creativeBriefParserPrompt = `
+        Analyze the following user's creative brief for a video ad. Extract the core components into a structured JSON format.
+        
+        User Brief: "${prompt}"
+
+        Extract the following:
+        - visual_description: A detailed description of only the visual scenes, actions, and style.
+        - text_overlays: An array of the exact text strings that should appear on the screen. These are typically found inside quotation marks. If no text is in quotes, this array should be empty.
+        - audio_description: A description of the music, sound effects, or voiceover. If no audio is described, this should be an empty string.
+    `;
+
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            visual_description: {
+                type: Type.STRING,
+                description: "A detailed description of the visual elements of the video, excluding text overlays and audio descriptions."
+            },
+            text_overlays: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "A list of exact text strings that should appear as overlays on the video. These are typically found in quotes in the original prompt. If no text is explicitly quoted, this should be an empty array."
+            },
+            audio_description: {
+                type: Type.STRING,
+                description: "A description of the soundtrack, music, or sound effects for the video."
+            }
+        },
+        required: ["visual_description", "text_overlays", "audio_description"]
+    };
+
+    let structuredPromptData;
+    try {
+        const parserResponse = await ai.models.generateContent({
+            model: "gemini-2.5-pro",
+            contents: creativeBriefParserPrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+            },
+        });
+        structuredPromptData = JSON.parse(parserResponse.text);
+    } catch (e) {
+        console.error("Failed to parse creative brief with AI. Falling back to a simpler prompt structure.", e);
+        // Fallback to a simpler structure if parsing fails
+        structuredPromptData = {
+            visual_description: prompt,
+            text_overlays: [],
+            audio_description: ''
+        };
+    }
+
+    // Step 2: Construct a highly structured and imperative prompt for the video model.
+    let finalVideoPrompt = structuredPromptData.visual_description;
+
+    // Imperative instruction for text overlays
+    if (structuredPromptData.text_overlays && structuredPromptData.text_overlays.length > 0) {
+        const texts = structuredPromptData.text_overlays.map((text: string) => `"${text}"`).join(' and ');
+        finalVideoPrompt += ` The video MUST feature the following text overlays, rendered clearly and prominently: ${texts}.`;
+    } else {
+        // Explicitly tell the model NOT to add text if none was parsed.
+        finalVideoPrompt += ` Do NOT add any text overlays to this video. The video must be purely visual, with no written words appearing on screen.`;
+    }
+
+    // Imperative instruction for audio
+    if (structuredPromptData.audio_description && structuredPromptData.audio_description.trim() !== '') {
+        finalVideoPrompt += ` The video MUST have a high-quality audio track featuring: ${structuredPromptData.audio_description}.`;
+    }
+    
+    const requestPayload: any = {
+        model: 'veo-2.0-generate-001',
+        prompt: finalVideoPrompt,
+        config: {
+            numberOfVideos: 1,
+            aspectRatio: aspectRatio,
+        }
+    };
+
+    if (image) {
+        requestPayload.image = {
+            imageBytes: image.base64,
+            mimeType: image.mimeType,
+        };
+    }
+
+    try {
+        let operation = await ai.models.generateVideos(requestPayload);
+
+        while (!operation.done) {
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            operation = await ai.operations.getVideosOperation({ operation: operation });
+        }
+        
+        const generatedVideos = operation.response?.generatedVideos;
+        if (!generatedVideos || generatedVideos.length === 0) {
+            console.warn(`Video generation for ${aspectRatio} finished but returned no videos.`);
+            return null;
+        }
+
+        const videoData = generatedVideos[0];
+        const downloadLink = videoData?.video?.uri;
+
+        if (downloadLink) {
+            try {
+                const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch video from URI: ${response.statusText}`);
+                }
+                const videoBlob = await response.blob();
+                return URL.createObjectURL(videoBlob);
+            } catch (fetchError) {
+                console.error("Error fetching video blob:", fetchError);
+                return null;
+            }
+        }
+        return null;
+
+    } catch (error) {
+        console.error(`Error during video generation process for ${aspectRatio}:`, error);
+        throw error; // Rethrow to be caught by Promise.allSettled
+    }
 };

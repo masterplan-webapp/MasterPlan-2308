@@ -1,17 +1,19 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
-import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
+import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, generateAIVideos, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import {
     PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
     CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps,
-    DashboardPageProps, MonthlyPlanPageProps, CreativeGroupProps, CopyBuilderPageProps, UTMBuilderPageProps, KeywordBuilderPageProps, CreativeBuilderPageProps,
+    DashboardPageProps, MonthlyPlanPageProps, CreativeGroupProps, CopyBuilderPageProps, UTMBuilderPageProps, KeywordBuilderPageProps, CreativeBuilderPageProps, VideoBuilderPageProps,
     AddMonthModalProps, OnboardingPageProps, PlanSelectorPageProps, AISuggestionsModalProps,
     ChartCardProps, ChartsSectionProps, DashboardHeaderProps, RenamePlanModalProps, PlanCreationChoiceModalProps, AIPlanCreationModalProps,
     GeneratedImage,
+    GeneratedVideo,
     AspectRatio
 } from './types';
 
@@ -1576,107 +1578,115 @@ const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, onUpdate,
     };
     
     const applySuggestion = (type: string, text: string) => {
-        // This is a simplified application logic, it just adds the suggestion to the end.
         if (type === 'Títulos (Headlines)') {
             updateField('headlines', [...group.headlines, text]);
-        } else if (type === 'Descrições (Descriptions)') {
-            updateField('descriptions', [...group.descriptions, text]);
         } else if (type === 'Títulos Longos (Long Headlines)') {
             updateField('longHeadlines', [...(group.longHeadlines || []), text]);
+        } else if (type === 'Descrições (Descriptions)') {
+            updateField('descriptions', [...group.descriptions, text]);
         }
     };
 
-    const applyAllSuggestions = (type: string, texts: string[]) => {
-         if (type === 'Títulos (Headlines)') {
-            updateField('headlines', [...group.headlines, ...texts]);
-        } else if (type === 'Descrições (Descriptions)') {
-            updateField('descriptions', [...group.descriptions, ...texts]);
-        } else if (type === 'Títulos Longos (Long Headlines)') {
-            updateField('longHeadlines', [...(group.longHeadlines || []), ...texts]);
-        }
-    }
-
     return (
-        <Card className="mb-6">
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <input
-                        type="text"
-                        value={group.name}
-                        onChange={(e) => updateField('name', e.target.value)}
-                        className="text-lg font-semibold bg-transparent border-b-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 dark:focus:border-blue-500"
-                        placeholder={t('Nome do Grupo de Criativos')}
-                    />
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={handleGenerateSuggestions} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-full" title={t('Gerar Sugestões com IA')}><Sparkles size={18}/></button>
-                    <button onClick={() => onDelete(group.id)} className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"><Trash2 size={18}/></button>
-                </div>
+        <Card className="space-y-6">
+            <div className="flex justify-between items-start pb-4 border-b dark:border-gray-700">
+                <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    className="text-lg font-semibold bg-transparent focus:outline-none focus:ring-0 border-none p-0 w-full text-gray-900 dark:text-gray-100"
+                    placeholder={t('Nome do Grupo de Criativos')}
+                />
+                <button onClick={() => onDelete(group.id)} className="text-gray-400 hover:text-red-500 ml-4">
+                    <Trash2 size={20} />
+                </button>
             </div>
-             <div className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('Contexto para a IA')}</label>
-                    <textarea
-                        value={group.context}
-                        onChange={(e) => updateField('context', e.target.value)}
-                        rows={3}
-                        className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
-                    />
-                </div>
-                
-                 {/* Headlines */}
-                <div>
-                    <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Títulos (Headlines)')} (30)</h4>
-                    <div className="space-y-2">
-                        {group.headlines.map((h, i) => (
-                             <div key={i} className="flex items-center gap-2">
-                                <CharacterCountInput value={h} onChange={(e) => updateArrayField('headlines', i, e.target.value)} maxLength={30} placeholder={`Headline ${i + 1}`} />
-                                <button onClick={() => removeArrayField('headlines', i)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                             </div>
-                        ))}
-                    </div>
-                    <button onClick={() => addArrayField('headlines')} className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('Novo Grupo')}</button>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Contexto para a IA')}</label>
+                <textarea
+                    value={group.context}
+                    onChange={(e) => updateField('context', e.target.value)}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
+                />
+                 <button onClick={handleGenerateSuggestions} className="mt-2 flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                    <Sparkles size={16} />
+                    {t('Gerar Sugestões com IA')}
+                </button>
+            </div>
+
+            <div className="space-y-4">
+                {/* Headlines */}
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200">{t('Títulos (Headlines)')}</h4>
+                    {group.headlines.map((headline, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <CharacterCountInput
+                                value={headline}
+                                onChange={(e) => updateArrayField('headlines', index, e.target.value)}
+                                maxLength={30}
+                                placeholder={`${t('Títulos (Headlines)')} ${index + 1}`}
+                            />
+                            <button onClick={() => removeArrayField('headlines', index)} className="text-gray-400 hover:text-red-500 p-2 rounded-full"><Trash2 size={16} /></button>
+                        </div>
+                    ))}
+                    <button onClick={() => addArrayField('headlines')}  className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"><PlusCircle size={14}/> {t('add')}</button>
                 </div>
 
-                {/* Long Headlines (conditional) */}
-                {channel === 'Google Ads' && (
-                    <div>
-                        <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Títulos Longos (Long Headlines)')} (90)</h4>
-                        <div className="space-y-2">
-                            {(group.longHeadlines || []).map((h, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                    <CharacterCountInput value={h} onChange={(e) => updateArrayField('longHeadlines', i, e.target.value)} maxLength={90} placeholder={`Long Headline ${i + 1}`} />
-                                    <button onClick={() => removeArrayField('longHeadlines', i)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                                </div>
-                            ))}
-                        </div>
-                        <button onClick={() => addArrayField('longHeadlines')} className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('Novo Grupo')}</button>
+                {/* Long Headlines (Optional for Google Ads) */}
+                {channel.includes("Google") && (
+                    <div className="space-y-2">
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-200">{t('Títulos Longos (Long Headlines)')}</h4>
+                        {(group.longHeadlines || []).map((headline, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <CharacterCountInput
+                                    value={headline}
+                                    onChange={(e) => updateArrayField('longHeadlines', index, e.target.value)}
+                                    maxLength={90}
+                                    placeholder={`${t('Títulos Longos (Long Headlines)')} ${index + 1}`}
+                                />
+                                <button onClick={() => removeArrayField('longHeadlines', index)} className="text-gray-400 hover:text-red-500 p-2 rounded-full"><Trash2 size={16} /></button>
+                            </div>
+                        ))}
+                        <button onClick={() => addArrayField('longHeadlines')} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"><PlusCircle size={14}/> {t('add')}</button>
                     </div>
                 )}
 
                 {/* Descriptions */}
-                <div>
-                    <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Descrições (Descriptions)')} (90)</h4>
-                     <div className="space-y-2">
-                        {group.descriptions.map((d, i) => (
-                              <div key={i} className="flex items-center gap-2">
-                                <CharacterCountInput value={d} onChange={(e) => updateArrayField('descriptions', i, e.target.value)} maxLength={90} placeholder={`Description ${i + 1}`} />
-                                <button onClick={() => removeArrayField('descriptions', i)} className="p-2 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                              </div>
-                        ))}
-                    </div>
-                    <button onClick={() => addArrayField('descriptions')} className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('Novo Grupo')}</button>
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200">{t('Descrições (Descriptions)')}</h4>
+                    {group.descriptions.map((desc, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <CharacterCountInput
+                                value={desc}
+                                onChange={(e) => updateArrayField('descriptions', index, e.target.value)}
+                                maxLength={90}
+                                placeholder={`${t('Descrições (Descriptions)')} ${index + 1}`}
+                            />
+                            <button onClick={() => removeArrayField('descriptions', index)} className="text-gray-400 hover:text-red-500 p-2 rounded-full"><Trash2 size={16} /></button>
+                        </div>
+                    ))}
+                    <button onClick={() => addArrayField('descriptions')} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"><PlusCircle size={14}/> {t('add')}</button>
                 </div>
             </div>
-
-            <AISuggestionsModal 
+            
+            <AISuggestionsModal
                 isOpen={isSuggestionsModalOpen}
                 onClose={() => setIsSuggestionsModalOpen(false)}
                 isLoading={isGeneratingSuggestions}
                 suggestions={suggestions}
                 onApplySuggestion={applySuggestion}
-                onApplyAllSuggestions={applyAllSuggestions}
+                onApplyAllSuggestions={(type, texts) => {
+                    if (type === 'Títulos (Headlines)') {
+                        updateField('headlines', [...group.headlines, ...texts]);
+                    } else if (type === 'Títulos Longos (Long Headlines)') {
+                        updateField('longHeadlines', [...(group.longHeadlines || []), ...texts]);
+                    } else if (type === 'Descrições (Descriptions)') {
+                        updateField('descriptions', [...group.descriptions, ...texts]);
+                    }
+                }}
             />
         </Card>
     );
@@ -1684,132 +1694,138 @@ const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, onUpdate,
 
 export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState<string | null>(null);
+    const { user } = useAuth();
+    const [activeChannel, setActiveChannel] = useState<string | null>(null);
 
-    const activeChannels = useMemo(() => {
-        const channels = new Set<string>();
-        Object.values(planData.months || {}).flat().forEach(campaign => {
-            if (campaign.canal) channels.add(campaign.canal);
-        });
-        return Array.from(channels);
+    const channelsWithCampaigns = useMemo(() => {
+        const allCampaigns = Object.values(planData.months || {}).flat();
+        return [...new Set(allCampaigns.map(c => c.canal).filter(Boolean))] as string[];
     }, [planData.months]);
 
     useEffect(() => {
-        if (activeChannels.length > 0 && !activeTab) {
-            setActiveTab(activeChannels[0]);
-        } else if (activeChannels.length === 0) {
-            setActiveTab(null);
+        if (channelsWithCampaigns.length > 0 && !activeChannel) {
+            setActiveChannel(channelsWithCampaigns[0]);
+        } else if (channelsWithCampaigns.length === 0) {
+            setActiveChannel(null);
         }
-    }, [activeChannels, activeTab]);
+    }, [channelsWithCampaigns, activeChannel]);
 
     const handleUpdateGroup = (updatedGroup: CreativeTextData) => {
-        if (!activeTab || !planData.creatives) return;
-        const updatedCreatives = {
-            ...planData.creatives,
-            [activeTab]: planData.creatives[activeTab].map(g => g.id === updatedGroup.id ? updatedGroup : g)
-        };
-        setPlanData({ ...planData, creatives: updatedCreatives });
+        if (!activeChannel) return;
+        setPlanData(prev => {
+            if (!prev) return null;
+            const newCreatives = { ...(prev.creatives || {}) };
+            const channelCreatives = (newCreatives[activeChannel] || []);
+            const groupIndex = channelCreatives.findIndex(g => g.id === updatedGroup.id);
+            if (groupIndex > -1) {
+                channelCreatives[groupIndex] = updatedGroup;
+                const updatedPlan = { ...prev, creatives: { ...prev.creatives, [activeChannel]: channelCreatives }};
+                if (user) dbService.savePlan(user.uid, updatedPlan);
+                return updatedPlan;
+            }
+            return prev;
+        });
     };
-
+    
     const handleDeleteGroup = (groupId: number) => {
-        if (!activeTab || !planData.creatives) return;
-        const updatedCreatives = {
-            ...planData.creatives,
-            [activeTab]: planData.creatives[activeTab].filter(g => g.id !== groupId)
-        };
-        setPlanData({ ...planData, creatives: updatedCreatives });
+        if (!activeChannel) return;
+        setPlanData(prev => {
+            if (!prev) return null;
+            const channelCreatives = (prev.creatives?.[activeChannel] || []).filter(g => g.id !== groupId);
+            const updatedPlan = { ...prev, creatives: { ...prev.creatives, [activeChannel]: channelCreatives }};
+            if (user) dbService.savePlan(user.uid, updatedPlan);
+            return updatedPlan;
+        });
     };
 
     const handleAddGroup = () => {
-        if (!activeTab) return;
+        if (!activeChannel) return;
         const newGroup: CreativeTextData = {
             id: Date.now(),
-            name: t('Novo Grupo de Criativos'),
+            name: t('Novo Grupo'),
             context: '',
             headlines: [''],
-            descriptions: ['']
+            descriptions: [''],
+            longHeadlines: []
         };
-        const updatedCreatives = {
-            ...planData.creatives,
-            [activeTab]: [...(planData.creatives?.[activeTab] || []), newGroup]
-        };
-        setPlanData({ ...planData, creatives: updatedCreatives });
+        setPlanData(prev => {
+            if (!prev) return null;
+            const channelCreatives = [...(prev.creatives?.[activeChannel] || []), newGroup];
+            const updatedPlan = { ...prev, creatives: { ...prev.creatives, [activeChannel]: channelCreatives }};
+            if (user) dbService.savePlan(user.uid, updatedPlan);
+            return updatedPlan;
+        });
     };
 
-    const handleExport = (format: 'csv' | 'txt') => {
-        if(format === 'csv') {
-            exportCreativesAsCSV(planData, t);
-        } else {
-            exportCreativesAsTXT(planData, t);
-        }
-    };
-    
+    const activeGroups = planData.creatives?.[activeChannel || ''] || [];
+
     return (
-        <div>
-            {activeChannels.length > 0 && activeTab ? (
-                <>
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="border-b border-gray-200 dark:border-gray-700">
-                            <nav className="-mb-px flex space-x-6" aria-label="Tabs">
-                                {activeChannels.map(channel => (
-                                    <button
-                                        key={channel}
-                                        onClick={() => setActiveTab(channel)}
-                                        className={`${
-                                            activeTab === channel
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500'
-                                        } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
-                                    >
-                                        <ChannelDisplay channel={channel} />
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
-                         <div className="relative group">
-                            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors">
-                                <FileDown size={16} /> {t('export')} <ChevronDown size={16} />
-                            </button>
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible">
-                                <div className="py-1">
-                                    <button onClick={() => handleExport('csv')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_csv')}</button>
-                                    <button onClick={() => handleExport('txt')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_txt')}</button>
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                 <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('copy_builder')}</h2>
+                 <div className="flex items-center gap-2">
+                    <button onClick={() => exportCreativesAsCSV(planData, t)} className="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1.5"><Sheet size={16}/> CSV</button>
+                    <button onClick={() => exportCreativesAsTXT(planData, t)} className="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1.5"><FileText size={16}/> TXT</button>
+                 </div>
+            </div>
+
+            {channelsWithCampaigns.length > 0 ? (
+                <div>
+                    <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+                        <nav className="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                            {channelsWithCampaigns.map(channel => (
+                                <button
+                                    key={channel}
+                                    onClick={() => setActiveChannel(channel)}
+                                    className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors
+                                        ${activeChannel === channel
+                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-500'
+                                        }`
+                                    }
+                                >
+                                    {channel}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {activeChannel && (
+                        <div>
+                             <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-semibold">{t('Criativos para')} {activeChannel}</h3>
+                                <button onClick={handleAddGroup} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors text-sm">
+                                    <PlusCircle size={18} />
+                                    {t('Novo Grupo de Criativos')}
+                                </button>
+                             </div>
+                            {activeGroups.length > 0 ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {activeGroups.map(group => (
+                                        <CreativeGroup 
+                                            key={group.id} 
+                                            group={group} 
+                                            channel={activeChannel}
+                                            onUpdate={handleUpdateGroup}
+                                            onDelete={handleDeleteGroup}
+                                            planData={planData}
+                                        />
+                                    ))}
                                 </div>
-                            </div>
-                         </div>
-                    </div>
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">{t('Criativos para')} {activeTab}</h2>
-                            <button onClick={handleAddGroup} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
-                                <PlusCircle size={20} />
-                                {t('Novo Grupo')}
-                            </button>
+                            ) : (
+                                <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeChannel})}</h3>
+                                    <p className="mt-1 text-gray-500 dark:text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
+                                </div>
+                            )}
                         </div>
-                        {planData.creatives?.[activeTab] && planData.creatives[activeTab].length > 0 ? (
-                            planData.creatives[activeTab].map(group => (
-                                <CreativeGroup 
-                                    key={group.id} 
-                                    group={group} 
-                                    channel={activeTab} 
-                                    onUpdate={handleUpdateGroup}
-                                    onDelete={handleDeleteGroup}
-                                    planData={planData}
-                                />
-                            ))
-                        ) : (
-                            <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-                                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeTab})}</h3>
-                                <p className="mt-1 text-gray-500 dark:text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
-                            </div>
-                        )}
-                    </div>
-                </>
-            ) : (
-                <div className="text-center py-16">
-                    <h2 className="text-xl font-semibold">{t('Nenhum canal ativo')}</h2>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
+                    )}
                 </div>
+            ) : (
+                <Card className="text-center">
+                    <h3 className="text-lg font-semibold">{t('Nenhum canal ativo')}</h3>
+                    <p className="text-gray-500 dark:text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
+                </Card>
             )}
         </div>
     );
@@ -1817,460 +1833,421 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 
 export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t } = useLanguage();
-    const [utm, setUtm] = useState<Omit<UTMLink, 'id' | 'createdAt' | 'fullUrl'>>({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
-    const [fullUrl, setFullUrl] = useState('');
+    const { user } = useAuth();
+    const [utm, setUtm] = useState({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
+    const [generatedUrl, setGeneratedUrl] = useState('');
     const [copied, setCopied] = useState(false);
-    const [error, setError] = useState('');
-    
-    const utmLinks = planData.utmLinks || [];
 
-    const handleInputChange = (field: keyof typeof utm, value: string) => {
-        setUtm(prev => ({ ...prev, [field]: value }));
-        setError('');
-        setFullUrl(''); // Reset full URL on change
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setUtm(prev => ({ ...prev, [name]: value }));
     };
-    
-    const generateURL = () => {
-        const { url, source, medium, campaign } = utm;
-        if (!url || !source || !medium || !campaign) {
-            setError(t('Por favor, preencha todos os campos obrigatórios (*) e gere a URL.'));
-            return;
-        }
-        setError('');
-        const params = new URLSearchParams({
-            utm_source: source,
-            utm_medium: medium,
-            utm_campaign: campaign,
-        });
-        if (utm.term) params.append('utm_term', utm.term);
-        if (utm.content) params.append('utm_content', utm.content);
 
-        // Ensure URL has a protocol
-        let finalUrl = url;
-        if (!/^https?:\/\//i.test(finalUrl)) {
-            finalUrl = 'https://' + finalUrl;
+    useEffect(() => {
+        const { url, source, medium, campaign, term, content } = utm;
+        if (url && source && medium && campaign) {
+            const params = new URLSearchParams({
+                utm_source: source,
+                utm_medium: medium,
+                utm_campaign: campaign,
+            });
+            if (term) params.set('utm_term', term);
+            if (content) params.set('utm_content', content);
+            
+            try {
+                const urlObject = new URL(url.startsWith('http') ? url : `https://${url}`);
+                urlObject.search = params.toString();
+                setGeneratedUrl(urlObject.toString());
+            } catch (error) {
+                // Invalid URL, do nothing
+                setGeneratedUrl('');
+            }
+        } else {
+            setGeneratedUrl('');
         }
-        
-        const generated = `${finalUrl}?${params.toString()}`;
-        setFullUrl(generated);
-    };
+    }, [utm]);
 
     const handleSave = () => {
-        if (!fullUrl) {
-            generateURL();
-            // Need to check again after generation attempt
-            if (!utm.url || !utm.source || !utm.medium || !utm.campaign) {
-                return;
-            }
+        if (!generatedUrl) {
+            alert(t('Por favor, preencha todos os campos obrigatórios (*) e gere a URL.'));
+            return;
         }
-        
         const newLink: UTMLink = {
             id: Date.now(),
             createdAt: new Date(),
-            fullUrl: fullUrl || `${utm.url}?${new URLSearchParams({
-                utm_source: utm.source,
-                utm_medium: utm.medium,
-                utm_campaign: utm.campaign,
-                ...(utm.term && { utm_term: utm.term }),
-                ...(utm.content && { utm_content: utm.content })
-            }).toString()}`,
+            fullUrl: generatedUrl,
             ...utm
         };
-
-        const updatedPlan = { ...planData, utmLinks: [...utmLinks, newLink] };
-        setPlanData(updatedPlan);
-        clearForm();
+        setPlanData(prev => {
+            if (!prev) return null;
+            const updatedPlan = { ...prev, utmLinks: [...(prev.utmLinks || []), newLink] };
+            if(user) dbService.savePlan(user.uid, updatedPlan);
+            return updatedPlan;
+        });
+        handleClear();
     };
 
-    const clearForm = () => {
+    const handleClear = () => {
         setUtm({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
-        setFullUrl('');
-        setError('');
+        setGeneratedUrl('');
     };
-
+    
     const copyUrl = () => {
-        navigator.clipboard.writeText(fullUrl).then(() => {
+        navigator.clipboard.writeText(generatedUrl).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
     };
-
-    const handleDelete = (id: number) => {
-        const updatedLinks = utmLinks.filter(link => link.id !== id);
-        setPlanData({ ...planData, utmLinks: updatedLinks });
-    };
-
-    const handleExport = (format: 'csv' | 'txt') => {
-        if(format === 'csv') {
-            exportUTMLinksAsCSV(planData, t);
-        } else {
-            exportUTMLinksAsTXT(planData, t);
-        }
+    
+    const handleDeleteLink = (id: number) => {
+        setPlanData(prev => {
+             if (!prev) return null;
+            const updatedLinks = (prev.utmLinks || []).filter(link => link.id !== id);
+            const updatedPlan = { ...prev, utmLinks: updatedLinks };
+            if(user) dbService.savePlan(user.uid, updatedPlan);
+            return updatedPlan;
+        })
     };
     
-    useEffect(() => {
-        const { url, source, medium, campaign } = utm;
-        if(url && source && medium && campaign) {
-            generateURL();
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [utm]);
-
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-                <Card>
-                    <div className="space-y-4">
-                        <InputField label={t("URL do Site *")} value={utm.url} onChange={e => handleInputChange('url', e.target.value)} />
-                        <InputField label={t("Campaign Source *")} value={utm.source} onChange={e => handleInputChange('source', e.target.value)} />
-                        <InputField label={t("Campaign Medium *")} value={utm.medium} onChange={e => handleInputChange('medium', e.target.value)} />
-                        <InputField label={t("Campaign Name *")} value={utm.campaign} onChange={e => handleInputChange('campaign', e.target.value)} />
-                        <InputField label={t("Campaign Term")} value={utm.term || ''} onChange={e => handleInputChange('term', e.target.value)} />
-                        <InputField label={t("Campaign Content")} value={utm.content || ''} onChange={e => handleInputChange('content', e.target.value)} />
-                    </div>
-                     <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('URL Gerada')}</label>
-                        <div className="relative mt-1">
-                           <textarea
-                                readOnly
-                                value={fullUrl || t('Preencha os campos para gerar a URL.')}
-                                rows={4}
-                                className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-xs"
-                            />
-                            {fullUrl && (
-                                <button
-                                    onClick={copyUrl}
-                                    className="absolute top-2 right-2 p-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/60"
-                                >
-                                    {copied ? <Check size={16} /> : <CopyIcon size={16} />}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-                    <div className="mt-6 flex gap-2">
-                        <button onClick={handleSave} className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"><Save size={18}/> {t('Salvar Link')}</button>
-                        <button onClick={clearForm} className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">{t('Limpar')}</button>
-                    </div>
-                </Card>
-            </div>
-            <div className="lg:col-span-2">
-                <Card>
-                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-xl font-bold">{t('Links Salvos')}</h3>
-                        {utmLinks.length > 0 && (
-                             <div className="relative group">
-                                <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors">
-                                    <FileDown size={16} /> {t('export')} <ChevronDown size={16} />
-                                </button>
-                                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible">
-                                    <div className="py-1">
-                                        <button onClick={() => handleExport('csv')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_csv')}</button>
-                                        <button onClick={() => handleExport('txt')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_txt')}</button>
-                                    </div>
-                                </div>
-                             </div>
-                        )}
+        <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('utm_builder')}</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Card className="lg:col-span-1 space-y-4">
+                     <h3 className="text-lg font-semibold">{t('Gerador de UTM')}</h3>
+                     <div>
+                        <label className="block text-sm font-medium">{t('URL do Site *')}</label>
+                        <input type="text" name="url" value={utm.url} onChange={handleInputChange} className="mt-1 w-full input-style" />
                      </div>
-                    <div className="overflow-x-auto">
-                        {utmLinks.length > 0 ? (
-                             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3">{t('Data')}</th>
-                                        <th scope="col" className="px-6 py-3">{t('Campanha')}</th>
-                                        <th scope="col" className="px-6 py-3">{t('URL Completa')}</th>
-                                        <th scope="col" className="px-6 py-3"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {utmLinks.slice().reverse().map(link => (
-                                        <tr key={link.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                                            <td className="px-6 py-4 whitespace-nowrap">{new Date(link.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4">{link.campaign}</td>
-                                            <td className="px-6 py-4">
-                                                <a href={link.fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate block max-w-xs">{link.fullUrl}</a>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <button onClick={() => handleDelete(link.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
+                     <div>
+                        <label className="block text-sm font-medium">{t('Campaign Source *')}</label>
+                        <input type="text" name="source" value={utm.source} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                     </div>
+                      <div>
+                        <label className="block text-sm font-medium">{t('Campaign Medium *')}</label>
+                        <input type="text" name="medium" value={utm.medium} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium">{t('Campaign Name *')}</label>
+                        <input type="text" name="campaign" value={utm.campaign} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium">{t('Campaign Term')}</label>
+                        <input type="text" name="term" value={utm.term} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium">{t('Campaign Content')}</label>
+                        <input type="text" name="content" value={utm.content} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                     </div>
+                     <div className="pt-4 border-t dark:border-gray-700">
+                        <label className="block text-sm font-medium">{t('URL Gerada')}</label>
+                        <div className="relative mt-1">
+                            <textarea
+                                value={generatedUrl || t('Preencha os campos para gerar a URL.')}
+                                readOnly
+                                rows={4}
+                                className="w-full input-style bg-gray-100 dark:bg-gray-700/50 pr-10"
+                            />
+                             {generatedUrl && (
+                                <button onClick={copyUrl} className="absolute top-2 right-2 p-1.5 rounded-md bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500">
+                                    {copied ? <Check size={16} className="text-green-500"/> : <CopyIcon size={16} />}
+                                </button>
+                             )}
+                        </div>
+                     </div>
+                     <div className="flex gap-2 justify-end">
+                         <button onClick={handleClear} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-md text-sm">{t('Limpar')}</button>
+                         <button onClick={handleSave} disabled={!generatedUrl} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm disabled:opacity-50">{t('Salvar Link')}</button>
+                     </div>
+                </Card>
+                <Card className="lg:col-span-2">
+                     <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">{t('Links Salvos')}</h3>
+                        <div className="flex items-center gap-2">
+                             <button onClick={() => exportUTMLinksAsCSV(planData, t)} className="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1.5"><Sheet size={16}/> CSV</button>
+                             <button onClick={() => exportUTMLinksAsTXT(planData, t)} className="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1.5"><FileText size={16}/> TXT</button>
+                        </div>
+                     </div>
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                           <thead className="text-left bg-gray-50 dark:bg-gray-700/50">
+                             <tr>
+                                 <th className="p-3 font-medium">{t('Data')}</th>
+                                 <th className="p-3 font-medium">{t('Campanha')}</th>
+                                 <th className="p-3 font-medium">{t('URL Completa')}</th>
+                                 <th className="p-3 font-medium"></th>
+                             </tr>
+                           </thead>
+                           <tbody>
+                                {(planData.utmLinks || []).length > 0 ? (
+                                    planData.utmLinks.map(link => (
+                                        <tr key={link.id} className="border-b dark:border-gray-700">
+                                            <td className="p-3 whitespace-nowrap">{new Date(link.createdAt).toLocaleDateString()}</td>
+                                            <td className="p-3">{link.campaign}</td>
+                                            <td className="p-3 truncate max-w-xs" title={link.fullUrl}>{link.fullUrl}</td>
+                                            <td className="p-3 text-right">
+                                                 <button onClick={() => handleDeleteLink(link.id)} className="text-gray-400 hover:text-red-500 p-1 rounded-full"><Trash2 size={16} /></button>
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p className="text-center py-8 text-gray-500 dark:text-gray-400">{t('Nenhum link salvo ainda.')}</p>
-                        )}
-                    </div>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-8 text-gray-500">{t('Nenhum link salvo ainda.')}</td>
+                                    </tr>
+                                )}
+                           </tbody>
+                        </table>
+                     </div>
                 </Card>
             </div>
         </div>
     );
 };
 
-const InputField: React.FC<{label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-        <input type="text" value={value} onChange={onChange} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-    </div>
-);
-
 export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t, language } = useLanguage();
-    
-    const [generationMode, setGenerationMode] = useState<'seed' | 'prompt'>('seed');
-    const [seedKeywords, setSeedKeywords] = useState('');
-    const [aiPrompt, setAIPrompt] = useState('');
-    const [generatedKeywords, setGeneratedKeywords] = useState<KeywordSuggestion[]>([]);
+    const { user } = useAuth();
+    const [mode, setMode] = useState<'seed' | 'prompt'>('prompt');
+    const [input, setInput] = useState('');
+    const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [adGroups, setAdGroups] = useState<AdGroup[]>(planData.adGroups || []);
+    const [newGroupName, setNewGroupName] = useState('');
+    
+    useEffect(() => {
+        setAdGroups(planData.adGroups || []);
+    }, [planData.adGroups]);
+    
+    const updatePlanData = (newAdGroups: AdGroup[]) => {
+         setPlanData(prev => {
+            if (!prev) return null;
+            const updatedPlan = { ...prev, adGroups: newAdGroups };
+            if (user) dbService.savePlan(user.uid, updatedPlan);
+            return updatedPlan;
+        });
+    }
 
-    const adGroups = useMemo(() => planData.adGroups || [], [planData.adGroups]);
-    const unassignedKeywords = useMemo(() => {
-        const assignedKeywords = new Set(adGroups.flatMap(g => g.keywords.map(k => k.keyword)));
-        return generatedKeywords.filter(k => !assignedKeywords.has(k.keyword));
-    }, [adGroups, generatedKeywords]);
-
-    const handleGenerate = async () => {
-        const input = generationMode === 'seed' ? seedKeywords : aiPrompt;
+    const handleGenerateKeywords = async () => {
         if (!input.trim()) return;
-
         setIsLoading(true);
-        setError('');
+        setError(null);
         try {
-            const keywords = await generateAIKeywords(planData, generationMode, input, language);
-            setGeneratedKeywords(prev => {
-                const existingKeywords = new Set(prev.map(k => k.keyword));
-                const newUniqueKeywords = keywords.filter(k => !existingKeywords.has(k.keyword));
-                return [...prev, ...newUniqueKeywords];
-            });
-        } catch (e) {
-            console.error(e);
+            const generated = await generateAIKeywords(planData, mode, input, language);
+            setKeywords(generated);
+        } catch (err) {
+            console.error(err);
             setError(t('error_generating_keywords'));
         } finally {
             setIsLoading(false);
         }
     };
-
-    const addAdGroup = (name: string) => {
-        if (name.trim() && !adGroups.find(g => g.name === name.trim())) {
-            const newGroup: AdGroup = {
-                id: `ag_${Date.now()}`,
-                name: name.trim(),
-                keywords: [],
-            };
-            setPlanData({ ...planData, adGroups: [...adGroups, newGroup] });
-        }
-    };
     
-    const deleteAdGroup = (groupId: string) => {
-        const updatedGroups = adGroups.filter(g => g.id !== groupId);
-        setPlanData({ ...planData, adGroups: updatedGroups });
-    };
-
-    const assignKeywordToGroup = (keyword: KeywordSuggestion, groupId: string) => {
-        const updatedGroups = adGroups.map(group => {
-            // Remove from any other group first
-            const filteredKeywords = group.keywords.filter(k => k.keyword !== keyword.keyword);
-            if (group.id === groupId) {
-                return { ...group, keywords: [...filteredKeywords, keyword] };
-            }
-            return { ...group, keywords: filteredKeywords };
-        });
-        setPlanData({ ...planData, adGroups: updatedGroups });
-    };
-
-    return (
-        <div className="space-y-6">
-            <Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('seed_keywords_label')}</label>
-                        <textarea
-                            rows={3}
-                            value={seedKeywords}
-                            onChange={e => setSeedKeywords(e.target.value)}
-                            onFocus={() => setGenerationMode('seed')}
-                            placeholder={t('seed_keywords_placeholder')}
-                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('ai_prompt_label')}</label>
-                        <textarea
-                            rows={3}
-                            value={aiPrompt}
-                            onChange={e => setAIPrompt(e.target.value)}
-                            onFocus={() => setGenerationMode('prompt')}
-                            placeholder={t('ai_prompt_placeholder')}
-                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                </div>
-                 <div className="mt-4 flex justify-end">
-                    <button onClick={handleGenerate} disabled={isLoading} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-                        {isLoading ? <><LoaderIcon size={18} className="animate-spin" /> {t('generating_keywords')}</> : <><Sparkles size={18}/> {t('generate_keywords')}</>}
-                    </button>
-                </div>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-            </Card>
-
-            <Card>
-                <h3 className="text-xl font-bold mb-4">{t('Results')}</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1">
-                        <AdGroupManager adGroups={adGroups} onAddGroup={addAdGroup} onDeleteGroup={deleteAdGroup} keywords={generatedKeywords} onAssign={assignKeywordToGroup} />
-                    </div>
-                    <div className="lg:col-span-2">
-                        <UnassignedKeywords keywords={unassignedKeywords} adGroups={adGroups} onAssign={assignKeywordToGroup} />
-                    </div>
-                </div>
-                 <div className="mt-6 flex justify-end">
-                    <div className="relative group">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors">
-                            <FileDown size={16} /> {t('export_keywords')} <ChevronDown size={16} />
-                        </button>
-                        <div className="absolute right-0 bottom-full mb-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible">
-                            <div className="py-1">
-                                <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_csv')}</button>
-                                <button onClick={() => exportGroupedKeywordsAsTXT(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('export_as_txt')}</button>
-                            </div>
-                        </div>
-                    </div>
-                 </div>
-            </Card>
-        </div>
-    );
-};
-
-const AdGroupManager: React.FC<{adGroups: AdGroup[], onAddGroup: (name:string) => void, onDeleteGroup: (id: string) => void, keywords: KeywordSuggestion[], onAssign: (kw: KeywordSuggestion, groupId: string) => void}> = ({adGroups, onAddGroup, onDeleteGroup, keywords, onAssign}) => {
-    const { t } = useLanguage();
-    const [newGroupName, setNewGroupName] = useState('');
-
-    const handleAdd = () => {
-        onAddGroup(newGroupName);
+    const handleCreateAdGroup = () => {
+        if (!newGroupName.trim()) return;
+        const newGroup: AdGroup = {
+            id: `group_${Date.now()}`,
+            name: newGroupName.trim(),
+            keywords: [],
+        };
+        const updatedGroups = [...adGroups, newGroup];
+        updatePlanData(updatedGroups);
         setNewGroupName('');
     };
     
+     const handleDeleteAdGroup = (groupId: string) => {
+        if (!confirm(t('confirm_delete_group'))) return;
+        
+        const groupToDelete = adGroups.find(g => g.id === groupId);
+        if(!groupToDelete) return;
+        
+        // Move keywords from deleted group to unassigned
+        const unassignedKeywords = getGroupById('unassigned')?.keywords || [];
+        const updatedUnassignedKeywords = [...unassignedKeywords, ...groupToDelete.keywords];
+        
+        const updatedGroups = adGroups.filter(g => g.id !== groupId);
+        
+        const unassignedIndex = updatedGroups.findIndex(g => g.id === 'unassigned');
+        if (unassignedIndex > -1) {
+            updatedGroups[unassignedIndex].keywords = updatedUnassignedKeywords;
+        } else {
+             updatedGroups.push({ id: 'unassigned', name: 'Unassigned', keywords: updatedUnassignedKeywords });
+        }
+        
+        updatePlanData(updatedGroups);
+    };
+
+    const handleAssignKeyword = (keyword: KeywordSuggestion, groupId: string) => {
+        // Remove keyword from its current group
+        const updatedGroups = adGroups.map(group => ({
+            ...group,
+            keywords: group.keywords.filter(kw => kw.keyword !== keyword.keyword),
+        }));
+
+        // Add keyword to the new group
+        const groupIndex = updatedGroups.findIndex(g => g.id === groupId);
+        if (groupIndex > -1) {
+            updatedGroups[groupIndex].keywords.push(keyword);
+        }
+        
+        updatePlanData(updatedGroups);
+    };
+    
+    const getGroupById = (id: string): AdGroup | undefined => adGroups.find(g => g.id === id);
+    
+    const unassignedKeywords = getGroupById('unassigned')?.keywords || [];
+
     return (
-        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg h-full">
-            <h4 className="font-semibold mb-2">{t('ad_groups')}</h4>
-            <div className="flex gap-2 mb-4">
-                <input
-                    type="text"
-                    value={newGroupName}
-                    onChange={e => setNewGroupName(e.target.value)}
-                    placeholder={t('ad_group_name_placeholder')}
-                    className="flex-grow border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-1.5 px-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('keyword_builder')}</h2>
+
+            <Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <button onClick={() => setMode('prompt')} className={`p-3 rounded-lg text-left ${mode === 'prompt' ? 'bg-blue-100 dark:bg-blue-900/50 border-blue-400 border-2' : 'bg-gray-100 dark:bg-gray-700/50'}`}>
+                        <label className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2"><Wand2 size={16}/> {t('ai_prompt_label')}</label>
+                    </button>
+                    <button onClick={() => setMode('seed')} className={`p-3 rounded-lg text-left ${mode === 'seed' ? 'bg-blue-100 dark:bg-blue-900/50 border-blue-400 border-2' : 'bg-gray-100 dark:bg-gray-700/50'}`}>
+                        <label className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2"><KeyRound size={16}/> {t('seed_keywords_label')}</label>
+                    </button>
+                </div>
+                 <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    rows={3}
+                    className="w-full input-style"
+                    placeholder={t(mode === 'seed' ? 'seed_keywords_placeholder' : 'ai_prompt_placeholder')}
                 />
-                <button onClick={handleAdd} className="p-2 bg-blue-600 text-white rounded-md"><PlusCircle size={16} /></button>
-            </div>
-             <div className="space-y-2">
-                {adGroups.map(group => (
-                    <AdGroupItem key={group.id} group={group} onDelete={onDeleteGroup} allKeywords={keywords} onAssign={onAssign} />
-                ))}
-            </div>
-        </div>
-    )
-}
-
-const AdGroupItem: React.FC<{group: AdGroup, onDelete: (id: string) => void, allKeywords: KeywordSuggestion[], onAssign: (kw: KeywordSuggestion, groupId: string) => void}> = ({group, onDelete, allKeywords, onAssign}) => {
-    const { t } = useLanguage();
-    const [isOpen, setIsOpen] = useState(false);
-
-    return (
-        <div className="bg-white dark:bg-gray-700 rounded-md p-2 shadow-sm">
-            <div className="flex justify-between items-center cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-                <span className="font-medium text-sm flex items-center gap-2"><Tags size={14} className="text-gray-400"/> {group.name}</span>
-                <div className="flex items-center">
-                    <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded-full mr-2">{group.keywords.length}</span>
-                    <button onClick={e => {e.stopPropagation(); onDelete(group.id)}} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
-                    <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <div className="mt-4 flex justify-end">
+                    <button onClick={handleGenerateKeywords} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 disabled:opacity-50">
+                        {isLoading ? <LoaderIcon className="animate-spin" size={20}/> : <Sparkles size={20}/>}
+                        {isLoading ? t('generating_keywords') : t('generate_keywords')}
+                    </button>
                 </div>
-            </div>
-            {isOpen && (
-                <div className="mt-2 pt-2 border-t dark:border-gray-600 text-sm">
-                    {group.keywords.length > 0 ? (
-                        <ul className="space-y-1">
-                            {group.keywords.map(kw => (
-                                <li key={kw.keyword} className="flex justify-between items-center text-xs p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                {error && <p className="text-red-500 mt-2">{error}</p>}
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Ad Groups Column */}
+                <div className="lg:col-span-1 space-y-4">
+                    <Card>
+                        <h3 className="text-lg font-semibold mb-2">{t('ad_groups')}</h3>
+                         <div className="flex gap-2 mb-4">
+                            <input 
+                                type="text"
+                                value={newGroupName}
+                                onChange={(e) => setNewGroupName(e.target.value)}
+                                placeholder={t('ad_group_name_placeholder')}
+                                className="w-full input-style"
+                            />
+                            <button onClick={handleCreateAdGroup} className="px-3 bg-blue-600 text-white rounded-md shrink-0"><PlusCircle size={18}/></button>
+                         </div>
+                        <div className="space-y-2">
+                             {adGroups.filter(g => g.id !== 'unassigned').map(group => (
+                                <div key={group.id} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-md flex justify-between items-center">
+                                    <span className="font-medium text-gray-800 dark:text-gray-200">{group.name}</span>
+                                    <button onClick={() => handleDeleteAdGroup(group.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
+                                </div>
+                             ))}
+                             {adGroups.filter(g => g.id !== 'unassigned').length === 0 && (
+                                <p className="text-sm text-gray-500">{t('no_ad_groups')}</p>
+                             )}
+                        </div>
+                    </Card>
+                    <Card>
+                         <h3 className="text-lg font-semibold mb-2">{t('unassigned_keywords')}</h3>
+                         <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {unassignedKeywords.map(kw => (
+                                <div key={kw.keyword} className="group p-2 bg-gray-100 dark:bg-gray-700/50 rounded-md flex justify-between items-center">
                                     <span>{kw.keyword}</span>
-                                    <button onClick={() => onAssign(kw, 'unassigned')} className="p-1 text-gray-400 hover:text-red-500" title="Unassign"><X size={12}/></button>
-                                </li>
+                                     <div className="relative">
+                                         <select 
+                                            onChange={(e) => handleAssignKeyword(kw, e.target.value)}
+                                            className="bg-transparent border-none text-sm p-1"
+                                         >
+                                             <option value="">{t('assign_to_group')}</option>
+                                             {adGroups.filter(g => g.id !== 'unassigned').map(g => (
+                                                 <option key={g.id} value={g.id}>{g.name}</option>
+                                             ))}
+                                         </select>
+                                     </div>
+                                </div>
                             ))}
-                        </ul>
-                    ) : (
-                         <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-2">{t('no_keywords_in_group')}</p>
-                    )}
+                            {unassignedKeywords.length === 0 && <p className="text-sm text-gray-500">{t('no_keywords_in_group')}</p>}
+                         </div>
+                    </Card>
                 </div>
-            )}
-        </div>
-    )
-}
 
-const UnassignedKeywords: React.FC<{keywords: KeywordSuggestion[], adGroups: AdGroup[], onAssign: (kw: KeywordSuggestion, groupId: string) => void}> = ({keywords, adGroups, onAssign}) => {
-    const { t } = useLanguage();
-    return (
-        <div>
-            <h4 className="font-semibold mb-2">{t('unassigned_keywords')} ({keywords.length})</h4>
-            {keywords.length > 0 ? (
-                <div className="overflow-auto max-h-[500px] border dark:border-gray-700 rounded-md">
-                     <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
-                            <tr>
-                                <th className="px-4 py-2">{t('keyword')}</th>
-                                <th className="px-4 py-2">{t('assign_to_group')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800">
-                            {keywords.map(kw => (
-                                <tr key={kw.keyword} className="border-b dark:border-gray-700">
-                                    <td className="px-4 py-2 font-medium">{kw.keyword}</td>
-                                    <td className="px-4 py-2">
-                                        <select onChange={e => onAssign(kw, e.target.value)} className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-1 px-2 bg-white dark:bg-gray-700 text-xs">
-                                            <option value="">{t('Selecione')}</option>
-                                            {adGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                                        </select>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('no_keywords_generated')}</p>
-            )}
+                {/* Keywords/Results Column */}
+                 <div className="lg:col-span-2">
+                    <Card>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">{t('Results')}</h3>
+                            <div>
+                                 <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1.5"><Sheet size={16}/> {t('export_keywords')}</button>
+                            </div>
+                        </div>
+                         <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                               <thead className="text-left bg-gray-50 dark:bg-gray-700/50">
+                                    <tr>
+                                        <th className="p-3 font-medium">{t('keyword')}</th>
+                                        <th className="p-3 font-medium text-right">{t('search_volume')}</th>
+                                        <th className="p-3 font-medium text-right">{t('estimated_clicks')}</th>
+                                        <th className="p-3 font-medium text-right">{t('min_cpc')}</th>
+                                        <th className="p-3 font-medium text-right">{t('max_cpc')}</th>
+                                    </tr>
+                               </thead>
+                               <tbody>
+                                 {keywords.length > 0 ? (
+                                    keywords.map(kw => (
+                                        <tr key={kw.keyword} className="border-b dark:border-gray-700">
+                                            <td className="p-3">{kw.keyword}</td>
+                                            <td className="p-3 text-right">{formatNumber(kw.volume)}</td>
+                                            <td className="p-3 text-right">{formatNumber(kw.clickPotential)}</td>
+                                            <td className="p-3 text-right">{formatCurrency(kw.minCpc)}</td>
+                                            <td className="p-3 text-right">{formatCurrency(kw.maxCpc)}</td>
+                                        </tr>
+                                    ))
+                                 ) : (
+                                     <tr><td colSpan={5} className="text-center p-8 text-gray-500">{t('no_keywords_generated')}</td></tr>
+                                 )}
+                               </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                 </div>
+            </div>
         </div>
-    )
+    );
 };
 
 export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData }) => {
     const { t } = useLanguage();
     const [prompt, setPrompt] = useState(planData.aiImagePrompt || '');
-    const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [images, setImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         setIsLoading(true);
-        setError('');
-        setGeneratedImages([]);
+        setError(null);
+        setImages([]);
         try {
-            const images = await generateAIImages(prompt);
-            setGeneratedImages(images);
-        } catch (e) {
-            console.error(e);
+            const result = await generateAIImages(prompt);
+            setImages(result);
+        } catch (err) {
+            console.error(err);
             setError(t('error_generating_images'));
         } finally {
             setIsLoading(false);
         }
     };
-
-    const downloadImage = (base64: string, filename: string, format: 'jpg' | 'png') => {
+    
+     const downloadImage = (base64: string, filename: string) => {
         const link = document.createElement('a');
-        link.href = `data:image/${format};base64,${base64}`;
-        link.download = `${filename}.${format}`;
+        link.href = `data:image/png;base64,${base64}`;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -2278,57 +2255,232 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
 
     return (
         <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('creative_builder')}</h2>
+
             <Card>
-                <h3 className="text-xl font-bold mb-2">{t('Prompt para Geração de Imagem')}</h3>
-                <textarea
-                    rows={4}
+                 <label htmlFor="creative-prompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Prompt para Geração de Imagem')}</label>
+                 <textarea
+                    id="creative-prompt"
                     value={prompt}
-                    onChange={e => setPrompt(e.target.value)}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    rows={4}
+                    className="mt-1 w-full input-style"
                     placeholder={t('creative_prompt_placeholder')}
-                    className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <div className="mt-4 flex justify-end">
-                    <button onClick={handleGenerate} disabled={isLoading} className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-                        {isLoading ? <><LoaderIcon size={18} className="animate-spin" /> {t('generating_images')}</> : <><ImageIcon size={18}/> {t('generate_images')}</>}
+                 <div className="mt-4 flex justify-end">
+                    <button onClick={handleGenerate} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 disabled:opacity-50">
+                        {isLoading ? <LoaderIcon className="animate-spin" size={20}/> : <ImageIcon size={20}/>}
+                        {isLoading ? t('generating_images') : t('generate_images')}
                     </button>
                 </div>
-                {error && <p className="text-red-500 text-sm mt-2 text-center">{error}</p>}
             </Card>
+            
+            {error && <p className="text-red-500 text-center">{error}</p>}
 
+            {images.length === 0 && !isLoading && (
+                 <div className="text-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                    <ImageIcon size={48} className="mx-auto text-gray-400" />
+                    <p className="mt-4 text-gray-500 dark:text-gray-400">{t('creative_builder_initial_prompt')}</p>
+                 </div>
+            )}
+            
             {isLoading && (
-                <div className="text-center py-10">
-                    <LoaderIcon size={32} className="animate-spin mx-auto text-blue-500" />
-                    <p className="mt-2 text-gray-500 dark:text-gray-400">{t('generating_images')}</p>
-                </div>
+                 <div className="text-center py-16">
+                     <LoaderIcon className="animate-spin text-blue-500 mx-auto" size={48}/>
+                     <p className="mt-4 text-gray-500 dark:text-gray-400">{t('generating_images')}</p>
+                 </div>
             )}
 
-            {generatedImages.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {generatedImages.map((image, index) => (
-                        <Card key={index} className="!p-4">
-                            <div className="aspect-w-1 aspect-h-1 mb-4">
-                               <img src={`data:image/png;base64,${image.base64}`} alt={`Generated image ${index + 1}`} className="w-full h-full object-cover rounded-md" />
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{image.aspectRatio}</span>
-                                <div className="relative group">
-                                    <button className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-xs font-medium transition-colors">
-                                        {t('download')}
-                                    </button>
-                                     <div className="absolute right-0 bottom-full mb-2 w-40 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 opacity-0 group-hover:opacity-100 transition-opacity invisible group-hover:visible">
-                                        <div className="py-1">
-                                            <button onClick={() => downloadImage(image.base64, `creative_${index}_${image.aspectRatio.replace(':','-')}`, 'jpg')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('download_as_jpg')}</button>
-                                            <button onClick={() => downloadImage(image.base64, `creative_${index}_${image.aspectRatio.replace(':','-')}`, 'png')} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('download_as_png')}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            {images.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {images.map((img, index) => (
+                        <Card key={index} className="!p-4 group">
+                             <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+                                <img
+                                    src={`data:image/png;base64,${img.base64}`}
+                                    alt={`Generated creative ${index + 1}`}
+                                    className="w-full h-full object-cover object-center"
+                                />
+                             </div>
+                             <div className="mt-3 flex justify-between items-center">
+                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{img.aspectRatio}</p>
+                                 <button onClick={() => downloadImage(img.base64, `creative_${img.aspectRatio.replace(':', 'x')}.png`)} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                                     <FileDown size={14}/> {t('download')}
+                                 </button>
+                             </div>
                         </Card>
                     ))}
                 </div>
             )}
-            {!isLoading && generatedImages.length === 0 && (
-                 <p className="text-center py-10 text-gray-500 dark:text-gray-400">{t('creative_builder_initial_prompt')}</p>
+        </div>
+    );
+};
+
+export const VideoBuilderPage: React.FC<VideoBuilderPageProps> = ({ planData }) => {
+    const { t } = useLanguage();
+    const [prompt, setPrompt] = useState(planData.aiImagePrompt || '');
+    const [videos, setVideos] = useState<GeneratedVideo[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [image, setImage] = useState<{ base64: string; mimeType: string; name: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [loadingMessage, setLoadingMessage] = useState('');
+    
+     useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isLoading) {
+            const messages = [t('loading_message_1'), t('loading_message_2'), t('loading_message_3'), t('loading_message_4')];
+            let msgIndex = 0;
+            setLoadingMessage(messages[msgIndex]);
+            interval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % messages.length;
+                setLoadingMessage(messages[msgIndex]);
+            }, 5000);
+        }
+        return () => clearInterval(interval);
+    }, [isLoading, t]);
+
+    const handleGenerate = async () => {
+        if (!prompt.trim()) return;
+        setIsLoading(true);
+        setError(null);
+        setVideos([]);
+        try {
+            const aspectRatios = ['16:9', '9:16']; // Widescreen, Vertical
+            const generationPromises = aspectRatios.map(ratio => 
+                generateAIVideos(prompt, ratio, image ? { base64: image.base64, mimeType: image.mimeType } : undefined)
+            );
+
+            const results = await Promise.allSettled(generationPromises);
+            
+            const successfulVideos = results
+                .map((result, index) => {
+                    if (result.status === 'fulfilled') {
+                        if (result.value) {
+                            return { url: result.value, aspectRatio: aspectRatios[index] };
+                        }
+                    } else { // result.status === 'rejected'
+                        console.error(`Failed to generate video for aspect ratio ${aspectRatios[index]}:`, result.reason);
+                    }
+                    return null;
+                })
+                .filter((v): v is GeneratedVideo => v !== null);
+
+            if (successfulVideos.length === 0) {
+                 throw new Error(t('error_generating_videos'));
+            }
+
+            setVideos(successfulVideos);
+
+        } catch (err) {
+            console.error(err);
+            const message = err instanceof Error ? err.message : t('error_generating_videos');
+            setError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = (reader.result as string).split(',')[1];
+                setImage({ base64: base64String, mimeType: file.type, name: file.name });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    const getAspectRatioLabel = (ratio: string) => {
+        switch (ratio) {
+            case '16:9': return 'Widescreen';
+            case '9:16': return 'Vertical (Stories)';
+            default: return ratio;
+        }
+    }
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('video_builder')}</h2>
+
+            <Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label htmlFor="video-prompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('video_prompt_label')}</label>
+                         <textarea
+                            id="video-prompt"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            rows={4}
+                            className="mt-1 w-full input-style"
+                            placeholder={t('video_prompt_placeholder')}
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('video_prompt_hint')}</p>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('upload_optional_image')}</label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
+                            <div className="space-y-1 text-center">
+                                <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                                <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" />
+                                    </label>
+                                </div>
+                                {image ? (
+                                    <div className="text-xs text-gray-500 flex items-center justify-center gap-2">
+                                        <span>{image.name}</span>
+                                        <button onClick={() => setImage(null)} className="text-red-500 hover:text-red-700"><X size={14}/></button>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                                )}
+                            </div>
+                        </div>
+                     </div>
+                </div>
+                 <div className="mt-4 flex justify-end">
+                    <button onClick={handleGenerate} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 disabled:opacity-50">
+                        {isLoading ? <LoaderIcon className="animate-spin" size={20}/> : <Video size={20}/>}
+                        {isLoading ? t('generating_videos') : t('generate_videos')}
+                    </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">{t('video_generation_disclaimer')}</p>
+            </Card>
+
+            {error && <p className="text-red-500 text-center">{error}</p>}
+
+             {videos.length === 0 && !isLoading && (
+                 <div className="text-center py-16 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                    <Video size={48} className="mx-auto text-gray-400" />
+                    <p className="mt-4 text-gray-500 dark:text-gray-400">{t('video_builder_initial_prompt')}</p>
+                 </div>
+            )}
+
+            {isLoading && (
+                 <div className="text-center py-16">
+                     <LoaderIcon className="animate-spin text-blue-500 mx-auto" size={48}/>
+                     <p className="mt-4 text-gray-500 dark:text-gray-400">{loadingMessage}</p>
+                 </div>
+            )}
+
+             {videos.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {videos.map((video, index) => (
+                        <Card key={index} className="!p-4 group">
+                             <h3 className="font-semibold mb-2">{getAspectRatioLabel(video.aspectRatio)} <span className="text-gray-400 font-normal">({video.aspectRatio})</span></h3>
+                            <video controls src={video.url} className="w-full rounded-lg bg-black"/>
+                            <div className="mt-3 flex justify-end">
+                                 <a href={video.url} download={`video_${video.aspectRatio.replace(':','x')}.mp4`} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                                     <FileDown size={14}/> {t('download_video')}
+                                 </a>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
             )}
         </div>
     );
