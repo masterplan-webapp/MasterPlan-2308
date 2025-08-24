@@ -828,7 +828,7 @@ export const exportGroupedKeywordsAsTXT = (plan: PlanData, t: (key: string, subs
 export const callGeminiAPI = async (prompt: string, isJsonOutput: boolean = false): Promise<any> => {
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro",
             contents: prompt,
             ...(isJsonOutput && { config: { responseMimeType: "application/json" } })
         });
