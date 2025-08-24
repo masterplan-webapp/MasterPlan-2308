@@ -1303,6 +1303,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
     const aggregateCTR = monthTotals.impressoes > 0 ? (monthTotals.cliques / monthTotals.impressoes) * 100 : 0;
     const aggregateConvRate = monthTotals.cliques > 0 ? (monthTotals.conversoes / monthTotals.cliques) * 100 : 0;
     const aggregateCPA = monthTotals.conversoes > 0 ? (monthTotals.budget / monthTotals.conversoes) : 0;
+    const totalOrcamentoDiario = monthTotals.budget / 30.4;
     const monthName = month.split('-').reverse().map(p => t(p)).join(' ');
 
     const getUnitValue = (c: Campaign) => {
@@ -1312,6 +1313,10 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
             default: return 'N/A';
         }
     };
+
+    const headers = [
+        'Tipo', 'Funil', 'Canal', 'Formato', 'Budget', 'Orçamento Diário', 'Unidade de Compra', 'Valor da Unidade (R$)', '% Share', 'Impressões', 'Cliques', 'Conversões', 'CTR (%)', 'Tx. Conversão', 'CPA (R$)'
+    ];
 
     return (
         <div className="space-y-6">
@@ -1330,7 +1335,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
-                                    {['Tipo', 'Funil', 'Canal', 'Formato', 'Budget', '% Share', 'Impressões', 'Cliques', 'Conversões', 'CTR (%)', 'Tx. Conversão', 'CPA (R$)', 'Orçamento Diário'].map(header => (
+                                    {headers.map(header => (
                                         <th key={header} scope="col" className="px-4 py-3">{t(header)}</th>
                                     ))}
                                     {!isReadOnly && <th scope="col" className="px-4 py-3">{t('actions')}</th>}
@@ -1338,7 +1343,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                             </thead>
                             <tbody>
                                 {campaigns.map(c => {
-                                    const share = totalInvestment > 0 ? (Number(c.budget || 0) / totalInvestment) * 100 : 0;
+                                    const share = monthTotals.budget > 0 ? (Number(c.budget || 0) / monthTotals.budget) * 100 : 0;
                                     return (
                                         <tr key={c.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600/20">
                                             <td className="px-4 py-4">{c.tipoCampanha}</td>
@@ -1346,6 +1351,9 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                             <td className="px-4 py-4">{c.canal}</td>
                                             <td className="px-4 py-4">{c.formato}</td>
                                             <td className="px-4 py-4">{formatCurrency(c.budget)}</td>
+                                            <td className="px-4 py-4">{formatCurrency(c.orcamentoDiario)}</td>
+                                            <td className="px-4 py-4">{c.unidadeCompra}</td>
+                                            <td className="px-4 py-4">{getUnitValue(c)}</td>
                                             <td className="px-4 py-4">{formatPercentage(share)}</td>
                                             <td className="px-4 py-4">{formatNumber(c.impressoes)}</td>
                                             <td className="px-4 py-4">{formatNumber(c.cliques)}</td>
@@ -1353,7 +1361,6 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                             <td className="px-4 py-4">{formatPercentage(c.ctr)}</td>
                                             <td className="px-4 py-4">{formatPercentage(c.taxaConversao)}</td>
                                             <td className="px-4 py-4">{formatCurrency(c.cpa)}</td>
-                                            <td className="px-4 py-4">{formatCurrency(c.orcamentoDiario)}</td>
                                             {!isReadOnly && (
                                                 <td className="px-4 py-4 flex items-center gap-2">
                                                     <button onClick={() => handleEditCampaign(c)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"><Edit size={16}/></button>
@@ -1368,14 +1375,16 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                 <tr className="font-bold bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-white">
                                     <td colSpan={4} className="px-4 py-3">{t('Totais do Mês')}</td>
                                     <td className="px-4 py-3">{formatCurrency(monthTotals.budget)}</td>
-                                    <td className="px-4 py-3">{formatPercentage(totalInvestment > 0 ? (monthTotals.budget / totalInvestment) * 100 : 0)}</td>
+                                    <td className="px-4 py-3">{formatCurrency(totalOrcamentoDiario)}</td>
+                                    <td colSpan={2}></td>
+                                    <td className="px-4 py-3">{formatPercentage(100)}</td>
                                     <td className="px-4 py-3">{formatNumber(monthTotals.impressoes)}</td>
                                     <td className="px-4 py-3">{formatNumber(monthTotals.cliques)}</td>
                                     <td className="px-4 py-3">{formatNumber(monthTotals.conversoes)}</td>
                                     <td className="px-4 py-3">{formatPercentage(aggregateCTR)}</td>
                                     <td className="px-4 py-3">{formatPercentage(aggregateConvRate)}</td>
                                     <td className="px-4 py-3">{formatCurrency(aggregateCPA)}</td>
-                                    <td colSpan={isReadOnly ? 1 : 2}></td>
+                                    {!isReadOnly && <td className="px-4 py-3"></td>}
                                 </tr>
                              </tfoot>
                         </table>
@@ -1433,6 +1442,7 @@ const CustomPieLegend: React.FC<any> = (props) => {
 };
 
 export const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, className, customLegend }) => {
+    const { t } = useLanguage();
     const lineColor = '#4B5563'; // gray-600
 
     const RADIAN = Math.PI / 180;
