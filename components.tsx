@@ -2172,7 +2172,7 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                         <div className="flex items-center gap-2 overflow-hidden">
                                             <ChevronDown size={16} className={`transform transition-transform shrink-0 ${expandedGroupId === group.id ? 'rotate-180' : ''}`} />
                                             <span className="font-medium text-gray-800 dark:text-gray-200 truncate" title={group.name}>{group.name}</span>
-                                            <span className="text-xs text-gray-500 bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded-full shrink-0">{group.keywords.length}</span>
+                                            <span className="text-xs font-medium text-gray-700 dark:text-gray-900 bg-gray-200 dark:bg-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{group.keywords.length}</span>
                                         </div>
                                         {group.id !== 'unassigned' && (
                                             <button
