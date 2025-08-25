@@ -913,7 +913,7 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
     return callGeminiAPI(aiPrompt, true);
 };
 
-export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'prompt', input: string, language: LanguageCode): Promise<KeywordSuggestion[]> => {
+export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'prompt', input: string, language: LanguageCode, keywordCount: string): Promise<KeywordSuggestion[]> => {
     const langInstruction = language === 'pt-BR' ? 'Responda em Português do Brasil.' : 'Respond in English.';
     const promptContext = `
         Plan Objective: ${planData.objective}
@@ -923,7 +923,7 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
     `;
 
     const aiPrompt = `
-        You are a Google Ads keyword research expert. Based on the provided context, generate a list of 20-30 highly relevant keywords.
+        You are a Google Ads keyword research expert. Based on the provided context, generate a list of ${keywordCount} highly relevant keywords.
         The output MUST be a valid JSON object with a single key "keywords" which contains an array of keyword objects.
         Do not include any text, explanation, or markdown fences like \`\`\`json around the JSON output.
         
@@ -1027,79 +1027,4 @@ Your output should be ONLY the final, detailed text-to-image prompt, with no ext
    }
 
    return validImages;
-};
-
-export const generateAIVideos = async (prompt: string, aspectRatio: string, image?: { base64: string; mimeType: string }): Promise<string | null> => {
-    // A simplified local parser for text in quotes. This is more reliable and efficient than a second AI call.
-    const textOverlayRegex = /"([^"]*)"/g;
-    const textOverlays = [...prompt.matchAll(textOverlayRegex)].map(match => match[1]);
-    const visualDescription = prompt.replace(textOverlayRegex, '').trim();
-    
-    let finalVideoPrompt = visualDescription;
-    
-    // Construct an explicit prompt for text overlays, only if requested.
-    if (textOverlays.length > 0) {
-        const texts = textOverlays.map(text => `"${text}"`).join(' and ');
-        finalVideoPrompt += ` The video MUST feature the following text overlays, rendered clearly and prominently: ${texts}.`;
-    } else {
-        // Explicitly instruct the model not to add text if none was specified in quotes.
-        finalVideoPrompt += ` Do NOT add any text overlays to this video. The video must be purely visual, with no written words appearing on screen.`;
-    }
-
-    // NOTE: Audio generation instructions have been removed. The Veo model is a video-only generator
-    // and does not create audio tracks from text prompts. Attempting to request audio is ineffective.
-    // The focus is now on reliably generating the visual content based on the API's actual capabilities.
-
-    const requestPayload: any = {
-        model: 'veo-2.0-generate-001',
-        prompt: finalVideoPrompt,
-        config: {
-            numberOfVideos: 1,
-            aspectRatio: aspectRatio,
-        }
-    };
-
-    if (image) {
-        requestPayload.image = {
-            imageBytes: image.base64,
-            mimeType: image.mimeType,
-        };
-    }
-
-    try {
-        let operation = await ai.models.generateVideos(requestPayload);
-
-        while (!operation.done) {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-            operation = await ai.operations.getVideosOperation({ operation: operation });
-        }
-        
-        const generatedVideos = operation.response?.generatedVideos;
-        if (!generatedVideos || generatedVideos.length === 0) {
-            console.warn(`Video generation for ${aspectRatio} finished but returned no videos.`);
-            return null;
-        }
-
-        const videoData = generatedVideos[0];
-        const downloadLink = videoData?.video?.uri;
-
-        if (downloadLink) {
-            try {
-                const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch video from URI: ${response.statusText}`);
-                }
-                const videoBlob = await response.blob();
-                return URL.createObjectURL(videoBlob);
-            } catch (fetchError) {
-                console.error("Error fetching video blob:", fetchError);
-                return null;
-            }
-        }
-        return null;
-
-    } catch (error) {
-        console.error(`Error during video generation process for ${aspectRatio}:`, error);
-        throw error; // Rethrow to be caught by Promise.allSettled
-    }
 };

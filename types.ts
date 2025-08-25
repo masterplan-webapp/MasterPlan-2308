@@ -54,11 +54,6 @@ export interface GeneratedImage {
     aspectRatio: AspectRatio;
 }
 
-export interface GeneratedVideo {
-    url: string;
-    aspectRatio: string;
-}
-
 export interface AdGroup {
     id: string;
     name: string;
@@ -299,10 +294,6 @@ export interface KeywordBuilderPageProps {
 }
 
 export interface CreativeBuilderPageProps {
-    planData: PlanData;
-}
-
-export interface VideoBuilderPageProps {
     planData: PlanData;
 }
 

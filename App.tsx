@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon, Video } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF } from './services';
@@ -12,7 +12,7 @@ import {
     LanguageProvider, useLanguage, ThemeProvider, useTheme, AuthProvider, useAuth
 } from './contexts';
 import { 
-    LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage, VideoBuilderPage,
+    LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage,
     PlanDetailsModal, RenamePlanModal,
     Card,
     AddMonthModal,
@@ -86,7 +86,7 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                            </a>
                         </li>
                          <li>
-                            <button onClick={() => setIsDetailingOpen(!isDetailingOpen)} className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-4'} py-2.5 text-sm rounded-md transition-colors text-gray-300 hover:bg-gray-700/70 hover:text-white`} title={isCollapsed ? t('detailing') : undefined}>
+                            <button onClick={() => setIsDetailingOpen(!isDetailingOpen)} className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-4'} py-2.5 text-sm rounded-md transition-colors text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('detailing') : undefined}>
                                 <div className="flex items-center gap-3">
                                     <List size={18}/> 
                                     <span className={isCollapsed ? 'hidden' : 'inline'}>{t('detailing')}</span>
