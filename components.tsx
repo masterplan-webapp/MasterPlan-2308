@@ -1,10 +1,9 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
-import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
+import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary, generateAIVideos } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import {
     PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
@@ -2172,7 +2171,7 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                         <div className="flex items-center gap-2 overflow-hidden">
                                             <ChevronDown size={16} className={`transform transition-transform shrink-0 ${expandedGroupId === group.id ? 'rotate-180' : ''}`} />
                                             <span className="font-medium text-gray-800 dark:text-gray-200 truncate" title={group.name}>{group.name}</span>
-                                            <span className="text-xs font-medium text-gray-700 dark:text-gray-900 bg-gray-200 dark:bg-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{group.keywords.length}</span>
+                                            <span className="text-xs font-medium text-gray-900 dark:text-gray-900 bg-gray-200 dark:bg-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{group.keywords.length}</span>
                                         </div>
                                         {group.id !== 'unassigned' && (
                                             <button
@@ -2280,6 +2279,8 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [images, setImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [image, setImage] = useState<{ base64: string; mimeType: string; name: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
@@ -2287,7 +2288,8 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         setError(null);
         setImages([]);
         try {
-            const result = await generateAIImages(prompt);
+            const imageParam = image ? { base64: image.base64, mimeType: image.mimeType } : undefined;
+            const result = await generateAIImages(prompt, imageParam);
             setImages(result);
         } catch (err) {
             console.error(err);
@@ -2297,7 +2299,19 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         }
     };
     
-     const downloadImage = (base64: string, filename: string) => {
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = (reader.result as string).split(',')[1];
+                setImage({ base64: base64String, mimeType: file.type, name: file.name });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const downloadImage = (base64: string, filename: string) => {
         const link = document.createElement('a');
         link.href = `data:image/png;base64,${base64}`;
         link.download = filename;
@@ -2311,15 +2325,51 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('creative_builder')}</h2>
 
             <Card>
-                 <label htmlFor="creative-prompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Prompt para Geração de Imagem')}</label>
-                 <textarea
-                    id="creative-prompt"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={4}
-                    className="mt-1 w-full input-style"
-                    placeholder={t('creative_prompt_placeholder')}
-                />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label htmlFor="creative-prompt" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Prompt para Geração de Imagem')}</label>
+                         <textarea
+                            id="creative-prompt"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            rows={8}
+                            className="mt-1 w-full input-style"
+                            placeholder={t('creative_prompt_placeholder')}
+                        />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('upload_optional_image')}</label>
+                        <div className="mt-1 flex justify-center items-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md h-full">
+                            {image ? (
+                                <div className="relative text-center w-full">
+                                    <img 
+                                        src={`data:${image.mimeType};base64,${image.base64}`} 
+                                        alt={image.name}
+                                        className="max-h-48 rounded-md mx-auto object-contain"
+                                    />
+                                    <button 
+                                        onClick={() => setImage(null)}
+                                        className="mt-2 text-sm text-red-600 dark:text-red-400 hover:underline flex items-center justify-center w-full gap-1"
+                                        aria-label={t('remove_image')}
+                                    >
+                                        <X size={14} /> {t('remove_image')}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-1 text-center">
+                                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                                    <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                                        <label htmlFor="creative-file-upload" className="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none">
+                                            <span>Upload a file</span>
+                                            <input id="creative-file-upload" name="file-upload" type="file" className="sr-only" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" />
+                                        </label>
+                                    </div>
+                                    <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                                </div>
+                            )}
+                        </div>
+                     </div>
+                 </div>
                  <div className="mt-4 flex justify-end">
                     <button onClick={handleGenerate} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 disabled:opacity-50">
                         {isLoading ? <LoaderIcon className="animate-spin" size={20}/> : <ImageIcon size={20}/>}
@@ -2400,8 +2450,11 @@ export const VideoBuilderPage: React.FC<VideoBuilderPageProps> = ({ planData }) 
         setVideos([]);
         try {
             const aspectRatios = ['16:9', '9:16']; // Widescreen, Vertical
+            
+            const imageParam = image ? { base64: image.base64, mimeType: image.mimeType } : undefined;
+
             const generationPromises = aspectRatios.map(ratio =>
-                callGeminiAPI(prompt)
+                generateAIVideos(prompt, ratio, imageParam)
             );
     
             const results = await Promise.allSettled(generationPromises);

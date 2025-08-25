@@ -949,14 +949,57 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
     throw new Error("Invalid response from AI for keywords");
 };
 
-export const generateAIImages = async (prompt: string): Promise<GeneratedImage[]> => {
+export const generateAIImages = async (prompt: string, image?: { base64: string; mimeType: string }): Promise<GeneratedImage[]> => {
+    let finalPrompt = prompt;
+
+    if (image) {
+        // Step 1: Use a multimodal model to generate a detailed prompt.
+        const metaPrompt = `
+You are an expert creative director and prompt engineer for advanced text-to-image AI models.
+The user has provided a base image and a text prompt. Your task is to analyze both and create a new, single, highly-detailed text-to-image prompt.
+This new prompt should describe a new image that incorporates the user's instructions while retaining the key subjects, style, composition, and mood of the reference image.
+
+- Analyze the reference image for its core elements: subject, style (e.g., photorealistic, illustration, anime), lighting, color palette, and overall composition.
+- Analyze the user's text prompt for the desired modification, addition, or change.
+- Combine these analyses into a coherent, descriptive paragraph. Be specific about details. Describe the scene, the characters, the actions, the environment, the lighting, and the camera angle.
+
+Reference Image: [User's image is attached]
+User's Text Prompt: "${prompt}"
+
+Your output should be ONLY the final, detailed text-to-image prompt, with no extra explanations or preamble.
+`;
+        
+        try {
+            const imagePart = {
+                inlineData: {
+                    mimeType: image.mimeType,
+                    data: image.base64,
+                },
+            };
+            const textPart = { text: metaPrompt };
+
+            const response: GenerateContentResponse = await ai.models.generateContent({
+                model: "gemini-2.5-pro",
+                contents: { parts: [imagePart, textPart] },
+            });
+            
+            finalPrompt = response.text;
+            console.log("Generated a new prompt for image generation:", finalPrompt);
+        } catch (error) {
+            console.error("Error generating detailed prompt from image:", error);
+            // Fallback to using the original prompt if the analysis fails
+            finalPrompt = prompt; 
+        }
+    }
+
+    // Step 2: Generate images using the final prompt.
     const aspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "3:4"];
 
    const imagePromises = aspectRatios.map(async (aspectRatio) => {
        try {
            const response = await ai.models.generateImages({
                model: 'imagen-3.0-generate-002',
-               prompt: prompt,
+               prompt: finalPrompt,
                config: {
                    numberOfImages: 1,
                    outputMimeType: 'image/png',
