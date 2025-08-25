@@ -1918,26 +1918,32 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
                      <div>
                         <label className="block text-sm font-medium">{t('URL do Site *')}</label>
                         <input type="text" name="url" value={utm.url} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_url_helper')}</p>
                      </div>
                      <div>
                         <label className="block text-sm font-medium">{t('Campaign Source *')}</label>
                         <input type="text" name="source" value={utm.source} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_source_helper')}</p>
                      </div>
                       <div>
                         <label className="block text-sm font-medium">{t('Campaign Medium *')}</label>
                         <input type="text" name="medium" value={utm.medium} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_medium_helper')}</p>
                      </div>
                      <div>
                         <label className="block text-sm font-medium">{t('Campaign Name *')}</label>
                         <input type="text" name="campaign" value={utm.campaign} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_campaign_helper')}</p>
                      </div>
                      <div>
                         <label className="block text-sm font-medium">{t('Campaign Term')}</label>
                         <input type="text" name="term" value={utm.term} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_term_helper')}</p>
                      </div>
                      <div>
                         <label className="block text-sm font-medium">{t('Campaign Content')}</label>
                         <input type="text" name="content" value={utm.content} onChange={handleInputChange} className="mt-1 w-full input-style" />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('utm_content_helper')}</p>
                      </div>
                      <div className="pt-4 border-t dark:border-gray-700">
                         <label className="block text-sm font-medium">{t('URL Gerada')}</label>

@@ -116,7 +116,6 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Keyword_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Keyword_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('keyword_builder') : undefined}><KeyRound size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('keyword_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Copy_builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Copy_builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('copy_builder') : undefined}><PencilRuler size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('copy_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Creative_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Creative_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('creative_builder') : undefined}><ImageIcon size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('creative_builder')}</span></a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Video_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Video_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('video_builder') : undefined}><Video size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('video_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('UTM_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'UTM_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('utm_builder') : undefined}><Link2 size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('utm_builder')}</span></a></li>
                     </ul>
                 </nav>
@@ -176,7 +175,7 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
     };
 
     const getHeaderTitle = () => {
-        if (['Overview', 'Copy_builder', 'UTM_Builder', 'Keyword_Builder', 'Creative_Builder', 'Video_Builder'].includes(activeView)) {
+        if (['Overview', 'Copy_builder', 'UTM_Builder', 'Keyword_Builder', 'Creative_Builder'].includes(activeView)) {
             return t(activeView.toLowerCase());
         }
         // It's a month key like "2025-Janeiro"
@@ -760,7 +759,7 @@ function AppLogic() {
     }
     
     const currentView = (() => {
-        const knownTopLevelViews = ['Overview', 'Copy_builder', 'UTM_Builder', 'Keyword_Builder', 'Creative_Builder', 'Video_Builder'];
+        const knownTopLevelViews = ['Overview', 'Copy_builder', 'UTM_Builder', 'Keyword_Builder', 'Creative_Builder'];
         if (knownTopLevelViews.includes(activeView)) {
             return activeView;
         }
@@ -813,7 +812,6 @@ function AppLogic() {
                     {currentView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
                     {currentView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
                     {currentView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
-                    {currentView === 'Video_Builder' && <VideoBuilderPage planData={activePlan} />}
                     {activePlan.months && Object.keys(activePlan.months).includes(currentView) && (
                         <MonthlyPlanPage 
                             month={currentView} 

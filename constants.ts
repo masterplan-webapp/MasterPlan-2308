@@ -293,7 +293,13 @@ export const TRANSLATIONS: Translations = {
         "video_prompt_hint": "Dica: para sobrepor texto, coloque-o entre aspas. Ex: Uma praia com o texto \"Promoção de Verão\".",
         "add": "Adicionar",
         "video_billing_error": "A geração de vídeo com este modelo requer que o faturamento esteja ativado na sua conta do Google Cloud Platform. Por favor, ative o faturamento para usar este recurso.",
-        "move_to": "Mover para..."
+        "move_to": "Mover para...",
+        "utm_url_helper": "A URL de destino final do seu anúncio ou link. Ex: https://www.seusite.com.br/produto",
+        "utm_source_helper": "Identifique a origem do tráfego. Ex: google, facebook, newsletter_email",
+        "utm_medium_helper": "O meio da campanha. Ex: cpc, social, email",
+        "utm_campaign_helper": "O nome da sua campanha específica. Ex: promocao_verao_2024, lancamento_produto_x",
+        "utm_term_helper": "Use para identificar palavras-chave pagas. Ex: tenis_corrida_masculino",
+        "utm_content_helper": "Diferencie anúncios ou links que apontam para a mesma URL. Ex: banner_azul, link_texto_CTA"
     },
     'en-US': {
         save: 'Save',
@@ -554,6 +560,12 @@ export const TRANSLATIONS: Translations = {
         "video_prompt_hint": "Tip: for text overlays, put the text in \"quotes\". Ex: A beach with the text \"Summer Sale\".",
         "add": "Add",
         "video_billing_error": "Video generation with this model requires billing to be enabled on your Google Cloud Platform account. Please enable billing to use this feature.",
-        "move_to": "Move to..."
+        "move_to": "Move to...",
+        "utm_url_helper": "The final destination URL of your ad or link. E.g., https://www.yoursite.com/product",
+        "utm_source_helper": "Identify the source of the traffic. E.g., google, facebook, email_newsletter",
+        "utm_medium_helper": "The campaign medium. E.g., cpc, social, email",
+        "utm_campaign_helper": "The name of your specific campaign. E.g., summer_sale_2024, product_x_launch",
+        "utm_term_helper": "Use to identify paid keywords. E.g., mens_running_shoes",
+        "utm_content_helper": "Differentiate ads or links that point to the same URL. E.g., blue_banner, text_link_CTA"
     }
 };
