@@ -1065,7 +1065,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                     <th scope="col" className="px-6 py-3">{t('Cliques')}</th>
                                     <th scope="col" className="px-6 py-3">{t('Conversões')}</th>
                                     <th scope="col" className="px-6 py-3">{t('Tx. Conversão')}</th>
-                                    <th scope="col" className="px-6 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1076,16 +1075,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
 
                                     return (
                                         <tr key={month} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{`${t(monthName)} ${year}`}</th>
+                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate(month); }} className="text-blue-600 dark:text-blue-500 hover:underline">
+                                                    {`${t(monthName)} ${year}`}
+                                                </a>
+                                            </th>
                                             <td className="px-6 py-4">{formatCurrency(monthData.budget)}</td>
                                             <td className="px-6 py-4">{formatPercentage(share)}</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.impressoes)}</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.cliques)}</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.conversoes)}</td>
                                             <td className="px-6 py-4">{formatPercentage(monthData.taxaConversao)}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button onClick={() => onNavigate(month)} className="font-medium text-blue-600 dark:text-blue-500 hover:underline">{t('Ver Detalhes')}</button>
-                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -1097,7 +1097,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                     <td className="px-6 py-3">{formatNumber(summary.cliques)}</td>
                                     <td className="px-6 py-3">{formatNumber(summary.conversoes)}</td>
                                     <td className="px-6 py-3">{formatPercentage(summary.taxaConversao)}</td>
-                                    <td className="px-6 py-3"></td>
                                 </tr>
                             </tbody>
                         </table>
