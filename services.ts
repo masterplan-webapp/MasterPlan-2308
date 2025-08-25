@@ -7,7 +7,7 @@ import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeText
 import { MONTHS_LIST, OPTIONS, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from "./constants";
 
 // --- Gemini API Helper ---
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY }); // Removed from top-level
 
 // --- UTILITY FUNCTIONS ---
 export const formatCurrency = (value?: number | string): string => {
@@ -834,6 +834,7 @@ export const exportGroupedKeywordsAsTXT = (plan: PlanData, t: (key: string, subs
 
 // --- AI API CALLS ---
 export const callGeminiAPI = async (prompt: string, isJsonOutput: boolean = false): Promise<any> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: "gemini-2.5-pro",
@@ -950,6 +951,7 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
 };
 
 export const generateAIImages = async (prompt: string, image?: { base64: string; mimeType: string }): Promise<GeneratedImage[]> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     let finalPrompt = prompt;
 
     if (image) {
