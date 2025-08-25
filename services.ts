@@ -769,6 +769,10 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
     const headers = [
         t('ad_group_column'),
         t('keyword'),
+        t('search_volume'),
+        t('estimated_clicks'),
+        t('min_cpc'),
+        t('max_cpc'),
     ];
     let csvContent = headers.join(',') + '\r\n';
 
@@ -779,6 +783,10 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
             const row = [
                 escapeCSV(group.name),
                 escapeCSV(kw.keyword),
+                escapeCSV(kw.volume),
+                escapeCSV(kw.clickPotential),
+                escapeCSV(kw.minCpc),
+                escapeCSV(kw.maxCpc),
             ];
             csvContent += row.join(',') + '\r\n';
         });
@@ -979,76 +987,26 @@ export const generateAIImages = async (prompt: string): Promise<GeneratedImage[]
 };
 
 export const generateAIVideos = async (prompt: string, aspectRatio: string, image?: { base64: string; mimeType: string }): Promise<string | null> => {
-    // Step 1: Pre-process the user's prompt with a text model to structure it.
-    const creativeBriefParserPrompt = `
-        Analyze the following user's creative brief for a video ad. Extract the core components into a structured JSON format.
-        
-        User Brief: "${prompt}"
-
-        Extract the following:
-        - visual_description: A detailed description of only the visual scenes, actions, and style.
-        - text_overlays: An array of the exact text strings that should appear on the screen. These are typically found inside quotation marks. If no text is in quotes, this array should be empty.
-        - audio_description: A description of the music, sound effects, or voiceover. If no audio is described, this should be an empty string.
-    `;
-
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            visual_description: {
-                type: Type.STRING,
-                description: "A detailed description of the visual elements of the video, excluding text overlays and audio descriptions."
-            },
-            text_overlays: {
-                type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "A list of exact text strings that should appear as overlays on the video. These are typically found in quotes in the original prompt. If no text is explicitly quoted, this should be an empty array."
-            },
-            audio_description: {
-                type: Type.STRING,
-                description: "A description of the soundtrack, music, or sound effects for the video."
-            }
-        },
-        required: ["visual_description", "text_overlays", "audio_description"]
-    };
-
-    let structuredPromptData;
-    try {
-        const parserResponse = await ai.models.generateContent({
-            model: "gemini-2.5-pro",
-            contents: creativeBriefParserPrompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: responseSchema,
-            },
-        });
-        structuredPromptData = JSON.parse(parserResponse.text);
-    } catch (e) {
-        console.error("Failed to parse creative brief with AI. Falling back to a simpler prompt structure.", e);
-        // Fallback to a simpler structure if parsing fails
-        structuredPromptData = {
-            visual_description: prompt,
-            text_overlays: [],
-            audio_description: ''
-        };
-    }
-
-    // Step 2: Construct a highly structured and imperative prompt for the video model.
-    let finalVideoPrompt = structuredPromptData.visual_description;
-
-    // Imperative instruction for text overlays
-    if (structuredPromptData.text_overlays && structuredPromptData.text_overlays.length > 0) {
-        const texts = structuredPromptData.text_overlays.map((text: string) => `"${text}"`).join(' and ');
+    // A simplified local parser for text in quotes. This is more reliable and efficient than a second AI call.
+    const textOverlayRegex = /"([^"]*)"/g;
+    const textOverlays = [...prompt.matchAll(textOverlayRegex)].map(match => match[1]);
+    const visualDescription = prompt.replace(textOverlayRegex, '').trim();
+    
+    let finalVideoPrompt = visualDescription;
+    
+    // Construct an explicit prompt for text overlays, only if requested.
+    if (textOverlays.length > 0) {
+        const texts = textOverlays.map(text => `"${text}"`).join(' and ');
         finalVideoPrompt += ` The video MUST feature the following text overlays, rendered clearly and prominently: ${texts}.`;
     } else {
-        // Explicitly tell the model NOT to add text if none was parsed.
+        // Explicitly instruct the model not to add text if none was specified in quotes.
         finalVideoPrompt += ` Do NOT add any text overlays to this video. The video must be purely visual, with no written words appearing on screen.`;
     }
 
-    // Imperative instruction for audio
-    if (structuredPromptData.audio_description && structuredPromptData.audio_description.trim() !== '') {
-        finalVideoPrompt += ` The video MUST have a high-quality audio track featuring: ${structuredPromptData.audio_description}.`;
-    }
-    
+    // NOTE: Audio generation instructions have been removed. The Veo model is a video-only generator
+    // and does not create audio tracks from text prompts. Attempting to request audio is ineffective.
+    // The focus is now on reliably generating the visual content based on the API's actual capabilities.
+
     const requestPayload: any = {
         model: 'veo-2.0-generate-001',
         prompt: finalVideoPrompt,

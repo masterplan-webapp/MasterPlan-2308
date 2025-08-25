@@ -4,17 +4,18 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
-import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, generateAIVideos, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
+import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import {
     PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
     CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps,
-    DashboardPageProps, MonthlyPlanPageProps, CreativeGroupProps, CopyBuilderPageProps, UTMBuilderPageProps, KeywordBuilderPageProps, CreativeBuilderPageProps, VideoBuilderPageProps,
+    DashboardPageProps, MonthlyPlanPageProps, CreativeGroupProps, CopyBuilderPageProps, UTMBuilderPageProps, KeywordBuilderPageProps, CreativeBuilderPageProps,
     AddMonthModalProps, OnboardingPageProps, PlanSelectorPageProps, AISuggestionsModalProps,
     ChartCardProps, ChartsSectionProps, DashboardHeaderProps, RenamePlanModalProps, PlanCreationChoiceModalProps, AIPlanCreationModalProps,
     GeneratedImage,
     GeneratedVideo,
-    AspectRatio
+    AspectRatio,
+    VideoBuilderPageProps
 } from './types';
 
 // MasterPlan Logo URLs
@@ -2012,15 +2013,23 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
     const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [adGroups, setAdGroups] = useState<AdGroup[]>(planData.adGroups || []);
+    const [adGroups, setAdGroups] = useState<AdGroup[]>([]);
     const [newGroupName, setNewGroupName] = useState('');
-    
+    const [expandedGroupId, setExpandedGroupId] = useState<string | null>('unassigned');
+
     useEffect(() => {
-        setAdGroups(planData.adGroups || []);
-    }, [planData.adGroups]);
-    
+        const currentGroups = planData.adGroups || [];
+        const unassigned = currentGroups.find(g => g.id === 'unassigned');
+        const otherGroups = currentGroups.filter(g => g.id !== 'unassigned');
+        const newGroups = [
+            unassigned || { id: 'unassigned', name: t('unassigned_keywords'), keywords: [] },
+            ...otherGroups
+        ];
+        setAdGroups(newGroups);
+    }, [planData.adGroups, t]);
+
     const updatePlanData = (newAdGroups: AdGroup[]) => {
-         setPlanData(prev => {
+        setPlanData(prev => {
             if (!prev) return null;
             const updatedPlan = { ...prev, adGroups: newAdGroups };
             if (user) dbService.savePlan(user.uid, updatedPlan);
@@ -2042,7 +2051,25 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
             setIsLoading(false);
         }
     };
-    
+
+    const handleAssignKeywordFromResults = (keywordToAssign: KeywordSuggestion, groupId: string) => {
+        if (!groupId) return;
+
+        const updatedAdGroups = JSON.parse(JSON.stringify(adGroups));
+
+        updatedAdGroups.forEach((g: AdGroup) => {
+            g.keywords = g.keywords.filter((k: KeywordSuggestion) => k.keyword !== keywordToAssign.keyword);
+        });
+
+        const targetGroup = updatedAdGroups.find((g: AdGroup) => g.id === groupId);
+        if (targetGroup) {
+            targetGroup.keywords.push(keywordToAssign);
+        }
+
+        updatePlanData(updatedAdGroups);
+        setKeywords(prevKeywords => prevKeywords.filter(k => k.keyword !== keywordToAssign.keyword));
+    };
+
     const handleCreateAdGroup = () => {
         if (!newGroupName.trim()) return;
         const newGroup: AdGroup = {
@@ -2054,48 +2081,43 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
         updatePlanData(updatedGroups);
         setNewGroupName('');
     };
-    
-     const handleDeleteAdGroup = (groupId: string) => {
-        if (!confirm(t('confirm_delete_group'))) return;
-        
-        const groupToDelete = adGroups.find(g => g.id === groupId);
-        if(!groupToDelete) return;
-        
-        // Move keywords from deleted group to unassigned
-        const unassignedKeywords = getGroupById('unassigned')?.keywords || [];
-        const updatedUnassignedKeywords = [...unassignedKeywords, ...groupToDelete.keywords];
-        
-        const updatedGroups = adGroups.filter(g => g.id !== groupId);
-        
-        const unassignedIndex = updatedGroups.findIndex(g => g.id === 'unassigned');
-        if (unassignedIndex > -1) {
-            updatedGroups[unassignedIndex].keywords = updatedUnassignedKeywords;
-        } else {
-             updatedGroups.push({ id: 'unassigned', name: 'Unassigned', keywords: updatedUnassignedKeywords });
+
+    const handleDeleteAdGroup = (groupId: string) => {
+        if (groupId === 'unassigned' || !confirm(t('confirm_delete_group'))) return;
+
+        const updatedGroups = JSON.parse(JSON.stringify(adGroups));
+        const groupToDelete = updatedGroups.find((g: AdGroup) => g.id === groupId);
+        const unassignedGroup = updatedGroups.find((g: AdGroup) => g.id === 'unassigned');
+
+        if (groupToDelete && unassignedGroup) {
+            unassignedGroup.keywords.push(...groupToDelete.keywords);
+            unassignedGroup.keywords = unassignedGroup.keywords.filter((kw: KeywordSuggestion, index: number, self: KeywordSuggestion[]) =>
+                index === self.findIndex((k) => k.keyword === kw.keyword)
+            );
         }
-        
-        updatePlanData(updatedGroups);
+
+        const finalGroups = updatedGroups.filter((g: AdGroup) => g.id !== groupId);
+        updatePlanData(finalGroups);
     };
 
-    const handleAssignKeyword = (keyword: KeywordSuggestion, groupId: string) => {
-        // Remove keyword from its current group
-        const updatedGroups = adGroups.map(group => ({
-            ...group,
-            keywords: group.keywords.filter(kw => kw.keyword !== keyword.keyword),
-        }));
+    const handleMoveKeyword = (keywordToMove: KeywordSuggestion, fromGroupId: string, toGroupId: string) => {
+        if (fromGroupId === toGroupId || !toGroupId) return;
 
-        // Add keyword to the new group
-        const groupIndex = updatedGroups.findIndex(g => g.id === groupId);
-        if (groupIndex > -1) {
-            updatedGroups[groupIndex].keywords.push(keyword);
+        const updatedAdGroups = JSON.parse(JSON.stringify(adGroups));
+
+        const fromGroup = updatedAdGroups.find((g: AdGroup) => g.id === fromGroupId);
+        if (fromGroup) {
+            fromGroup.keywords = fromGroup.keywords.filter((k: KeywordSuggestion) => k.keyword !== keywordToMove.keyword);
         }
-        
-        updatePlanData(updatedGroups);
+
+        const toGroup = updatedAdGroups.find((g: AdGroup) => g.id === toGroupId);
+        if (toGroup) {
+            if (!toGroup.keywords.some((k: KeywordSuggestion) => k.keyword === keywordToMove.keyword)) {
+                toGroup.keywords.push(keywordToMove);
+            }
+        }
+        updatePlanData(updatedAdGroups);
     };
-    
-    const getGroupById = (id: string): AdGroup | undefined => adGroups.find(g => g.id === id);
-    
-    const unassignedKeywords = getGroupById('unassigned')?.keywords || [];
 
     return (
         <div className="space-y-6">
@@ -2127,12 +2149,11 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Ad Groups Column */}
-                <div className="lg:col-span-1 space-y-4">
+                <div className="lg:col-span-1">
                     <Card>
                         <h3 className="text-lg font-semibold mb-2">{t('ad_groups')}</h3>
-                         <div className="flex gap-2 mb-4">
-                            <input 
+                        <div className="flex gap-2 mb-4">
+                            <input
                                 type="text"
                                 value={newGroupName}
                                 onChange={(e) => setNewGroupName(e.target.value)}
@@ -2140,44 +2161,63 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                 className="w-full input-style"
                             />
                             <button onClick={handleCreateAdGroup} className="px-3 bg-blue-600 text-white rounded-md shrink-0"><PlusCircle size={18}/></button>
-                         </div>
-                        <div className="space-y-2">
-                             {adGroups.filter(g => g.id !== 'unassigned').map(group => (
-                                <div key={group.id} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-md flex justify-between items-center">
-                                    <span className="font-medium text-gray-800 dark:text-gray-200">{group.name}</span>
-                                    <button onClick={() => handleDeleteAdGroup(group.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
+                        </div>
+                        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                            {adGroups.map(group => (
+                                <div key={group.id} className="bg-gray-100 dark:bg-gray-700/50 rounded-md">
+                                    <div
+                                        className="p-3 flex justify-between items-center cursor-pointer"
+                                        onClick={() => setExpandedGroupId(expandedGroupId === group.id ? null : group.id)}
+                                    >
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <ChevronDown size={16} className={`transform transition-transform shrink-0 ${expandedGroupId === group.id ? 'rotate-180' : ''}`} />
+                                            <span className="font-medium text-gray-800 dark:text-gray-200 truncate" title={group.name}>{group.name}</span>
+                                            <span className="text-xs text-gray-500 bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded-full shrink-0">{group.keywords.length}</span>
+                                        </div>
+                                        {group.id !== 'unassigned' && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteAdGroup(group.id); }}
+                                                className="text-gray-400 hover:text-red-500 shrink-0"
+                                            >
+                                                <Trash2 size={16}/>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {expandedGroupId === group.id && (
+                                        <div className="p-3 border-t border-gray-200 dark:border-gray-600">
+                                            {group.keywords.length > 0 ? (
+                                                <div className="space-y-2">
+                                                    {group.keywords.map(kw => (
+                                                        <div key={kw.keyword} className="flex justify-between items-center text-sm">
+                                                            <span className="truncate pr-2">{kw.keyword}</span>
+                                                            <select
+                                                                value=""
+                                                                onChange={(e) => handleMoveKeyword(kw, group.id, e.target.value)}
+                                                                className="text-xs bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 rounded-md p-1 focus:ring-blue-500 focus:border-blue-500"
+                                                            >
+                                                                <option value="" disabled>{t('move_to')}</option>
+                                                                {adGroups.filter(g => g.id !== group.id).map(targetGroup => (
+                                                                    <option key={targetGroup.id} value={targetGroup.id}>{targetGroup.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-500">{t('no_keywords_in_group')}</p>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                             ))}
+                            ))}
                              {adGroups.filter(g => g.id !== 'unassigned').length === 0 && (
-                                <p className="text-sm text-gray-500">{t('no_ad_groups')}</p>
+                                <p className="text-sm text-gray-500 text-center py-4">{t('no_ad_groups')}</p>
                              )}
                         </div>
                     </Card>
-                    <Card>
-                         <h3 className="text-lg font-semibold mb-2">{t('unassigned_keywords')}</h3>
-                         <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {unassignedKeywords.map(kw => (
-                                <div key={kw.keyword} className="group p-2 bg-gray-100 dark:bg-gray-700/50 rounded-md flex justify-between items-center">
-                                    <span>{kw.keyword}</span>
-                                     <div className="relative">
-                                         <select 
-                                            onChange={(e) => handleAssignKeyword(kw, e.target.value)}
-                                            className="bg-transparent border-none text-sm p-1"
-                                         >
-                                             <option value="">{t('assign_to_group')}</option>
-                                             {adGroups.filter(g => g.id !== 'unassigned').map(g => (
-                                                 <option key={g.id} value={g.id}>{g.name}</option>
-                                             ))}
-                                         </select>
-                                     </div>
-                                </div>
-                            ))}
-                            {unassignedKeywords.length === 0 && <p className="text-sm text-gray-500">{t('no_keywords_in_group')}</p>}
-                         </div>
-                    </Card>
                 </div>
 
-                {/* Keywords/Results Column */}
                  <div className="lg:col-span-2">
                     <Card>
                         <div className="flex justify-between items-center mb-4">
@@ -2195,6 +2235,7 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                         <th className="p-3 font-medium text-right">{t('estimated_clicks')}</th>
                                         <th className="p-3 font-medium text-right">{t('min_cpc')}</th>
                                         <th className="p-3 font-medium text-right">{t('max_cpc')}</th>
+                                        <th className="p-3 font-medium">{t('assign_to_group')}</th>
                                     </tr>
                                </thead>
                                <tbody>
@@ -2206,10 +2247,22 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                             <td className="p-3 text-right">{formatNumber(kw.clickPotential)}</td>
                                             <td className="p-3 text-right">{formatCurrency(kw.minCpc)}</td>
                                             <td className="p-3 text-right">{formatCurrency(kw.maxCpc)}</td>
+                                            <td className="p-3">
+                                                <select
+                                                    value=""
+                                                    onChange={(e) => handleAssignKeywordFromResults(kw, e.target.value)}
+                                                    className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-1 px-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                >
+                                                    <option value="">{t('Selecione')}</option>
+                                                    {adGroups.map(g => (
+                                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                                    ))}
+                                                </select>
+                                            </td>
                                         </tr>
                                     ))
                                  ) : (
-                                     <tr><td colSpan={5} className="text-center p-8 text-gray-500">{t('no_keywords_generated')}</td></tr>
+                                     <tr><td colSpan={6} className="text-center p-8 text-gray-500">{t('no_keywords_generated')}</td></tr>
                                  )}
                                </tbody>
                             </table>
@@ -2347,35 +2400,49 @@ export const VideoBuilderPage: React.FC<VideoBuilderPageProps> = ({ planData }) 
         setVideos([]);
         try {
             const aspectRatios = ['16:9', '9:16']; // Widescreen, Vertical
-            const generationPromises = aspectRatios.map(ratio => 
-                generateAIVideos(prompt, ratio, image ? { base64: image.base64, mimeType: image.mimeType } : undefined)
+            const generationPromises = aspectRatios.map(ratio =>
+                callGeminiAPI(prompt)
             );
-
+    
             const results = await Promise.allSettled(generationPromises);
-            
-            const successfulVideos = results
-                .map((result, index) => {
-                    if (result.status === 'fulfilled') {
-                        if (result.value) {
-                            return { url: result.value, aspectRatio: aspectRatios[index] };
-                        }
-                    } else { // result.status === 'rejected'
-                        console.error(`Failed to generate video for aspect ratio ${aspectRatios[index]}:`, result.reason);
+    
+            let firstErrorReason: any = null;
+            const successfulVideos: GeneratedVideo[] = [];
+    
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled' && result.value) {
+                    successfulVideos.push({ url: result.value, aspectRatio: aspectRatios[index] });
+                } else if (result.status === 'rejected') {
+                    if (!firstErrorReason) {
+                        firstErrorReason = result.reason;
                     }
-                    return null;
-                })
-                .filter((v): v is GeneratedVideo => v !== null);
-
+                    console.error(`Failed to generate video for aspect ratio ${aspectRatios[index]}:`, result.reason);
+                }
+            });
+    
             if (successfulVideos.length === 0) {
-                 throw new Error(t('error_generating_videos'));
+                if (firstErrorReason) {
+                    throw firstErrorReason; // Re-throw the actual error from the service
+                }
+                throw new Error(t('error_generating_videos'));
             }
-
+    
             setVideos(successfulVideos);
-
-        } catch (err) {
+    
+        } catch (err: any) {
             console.error(err);
-            const message = err instanceof Error ? err.message : t('error_generating_videos');
-            setError(message);
+            let errorMessage = t('error_generating_videos');
+            
+            const status = err?.error?.status;
+            const apiMessage = err?.error?.message;
+            const genericMessage = err instanceof Error ? err.message : '';
+            const fullErrorString = typeof apiMessage === 'string' ? apiMessage : genericMessage;
+
+            if (status === 'FAILED_PRECONDITION' || fullErrorString.includes('billing enabled')) {
+                errorMessage = t('video_billing_error');
+            }
+            
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }

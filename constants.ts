@@ -291,7 +291,9 @@ export const TRANSLATIONS: Translations = {
         "loading_message_4": "Quase pronto, os resultados valerão a pena!",
         "video_prompt_label": "Prompt para Geração de Vídeo",
         "video_prompt_hint": "Dica: para sobrepor texto, coloque-o entre aspas. Ex: Uma praia com o texto \"Promoção de Verão\".",
-        "add": "Adicionar"
+        "add": "Adicionar",
+        "video_billing_error": "A geração de vídeo com este modelo requer que o faturamento esteja ativado na sua conta do Google Cloud Platform. Por favor, ative o faturamento para usar este recurso.",
+        "move_to": "Mover para..."
     },
     'en-US': {
         save: 'Save',
@@ -550,6 +552,8 @@ export const TRANSLATIONS: Translations = {
         "loading_message_4": "Almost there, the results will be worth it!",
         "video_prompt_label": "Video Generation Prompt",
         "video_prompt_hint": "Tip: for text overlays, put the text in \"quotes\". Ex: A beach with the text \"Summer Sale\".",
-        "add": "Add"
+        "add": "Add",
+        "video_billing_error": "Video generation with this model requires billing to be enabled on your Google Cloud Platform account. Please enable billing to use this feature.",
+        "move_to": "Move to..."
     }
 };
