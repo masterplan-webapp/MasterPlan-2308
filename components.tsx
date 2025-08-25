@@ -613,8 +613,8 @@ export const LoginPage: React.FC = () => {
                   alt="MasterPlan Logo" 
                   className="mx-auto h-16 mb-4"
                 />
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
-                <p className="mt-2 mb-8 text-gray-600 dark:text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('Plano de Mídia com Inteligência')}</h1>
+                <p className="mt-2 mb-8 text-gray-600 dark:text-gray-400">{t('Ferramenta de IA para Mídia Paga.')}</p>
                 <button 
                     onClick={signInWithGoogle}
                     className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-900 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
