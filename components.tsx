@@ -613,8 +613,8 @@ export const LoginPage: React.FC = () => {
                   alt="MasterPlan Logo" 
                   className="mx-auto h-16 mb-4"
                 />
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('Plano de Mídia com Inteligência')}</h1>
-                <p className="mt-2 mb-8 text-gray-600 dark:text-gray-400">{t('Ferramenta de IA para Mídia Paga.')}</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
+                <p className="mt-2 mb-8 text-gray-600 dark:text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
                 <button 
                     onClick={signInWithGoogle}
                     className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-900 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
@@ -853,6 +853,34 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, cl
         return null;
     };
     
+    const RADIAN = Math.PI / 180;
+    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+        // position label inside the slice
+        const radius = innerRadius + (outerRadius - innerRadius) * 0.6;
+        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+        // Do not render label for very small slices to avoid clutter
+        if (percent < 0.05) {
+            return null;
+        }
+
+        return (
+            <text
+                x={x}
+                y={y}
+                fill="white"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="12px"
+                fontWeight="bold"
+                style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.7)' }} // Add a subtle shadow for readability
+            >
+                {`${(percent * 100).toFixed(0)}%`}
+            </text>
+        );
+    };
+    
     return (
         <Card className={`flex flex-col ${className}`}>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{title}</h3>
@@ -864,6 +892,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, cl
                             cx="50%"
                             cy="50%"
                             labelLine={false}
+                            label={renderCustomizedLabel}
                             outerRadius={100}
                             fill="#8884d8"
                             dataKey={dataKey}
@@ -1203,7 +1232,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                             </thead>
                             <tbody>
                                 {campaigns.map(c => {
-                                    const share = totalInvestment > 0 ? (Number(c.budget || 0) / totalInvestment) * 100 : 0;
+                                    const share = totals.budget > 0 ? (Number(c.budget || 0) / totals.budget) * 100 : 0;
                                     return (
                                         <tr key={c.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                             <td className="px-4 py-4">{c.tipoCampanha}</td>
@@ -1227,7 +1256,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                 <tr className="font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
                                     <th colSpan={4} className="px-4 py-3 text-base">{t('Totais do Mês')}</th>
                                     <td className="px-4 py-3">{formatCurrency(totals.budget)}</td>
-                                    <td className="px-4 py-3">{formatPercentage(totalInvestment > 0 ? (totals.budget / totalInvestment) * 100 : 0)}</td>
+                                    <td className="px-4 py-3">{formatPercentage(totals.budget > 0 ? 100 : 0)}</td>
                                     <td className="px-4 py-3">{formatNumber(totals.impressoes)}</td>
                                     <td className="px-4 py-3">{formatNumber(totals.cliques)}</td>
                                     <td className="px-4 py-3">{formatNumber(totals.conversoes)}</td>
