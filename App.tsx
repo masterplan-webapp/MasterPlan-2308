@@ -21,6 +21,7 @@ import {
     ShareLinkModal,
     ShareablePlanViewer,
     LOGO_DARK,
+    LOGO_LIGHT,
     ICON_LOGO
 } from './components';
 
@@ -43,6 +44,7 @@ interface CustomSidebarProps {
 
 const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, activePlan, activeView, handleNavigate, handleBackToDashboard, setAddMonthModalOpen, setIsProfileModalOpen, user, signOut }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [isDetailingOpen, setIsDetailingOpen] = useState(true);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -156,6 +158,7 @@ interface CustomHeaderProps {
 
 const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPlanModalOpen, activePlan, isExporting, onExportPDF, onGetShareLink }) => {
     const { language, setLang, t } = useLanguage();
+    const { theme, toggleTheme } = useTheme();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -204,6 +207,13 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                     >
                          {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
                      </button>
+                    <button 
+                        onClick={toggleTheme}
+                        className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors"
+                        title={t('theme')}
+                    >
+                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
                     <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
                     <div className="relative" ref={exportMenuRef}>
                         <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
@@ -770,25 +780,11 @@ function AppLogic() {
     })();
 
     return (
-        <div className={`h-screen w-full bg-gray-100 dark:bg-gray-900 flex antialiased`}>
-             {isMobileSidebarOpen && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-                    onClick={() => setIsMobileSidebarOpen(false)} 
-                />
-            )}
-            <Sidebar 
-                isCollapsed={isSidebarCollapsed}
-                isMobileOpen={isMobileSidebarOpen}
-                activePlan={activePlan} 
-                activeView={currentView}
-                handleNavigate={handleNavigate}
-                handleBackToDashboard={handleBackToDashboard}
-                setAddMonthModalOpen={setAddMonthModalOpen}
-                setIsProfileModalOpen={setIsProfileModalOpen}
-                user={user}
-                signOut={signOut}
-            />
+        <div className={`flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} transition-all duration-300`}>
+            {/* Overlay for mobile */}
+            {isMobileSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
+            
+            <Sidebar isCollapsed={isSidebarCollapsed} isMobileOpen={isMobileSidebarOpen} activePlan={activePlan} activeView={currentView} handleNavigate={handleNavigate} handleBackToDashboard={handleBackToDashboard} setAddMonthModalOpen={setAddMonthModalOpen} setIsProfileModalOpen={setIsProfileModalOpen} user={user} signOut={signOut} />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header 
                     activeView={currentView}
@@ -799,84 +795,35 @@ function AppLogic() {
                     onExportPDF={handleExportPDF}
                     onGetShareLink={handleGetShareLink}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    {currentView === 'Overview' && 
-                        <DashboardPage 
-                            planData={activePlan} 
-                            onNavigate={handleNavigate} 
-                            onAddMonthClick={() => setAddMonthModalOpen(true)} 
-                            onRegeneratePlan={handleRegeneratePlan}
-                            isRegenerating={isRegeneratingPlan}
-                        />}
-                    {currentView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={setActivePlan}/>}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+                    {currentView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
+                    {activePlan.months && activePlan.months[currentView] && <MonthlyPlanPage month={currentView} campaigns={activePlan.months[currentView]} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} planObjective={activePlan.objective} customFormats={activePlan.customFormats || []} onAddFormat={handleAddCustomFormat} totalInvestment={activePlan.totalInvestment} />}
+                    {currentView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
                     {currentView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
                     {currentView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
                     {currentView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
-                    {activePlan.months && Object.keys(activePlan.months).includes(currentView) && (
-                        <MonthlyPlanPage 
-                            month={currentView} 
-                            campaigns={activePlan.months?.[currentView] || []} 
-                            onSave={handleSaveCampaign} 
-                            onDelete={handleDeleteCampaign} 
-                            planObjective={activePlan.objective} 
-                            onAddFormat={handleAddCustomFormat} 
-                            customFormats={activePlan.customFormats || []} 
-                            totalInvestment={activePlan.totalInvestment}
-                        />
-                    )}
                 </main>
             </div>
-            {isPlanDetailsModalOpen && activePlan && (
-                <PlanDetailsModal 
-                    isOpen={isPlanDetailsModalOpen} 
-                    onClose={() => setPlanDetailsModalOpen(false)} 
-                    onSave={handleSavePlanDetails} 
-                    planData={activePlan}
-                    onRename={(plan) => {
-                        handleOpenRenameModal(plan);
-                        setPlanDetailsModalOpen(false);
-                    }}
-                    onDuplicate={(plan) => {
-                        handleDuplicatePlan(plan);
-                        setPlanDetailsModalOpen(false);
-                    }}
-                    // onDelete prop removed from here
-                />
-            )}
-            {isAddMonthModalOpen && activePlan && <AddMonthModal isOpen={isAddMonthModalOpen} onClose={() => setAddMonthModalOpen(false)} onAddMonth={handleAddMonth} existingMonths={Object.keys(activePlan.months || {})} />}
-            {isProfileModalOpen && <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />}
-            {isRenamePlanModalOpen && planToRename && (
-                <RenamePlanModal
-                    isOpen={isRenamePlanModalOpen}
-                    onClose={() => { setIsRenamePlanModalOpen(false); setPlanToRename(null); }}
-                    plan={planToRename}
-                    onSave={handleRenamePlan}
-                />
-            )}
-            <AIPlanCreationModal 
-                isOpen={isAIPlanModalOpen} 
-                onClose={() => setIsAIPlanModalOpen(false)}
-                onGenerate={handleGenerateAIPlan}
-                isLoading={isGeneratingPlan}
-            />
-            <ShareLinkModal 
-                isOpen={isShareModalOpen}
-                onClose={() => setShareModalOpen(false)}
-                link={shareLink}
-            />
+            {isPlanDetailsModalOpen && <PlanDetailsModal isOpen={isPlanDetailsModalOpen} onClose={() => setPlanDetailsModalOpen(false)} onSave={handleSavePlanDetails} planData={activePlan} onRename={handleOpenRenameModal} onDuplicate={handleDuplicatePlan} />}
+            {isAddMonthModalOpen && <AddMonthModal isOpen={isAddMonthModalOpen} onClose={() => setAddMonthModalOpen(false)} onAddMonth={handleAddMonth} existingMonths={Object.keys(activePlan.months || {})} />}
+            <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+            {isRenamePlanModalOpen && planToRename && <RenamePlanModal isOpen={isRenamePlanModalOpen} onClose={() => setIsRenamePlanModalOpen(false)} plan={planToRename} onSave={handleRenamePlan} />}
+            <ShareLinkModal isOpen={isShareModalOpen} onClose={() => setShareModalOpen(false)} link={shareLink} />
         </div>
     );
 }
 
-// AppWrapper to include all providers
-export default function App() {
+// FIX: Added App component wrapper for providers and the default export.
+function App() {
     return (
-        <LanguageProvider>
-            <ThemeProvider>
-                <AuthProvider>
+        <AuthProvider>
+            <LanguageProvider>
+                <ThemeProvider>
                     <AppLogic />
-                </AuthProvider>
-            </ThemeProvider>
-        </LanguageProvider>
+                </ThemeProvider>
+            </LanguageProvider>
+        </AuthProvider>
     );
 }
+
+export default App;

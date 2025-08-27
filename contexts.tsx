@@ -54,17 +54,29 @@ export const useLanguage = (): LanguageContextType => {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-    const theme: Theme = 'dark'; // Always dark
+    const [theme, setTheme] = useState<Theme>(() => {
+        const savedTheme = localStorage.getItem('theme') as Theme | null;
+        if (savedTheme) {
+            return savedTheme;
+        }
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
+    });
 
     useEffect(() => {
         const root = document.documentElement;
-        root.classList.add('dark');
-        // Clean up legacy setting
-        localStorage.setItem('theme', 'dark');
-    }, []);
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     const toggleTheme = useCallback(() => {
-        // No-op, functionality removed for now
+        setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
     }, []);
 
     return (

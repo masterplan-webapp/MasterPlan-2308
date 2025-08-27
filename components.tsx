@@ -604,12 +604,13 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
 export const LoginPage: React.FC = () => {
     const { signInWithGoogle } = useAuth();
     const { t } = useLanguage();
+    const { theme } = useTheme();
 
     return (
         <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
             <Card className="max-w-md w-full text-center shadow-2xl">
                 <img 
-                  src={LOGO_DARK} 
+                  src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} 
                   alt="MasterPlan Logo" 
                   className="mx-auto h-16 mb-4"
                 />
@@ -699,6 +700,7 @@ export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = (
 export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan }) => {
     const { t } = useLanguage();
     const { signOut } = useAuth();
+    const { theme } = useTheme();
     const [isChoiceModalOpen, setChoiceModalOpen] = useState(false);
     const [isRenameModalOpen, setRenameModalOpen] = useState(false);
     const [planToRename, setPlanToRename] = useState<PlanData | null>(null);
@@ -782,7 +784,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
             <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8"/>
+                        <img src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} alt="MasterPlan Logo" className="h-8"/>
                          <div className="flex items-center gap-4">
                             <button onClick={onProfileClick} className="flex items-center gap-2">
                                 <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff`} alt="User avatar" className="w-8 h-8 rounded-full"/>
@@ -2260,6 +2262,7 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
     const [plan, setPlan] = useState<PlanData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { t } = useLanguage();
+    const { theme } = useTheme();
 
     useEffect(() => {
         const fetchPlan = () => {
@@ -2286,7 +2289,7 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
              <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8"/>
+                        <img src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} alt="MasterPlan Logo" className="h-8"/>
                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <span>{t('shared_by')}:</span>
                             <img src={plan.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(plan.campaignName[0])}`} alt="Presenter avatar" className="w-8 h-8 rounded-full object-cover"/>
