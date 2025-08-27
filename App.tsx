@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
 
@@ -158,7 +157,6 @@ interface CustomHeaderProps {
 
 const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPlanModalOpen, activePlan, isExporting, onExportPDF, onGetShareLink }) => {
     const { language, setLang, t } = useLanguage();
-    const { theme, toggleTheme } = useTheme();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
@@ -207,13 +205,6 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                     >
                          {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
                      </button>
-                    <button 
-                        onClick={toggleTheme}
-                        className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors"
-                        title={t('theme')}
-                    >
-                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
                     <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
                     <div className="relative" ref={exportMenuRef}>
                         <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
@@ -342,452 +333,314 @@ function AppLogic() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [isPlanDetailsModalOpen, setPlanDetailsModalOpen] = useState(false);
+    const [isRenameModalOpen, setRenameModalOpen] = useState(false);
+    const [planToRename, setPlanToRename] = useState<PlanData | null>(null);
     const [isAddMonthModalOpen, setAddMonthModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    const [isRenamePlanModalOpen, setIsRenamePlanModalOpen] = useState(false);
-    const [planToRename, setPlanToRename] = useState<PlanData | null>(null);
-    const [isAIPlanModalOpen, setIsAIPlanModalOpen] = useState(false);
-    const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+    const [isAIPlanCreationModalOpen, setAIPlanCreationModalOpen] = useState(false);
     const [isRegeneratingPlan, setIsRegeneratingPlan] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [shareLink, setShareLink] = useState('');
-    const [isShareModalOpen, setShareModalOpen] = useState(false);
+    const [isShareLinkModalOpen, setIsShareLinkModalOpen] = useState(false);
 
-    const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
-    const isShareView = urlParams.get('view') === 'share';
-    const shareUserId = urlParams.get('userId');
-    const sharePlanId = urlParams.get('planId');
-
-    if (isShareView && shareUserId && sharePlanId) {
-        return <ShareablePlanViewer userId={shareUserId} planId={sharePlanId} />;
-    }
+    useEffect(() => {
+        if (user) {
+            setAllPlans(dbService.getPlans(user.uid));
+        } else {
+            setAllPlans([]);
+            setActivePlan(null);
+        }
+    }, [user]);
 
     useEffect(() => {
         localStorage.setItem('sidebarCollapsed', String(isSidebarCollapsed));
     }, [isSidebarCollapsed]);
 
-    useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth >= 1024) { // 1024px is lg breakpoint in Tailwind
-                setIsMobileSidebarOpen(false);
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const toggleSidebar = () => {
-        if (window.innerWidth < 1024) {
-            setIsMobileSidebarOpen(prev => !prev);
-        } else {
-            setIsSidebarCollapsed(prev => !prev);
-        }
-    };
-
-    useEffect(() => { 
-        if (user) {
-            const userPlans = dbService.getPlans(user.uid);
-            setAllPlans(userPlans);
-            if (userPlans.length > 0 && !activePlan) {
-                // Check if there's a previously active plan ID in localStorage
-                const lastActivePlanId = localStorage.getItem('lastActivePlanId');
-                const lastPlan = lastActivePlanId ? userPlans.find(p => p.id === lastActivePlanId) : null;
-                if (lastPlan) {
-                    // setActivePlan(lastPlan); //This was causing issues, removing for now.
-                }
-            } else if (userPlans.length === 0) {
-                setActivePlan(null); // No plans, ensure activePlan is null for onboarding
-            }
-        } else {
-            setAllPlans([]);
-            setActivePlan(null);
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]); // Removed activePlan from dependencies to avoid loop
-
-    const selectActivePlan = useCallback((plan: PlanData) => {
-        setActivePlan(plan);
-        setActiveView('Overview'); // Reset to overview when a new plan is selected
-        localStorage.setItem('lastActivePlanId', plan.id);
-    }, []);
-    
-    const handleSavePlanDetails = useCallback((details: Partial<Omit<PlanData, 'id' | 'months' | 'creatives' | 'customFormats' | 'utmLinks' | 'adGroups'>>) => {
-        if (!user || !activePlan) return;
-        setActivePlan(prev => {
-            if (!prev) return null;
-            const updatedPlan = { ...prev, ...details };
-            dbService.savePlan(user.uid, updatedPlan);
-            setAllPlans(dbService.getPlans(user.uid)); // Refresh all plans list
-            return updatedPlan;
-        });
-    }, [user, activePlan]);
-    
-    const handleSaveCampaign = useCallback((month: string, campaignToSave: Campaign) => {
-        if (!user || !activePlan) return;
-        setActivePlan(currentPlanData => {
-            if (!currentPlanData) return null;
-            const newPlanData = JSON.parse(JSON.stringify(currentPlanData)); // Deep copy
-            const monthCampaigns = newPlanData.months[month] || [];
-            const existingIndex = monthCampaigns.findIndex((c: Campaign) => c.id === campaignToSave.id);
-
-            if (existingIndex > -1) {
-                monthCampaigns[existingIndex] = campaignToSave;
-            } else {
-                monthCampaigns.push(campaignToSave);
-            }
-            newPlanData.months[month] = monthCampaigns;
-            dbService.savePlan(user.uid, newPlanData);
-            setAllPlans(dbService.getPlans(user.uid));
-            return newPlanData;
-        });
-    }, [user, activePlan]);
-
-    const handleDeleteCampaign = useCallback((month: string, campaignId: string) => {
-        if (!user || !activePlan) return;
-        setActivePlan(currentPlanData => {
-            if (!currentPlanData) return null;
-            const newPlanData = JSON.parse(JSON.stringify(currentPlanData));
-            if (!newPlanData.months[month]) return currentPlanData;
-            newPlanData.months[month] = newPlanData.months[month].filter((c: Campaign) => c.id !== campaignId);
-            if (newPlanData.months[month].length === 0) {
-                 delete newPlanData.months[month];
-            }
-            dbService.savePlan(user.uid, newPlanData);
-            setAllPlans(dbService.getPlans(user.uid));
-            return newPlanData;
-        });
-    }, [user, activePlan]);
-
-    const handleAddCustomFormat = useCallback((newFormat: string) => {
-        if (!user || !activePlan) return;
-        setActivePlan(prev => {
-            if (!prev) return null;
-            const updatedPlan = {
-                ...prev,
-                customFormats: [...new Set([...(prev.customFormats || []), newFormat])]
-            };
-            dbService.savePlan(user.uid, updatedPlan);
-            setAllPlans(dbService.getPlans(user.uid));
-            return updatedPlan;
-        });
-    }, [user, activePlan]);
-
-    const handleNavigate = useCallback((view: string) => { 
-        setActiveView(view);
-        setIsMobileSidebarOpen(false);
-    }, []);
-
-    const handleAddMonth = useCallback((month: string) => {
-        if (!month || !user || !activePlan) return;
-        setActivePlan(currentPlanData => {
-            if (!currentPlanData) return null;
-            const newPlanData = JSON.parse(JSON.stringify(currentPlanData));
-            if (!newPlanData.months[month]) {
-                newPlanData.months[month] = [];
-            }
-            dbService.savePlan(user.uid, newPlanData);
-            setAllPlans(dbService.getPlans(user.uid));
-            handleNavigate(month); // Navigate to the newly added month
-            return newPlanData;
-        });
-        setAddMonthModalOpen(false);
-    }, [user, activePlan, handleNavigate]);
-    
-    const handlePlanCreated = useCallback((newPlanOrType: PlanData | 'blank' | 'ai' | 'template') => {
+    const handlePlanCreated = (type: 'ai' | 'blank' | 'template') => {
         if (!user) return;
-
-        if (newPlanOrType === 'ai') {
-            setIsAIPlanModalOpen(true);
+        if (type === 'ai') {
+            setAIPlanCreationModalOpen(true);
             return;
         }
+        const newPlan = type === 'blank' ? createNewEmptyPlan(user.uid) : createNewPlanFromTemplate(user.uid);
+        setAllPlans(prev => [...prev, newPlan]);
+        setActivePlan(newPlan);
+        setActiveView('Overview');
+    };
 
-        let planToActivate: PlanData;
-        if (newPlanOrType === 'blank') {
-            planToActivate = createNewEmptyPlan(user.uid);
-        } else if (newPlanOrType === 'template') {
-            planToActivate = createNewPlanFromTemplate(user.uid);
+    const handlePlanCreatedOrSelected = (newPlanOrType: PlanData | 'ai' | 'blank' | 'template') => {
+        if (typeof newPlanOrType === 'string') {
+            handlePlanCreated(newPlanOrType);
         } else {
-            // This case is for duplication
-            planToActivate = newPlanOrType as PlanData;
-            dbService.savePlan(user.uid, planToActivate);
+            setAllPlans(prev => {
+                if(prev.find(p => p.id === newPlanOrType.id)) return prev;
+                return [...prev, newPlanOrType];
+            });
         }
+    }
 
-        const updatedPlans = dbService.getPlans(user.uid);
-        setAllPlans(updatedPlans);
-        selectActivePlan(planToActivate);
-    }, [user, selectActivePlan]);
-    
-    const handleGenerateAIPlan = async (prompt: string) => {
+    const handleAIPlanGenerated = async (prompt: string) => {
         if (!user) return;
-        setIsGeneratingPlan(true);
-    
+        setIsRegeneratingPlan(true);
         try {
-            const aiGeneratedData = await generateAIPlan(prompt, language);
-    
-            // Basic validation
-            if (!aiGeneratedData || !aiGeneratedData.campaignName || !aiGeneratedData.months) {
-                console.error("AI returned invalid data structure:", aiGeneratedData);
-                throw new Error(t("A resposta da IA não retornou um plano válido."));
-            }
-    
+            const partialPlan = await generateAIPlan(prompt, language);
             const newPlan: PlanData = {
                 id: `plan_${new Date().getTime()}`,
-                campaignName: aiGeneratedData.campaignName || 'Novo Plano (IA)',
-                objective: aiGeneratedData.objective || '',
-                targetAudience: aiGeneratedData.targetAudience || '',
-                location: aiGeneratedData.location || '',
-                totalInvestment: aiGeneratedData.totalInvestment || 0,
-                logoUrl: aiGeneratedData.logoUrl || '',
-                aiPrompt: prompt,
-                aiImagePrompt: aiGeneratedData.aiImagePrompt || '',
-                creatives: aiGeneratedData.creatives || {},
-                adGroups: aiGeneratedData.adGroups || [],
+                campaignName: partialPlan.campaignName || 'Novo Plano (IA)',
+                objective: partialPlan.objective || '',
+                targetAudience: partialPlan.targetAudience || '',
+                location: partialPlan.location || '',
+                totalInvestment: partialPlan.totalInvestment || 5000,
+                logoUrl: partialPlan.logoUrl || '',
                 customFormats: [],
                 utmLinks: [],
-                months: Object.entries(aiGeneratedData.months).reduce((acc, [month, campaigns]) => {
-                    const [year, monthName] = month.split('-');
-                    if (year && monthName && MONTHS_LIST.includes(monthName)) { // Ensure month key is valid
-                        acc[month] = campaigns.map(c => {
-                            const defaults = DEFAULT_METRICS_BY_OBJECTIVE[c.tipoCampanha as string] || {};
-                            return calculateKPIs({ ...defaults, ...c, id: `c_${new Date().getTime()}_${Math.random()}`});
-                        });
-                    }
+                months: partialPlan.months ? Object.entries(partialPlan.months).reduce((acc, [month, campaigns]) => {
+                    acc[month] = campaigns.map((c, i) => calculateKPIs({ ...c, id: `c_ai_${i}` }));
                     return acc;
-                }, {} as Record<string, Campaign[]>),
+                }, {} as Record<string, Campaign[]>) : {},
+                creatives: {},
+                adGroups: [],
+                aiPrompt: prompt,
+                aiImagePrompt: partialPlan.aiImagePrompt,
             };
-    
             dbService.savePlan(user.uid, newPlan);
-            const updatedPlans = dbService.getPlans(user.uid);
-            setAllPlans(updatedPlans);
-            selectActivePlan(newPlan);
-            setIsAIPlanModalOpen(false);
-    
+            setAllPlans(prev => [...prev, newPlan]);
+            setActivePlan(newPlan);
+            setActiveView('Overview');
         } catch (error) {
-            console.error("Failed to generate AI plan:", error);
-            alert(t("Erro ao criar o plano com IA. Por favor, tente novamente."));
+            console.error("Error generating AI plan:", error);
+            alert(t('Erro ao criar o plano com IA. Por favor, tente novamente.'));
         } finally {
-            setIsGeneratingPlan(false);
+            setIsRegeneratingPlan(false);
+            setAIPlanCreationModalOpen(false);
         }
     };
 
+    const handleSelectPlan = (plan: PlanData) => {
+        setActivePlan(plan);
+        setActiveView('Overview');
+    };
+
+    const handleBackToDashboard = () => {
+        setActivePlan(null);
+    };
+
+    const handleDeletePlan = (planId: string) => {
+        if (!user) return;
+        dbService.deletePlan(user.uid, planId);
+        setAllPlans(allPlans.filter(p => p.id !== planId));
+    };
+
+    const updateActivePlan = (updatedPlan: PlanData) => {
+        if (!user) return;
+        setActivePlan(updatedPlan);
+        setAllPlans(allPlans.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+        dbService.savePlan(user.uid, updatedPlan);
+    };
+    
+    const handleSavePlanDetails = (details: Partial<PlanData>) => {
+        if (!activePlan) return;
+        const updatedPlan = { ...activePlan, ...details };
+        updateActivePlan(updatedPlan);
+    };
+
+    const handleRenamePlan = (planId: string, newName: string) => {
+        if(!user) return;
+        const planToUpdate = allPlans.find(p => p.id === planId);
+        if(planToUpdate) {
+            const updatedPlan = {...planToUpdate, campaignName: newName};
+            const updatedPlans = allPlans.map(p => p.id === planId ? updatedPlan : p);
+            setAllPlans(updatedPlans);
+            dbService.savePlan(user.uid, updatedPlan);
+            if(activePlan?.id === planId) {
+                setActivePlan(updatedPlan);
+            }
+        }
+        setRenameModalOpen(false);
+        setPlanToRename(null);
+    }
+    
+    const handleDuplicatePlan = (planToDuplicate: PlanData) => {
+        if(!user) return;
+        const newPlan: PlanData = {
+            ...JSON.parse(JSON.stringify(planToDuplicate)),
+            id: `plan_${new Date().getTime()}`,
+            campaignName: `${planToDuplicate.campaignName} ${t('Copy')}`
+        };
+        dbService.savePlan(user.uid, newPlan);
+        setAllPlans(prev => [...prev, newPlan]);
+    }
+
+    const handleSaveCampaign = (month: string, campaign: Campaign) => {
+        if (!activePlan) return;
+        const updatedMonths = { ...(activePlan.months || {}) };
+        if (!updatedMonths[month]) updatedMonths[month] = [];
+        
+        const campaignIndex = updatedMonths[month].findIndex(c => c.id === campaign.id);
+        if (campaignIndex > -1) {
+            updatedMonths[month][campaignIndex] = campaign;
+        } else {
+            updatedMonths[month].push(campaign);
+        }
+        updateActivePlan({ ...activePlan, months: updatedMonths });
+    };
+    
+    const handleDeleteCampaign = (month: string, campaignId: string) => {
+        if (!activePlan) return;
+        const updatedMonths = { ...(activePlan.months || {}) };
+        updatedMonths[month] = updatedMonths[month].filter(c => c.id !== campaignId);
+        updateActivePlan({ ...activePlan, months: updatedMonths });
+    }
+
+    const handleAddMonth = (month: string) => {
+        if (!activePlan || !month) return;
+        if (!activePlan.months) activePlan.months = {};
+        if (activePlan.months[month]) return;
+        
+        const updatedMonths = { ...activePlan.months, [month]: [] };
+        updateActivePlan({ ...activePlan, months: updatedMonths });
+        setAddMonthModalOpen(false);
+    };
+    
+    const handleAddFormat = (format: string) => {
+        if (!activePlan) return;
+        const updatedFormats = [...new Set([...(activePlan.customFormats || []), format])];
+        updateActivePlan({...activePlan, customFormats: updatedFormats});
+    };
+    
     const handleRegeneratePlan = async (prompt: string) => {
         if (!user || !activePlan) return;
         setIsRegeneratingPlan(true);
-    
         try {
-            const aiGeneratedData = await generateAIPlan(prompt, language);
-    
-            if (!aiGeneratedData || !aiGeneratedData.campaignName || !aiGeneratedData.months) {
-                throw new Error(t("A resposta da IA não retornou um plano válido."));
-            }
-
-            // Keep the same ID, but update everything else
-            const updatedPlan: PlanData = {
+             const partialPlan = await generateAIPlan(prompt, language);
+             const updatedPlan = {
                 ...activePlan,
-                campaignName: aiGeneratedData.campaignName || activePlan.campaignName,
-                objective: aiGeneratedData.objective || activePlan.objective,
-                targetAudience: aiGeneratedData.targetAudience || activePlan.targetAudience,
-                location: aiGeneratedData.location || activePlan.location,
-                totalInvestment: aiGeneratedData.totalInvestment || 0,
-                logoUrl: aiGeneratedData.logoUrl || activePlan.logoUrl,
-                aiPrompt: prompt,
-                aiImagePrompt: aiGeneratedData.aiImagePrompt || '',
-                months: Object.entries(aiGeneratedData.months).reduce((acc, [month, campaigns]) => {
-                    const [year, monthName] = month.split('-');
-                    if (year && monthName && MONTHS_LIST.includes(monthName)) {
-                        acc[month] = campaigns.map(c => {
-                            const defaults = DEFAULT_METRICS_BY_OBJECTIVE[c.tipoCampanha as string] || {};
-                            return calculateKPIs({ ...defaults, ...c, id: `c_${new Date().getTime()}_${Math.random()}`});
-                        });
-                    }
+                campaignName: partialPlan.campaignName || activePlan.campaignName,
+                objective: partialPlan.objective || activePlan.objective,
+                targetAudience: partialPlan.targetAudience || activePlan.targetAudience,
+                location: partialPlan.location || activePlan.location,
+                totalInvestment: partialPlan.totalInvestment || activePlan.totalInvestment,
+                logoUrl: partialPlan.logoUrl || activePlan.logoUrl,
+                months: partialPlan.months ? Object.entries(partialPlan.months).reduce((acc, [month, campaigns]) => {
+                    acc[month] = campaigns.map((c, i) => calculateKPIs({ ...c, id: `c_ai_${month}_${i}` }));
                     return acc;
-                }, {} as Record<string, Campaign[]>),
-                creatives: aiGeneratedData.creatives || {},
-                adGroups: aiGeneratedData.adGroups || [],
-                utmLinks: [], // Reset UTM links on regeneration
-            };
-    
-            dbService.savePlan(user.uid, updatedPlan);
-            setAllPlans(dbService.getPlans(user.uid));
-            setActivePlan(updatedPlan);
-    
+                }, {} as Record<string, Campaign[]>) : activePlan.months,
+                aiPrompt: prompt,
+                aiImagePrompt: partialPlan.aiImagePrompt || activePlan.aiImagePrompt,
+             };
+             updateActivePlan(updatedPlan);
         } catch (error) {
-            console.error("Failed to regenerate AI plan:", error);
-            alert(t("Erro ao criar o plano com IA. Por favor, tente novamente."));
+            console.error("Error regenerating AI plan:", error);
+            alert(t('Erro ao criar o plano com IA. Por favor, tente novamente.'));
         } finally {
             setIsRegeneratingPlan(false);
         }
     };
-        
-    const handleBackToDashboard = useCallback(() => {
-        setActivePlan(null);
-        setActiveView('Overview'); 
-        localStorage.removeItem('lastActivePlanId');
-    }, []);
-
-    const handleOpenRenameModal = useCallback((plan: PlanData) => {
-        setPlanToRename(plan);
-        setIsRenamePlanModalOpen(true);
-    }, []);
-
-    const handleRenamePlan = useCallback((planId: string, newName: string) => {
-        if (!user) return;
-        const planToUpdate = allPlans.find(p => p.id === planId);
-        if (planToUpdate) {
-            const updatedPlanData = { ...planToUpdate, campaignName: newName };
-            dbService.savePlan(user.uid, updatedPlanData);
-            const updatedPlans = dbService.getPlans(user.uid);
-            setAllPlans(updatedPlans);
-            if (activePlan?.id === planId) {
-                setActivePlan(updatedPlanData);
-            }
-        }
-        setIsRenamePlanModalOpen(false);
-        setPlanToRename(null);
-    }, [user, allPlans, activePlan]);
     
-    const handleDuplicatePlan = useCallback((planToDuplicate: PlanData) => {
-        if (!user) return;
-        const newPlan: PlanData = {
-            ...JSON.parse(JSON.stringify(planToDuplicate)), // Deep copy
-            id: `plan_${new Date().getTime()}`,
-            campaignName: t("{campaignName} {copy}", { campaignName: planToDuplicate.campaignName, copy: t("Copy") }),
-        };
-        dbService.savePlan(user.uid, newPlan);
-        const updatedPlans = dbService.getPlans(user.uid);
-        setAllPlans(updatedPlans);
-        // Go back to dashboard to see the new plan in the list.
-        handleBackToDashboard(); 
-    }, [user, t, handleBackToDashboard]);
-
-    const handleDeletePlan = useCallback((planId: string) => {
-        if (!user) return;
-        
-        dbService.deletePlan(user.uid, planId);
-        const updatedPlans = dbService.getPlans(user.uid);
-        setAllPlans(updatedPlans);
-
-        if (activePlan?.id === planId) {
-            setActivePlan(null); // Clear active plan
-            localStorage.removeItem('lastActivePlanId');
-            if (updatedPlans.length > 0) {
-                // If there are other plans, select the first one
-                selectActivePlan(updatedPlans[0]);
-            } else {
-                // No plans left, go to onboarding/plan selector state
-                handleBackToDashboard(); 
-            }
-        } else if (updatedPlans.length === 0) {
-             // If the deleted plan wasn't active, but now no plans exist
-             handleBackToDashboard(); 
-        }
-        // If PlanDetailsModal was open for the deleted plan, it should be closed by its own logic or here
-        if(isPlanDetailsModalOpen) setPlanDetailsModalOpen(false);
-
-    }, [user, activePlan, selectActivePlan, handleBackToDashboard, isPlanDetailsModalOpen]);
-
     const handleExportPDF = async () => {
         if (!activePlan) return;
         setIsExporting(true);
-        try {
-            await exportPlanAsPDF(activePlan, t);
-        } catch (error) {
-            console.error("PDF Export failed", error);
-            alert("Failed to export PDF.");
-        } finally {
-            setIsExporting(false);
+        await exportPlanAsPDF(activePlan, t);
+        setIsExporting(false);
+    };
+
+    const handleGetShareLink = () => {
+        if (!activePlan || !user) {
+            setShareLink(t('link_generation_error'));
+        } else {
+            const url = `${window.location.origin}${window.location.pathname}?share_user=${user.uid}&share_plan=${activePlan.id}`;
+            setShareLink(url);
+        }
+        setIsShareLinkModalOpen(true);
+    };
+
+
+    const toggleSidebar = () => {
+        if (window.innerWidth < 1024) {
+            setIsMobileSidebarOpen(!isMobileSidebarOpen);
+        } else {
+            setIsSidebarCollapsed(!isSidebarCollapsed);
         }
     };
     
-    const handleGetShareLink = () => {
-        if (!user || !activePlan) return;
-
-        const origin = window.location.origin;
-
-        // A shareable link requires a standard HTTP origin. `blob:` or `null` origins won't work.
-        if (!origin || !origin.startsWith('http')) {
-            console.error(`Cannot generate share link: Invalid origin "${origin}". This might be due to a sandboxed environment.`);
-            setShareLink(t('link_generation_error'));
-            setShareModalOpen(true);
-            return;
+    const handleNavigate = (view: string) => {
+        setActiveView(view);
+        if (window.innerWidth < 1024) {
+            setIsMobileSidebarOpen(false);
         }
+    }
 
-        const params = new URLSearchParams({
-            view: 'share',
-            userId: user.uid,
-            planId: activePlan.id,
-        }).toString();
-
-        // Construct the link from the root of the domain to ensure it works correctly in any environment.
-        const link = `${origin}/?${params}`;
-        
-        setShareLink(link);
-        setShareModalOpen(true);
-    };
 
     if (loading) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"><LoaderIcon className="animate-spin text-blue-600 dark:text-blue-400" size={48} /></div>;
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareUserId = urlParams.get('share_user');
+    const sharePlanId = urlParams.get('share_plan');
+
+    if (shareUserId && sharePlanId) {
+        return <ShareablePlanViewer userId={shareUserId} planId={sharePlanId} />;
     }
 
     if (!user) {
         return <LoginPage />;
     }
-    
-    if (allPlans.length === 0 && !activePlan) { // Ensure activePlan is null before showing onboarding
+
+    if (allPlans.length === 0 && !activePlan) {
         return (
             <>
                 <OnboardingPage onPlanCreated={handlePlanCreated} />
-                <AIPlanCreationModal 
-                    isOpen={isAIPlanModalOpen} 
-                    onClose={() => setIsAIPlanModalOpen(false)}
-                    onGenerate={handleGenerateAIPlan}
-                    isLoading={isGeneratingPlan}
-                />
-            </>
-        );
-    }
-
-    if (!activePlan) {
-        return (
-            <>
-                <PlanSelectorPageComponent 
-                    plans={allPlans} 
-                    onSelectPlan={selectActivePlan} 
-                    onPlanCreated={handlePlanCreated} 
-                    user={user} 
-                    onProfileClick={() => setIsProfileModalOpen(true)}
-                    onDeletePlan={handleDeletePlan} // Pass delete handler
-                />
                  <AIPlanCreationModal 
-                    isOpen={isAIPlanModalOpen} 
-                    onClose={() => setIsAIPlanModalOpen(false)}
-                    onGenerate={handleGenerateAIPlan}
-                    isLoading={isGeneratingPlan}
+                    isOpen={isAIPlanCreationModalOpen}
+                    onClose={() => setAIPlanCreationModalOpen(false)}
+                    onGenerate={handleAIPlanGenerated}
+                    isLoading={isRegeneratingPlan}
                 />
             </>
         );
     }
     
-    const currentView = (() => {
-        const knownTopLevelViews = ['Overview', 'Copy_builder', 'UTM_Builder', 'Keyword_Builder', 'Creative_Builder'];
-        if (knownTopLevelViews.includes(activeView)) {
-            return activeView;
-        }
-        if (activePlan.months && Object.keys(activePlan.months).includes(activeView)) {
-            return activeView; // It's a month
-        }
-        return 'Overview'; // Default if not a known top-level view or an existing month
-    })();
+    if (!activePlan) {
+         return (
+            <>
+                <PlanSelectorPageComponent 
+                    plans={allPlans} 
+                    onSelectPlan={handleSelectPlan} 
+                    onPlanCreated={handlePlanCreatedOrSelected} 
+                    user={user} 
+                    onProfileClick={() => setIsProfileModalOpen(true)} 
+                    onDeletePlan={handleDeletePlan}
+                />
+                 <AIPlanCreationModal 
+                    isOpen={isAIPlanCreationModalOpen}
+                    onClose={() => setAIPlanCreationModalOpen(false)}
+                    onGenerate={handleAIPlanGenerated}
+                    isLoading={isRegeneratingPlan}
+                />
+                <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+            </>
+         );
+    }
+
 
     return (
-        <div className={`flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} transition-all duration-300`}>
-            {/* Overlay for mobile */}
-            {isMobileSidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
-            
-            <Sidebar isCollapsed={isSidebarCollapsed} isMobileOpen={isMobileSidebarOpen} activePlan={activePlan} activeView={currentView} handleNavigate={handleNavigate} handleBackToDashboard={handleBackToDashboard} setAddMonthModalOpen={setAddMonthModalOpen} setIsProfileModalOpen={setIsProfileModalOpen} user={user} signOut={signOut} />
-            <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex h-screen bg-gray-100 dark:bg-gray-900 font-sans`}>
+             <Sidebar 
+                isCollapsed={isSidebarCollapsed}
+                isMobileOpen={isMobileSidebarOpen}
+                activePlan={activePlan} 
+                activeView={activeView} 
+                handleNavigate={handleNavigate} 
+                handleBackToDashboard={handleBackToDashboard}
+                setAddMonthModalOpen={setAddMonthModalOpen}
+                setIsProfileModalOpen={setIsProfileModalOpen}
+                user={user}
+                signOut={signOut}
+             />
+             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header 
-                    activeView={currentView}
+                    activeView={activeView} 
                     toggleSidebar={toggleSidebar}
                     setPlanModalOpen={setPlanDetailsModalOpen}
                     activePlan={activePlan}
@@ -795,35 +648,64 @@ function AppLogic() {
                     onExportPDF={handleExportPDF}
                     onGetShareLink={handleGetShareLink}
                 />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
-                    {currentView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
-                    {activePlan.months && activePlan.months[currentView] && <MonthlyPlanPage month={currentView} campaigns={activePlan.months[currentView]} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} planObjective={activePlan.objective} customFormats={activePlan.customFormats || []} onAddFormat={handleAddCustomFormat} totalInvestment={activePlan.totalInvestment} />}
-                    {currentView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
-                    {currentView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
-                    {currentView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={setActivePlan} />}
-                    {currentView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
+                     {activeView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
+                     {Object.keys(activePlan.months || {}).includes(activeView) && (
+                        <MonthlyPlanPage 
+                            month={activeView} 
+                            campaigns={activePlan.months[activeView]}
+                            onSave={handleSaveCampaign}
+                            onDelete={handleDeleteCampaign}
+                            planObjective={activePlan.objective}
+                            customFormats={activePlan.customFormats || []}
+                            onAddFormat={handleAddFormat}
+                            totalInvestment={activePlan.totalInvestment}
+                        />
+                     )}
+                     {activeView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                     {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                     {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                     {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
                 </main>
-            </div>
-            {isPlanDetailsModalOpen && <PlanDetailsModal isOpen={isPlanDetailsModalOpen} onClose={() => setPlanDetailsModalOpen(false)} onSave={handleSavePlanDetails} planData={activePlan} onRename={handleOpenRenameModal} onDuplicate={handleDuplicatePlan} />}
-            {isAddMonthModalOpen && <AddMonthModal isOpen={isAddMonthModalOpen} onClose={() => setAddMonthModalOpen(false)} onAddMonth={handleAddMonth} existingMonths={Object.keys(activePlan.months || {})} />}
-            <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
-            {isRenamePlanModalOpen && planToRename && <RenamePlanModal isOpen={isRenamePlanModalOpen} onClose={() => setIsRenamePlanModalOpen(false)} plan={planToRename} onSave={handleRenamePlan} />}
-            <ShareLinkModal isOpen={isShareModalOpen} onClose={() => setShareModalOpen(false)} link={shareLink} />
+             </div>
+             {isPlanDetailsModalOpen && (
+                <PlanDetailsModal
+                    isOpen={isPlanDetailsModalOpen}
+                    onClose={() => setPlanDetailsModalOpen(false)}
+                    onSave={handleSavePlanDetails}
+                    planData={activePlan}
+                    onRename={(plan) => { setPlanToRename(plan); setRenameModalOpen(true); }}
+                    onDuplicate={handleDuplicatePlan}
+                />
+             )}
+            {isRenameModalOpen && planToRename && (
+                <RenamePlanModal 
+                    isOpen={isRenameModalOpen} 
+                    onClose={() => setRenameModalOpen(false)}
+                    plan={planToRename}
+                    onSave={handleRenamePlan}
+                />
+            )}
+             <AddMonthModal 
+                isOpen={isAddMonthModalOpen} 
+                onClose={() => setAddMonthModalOpen(false)}
+                onAddMonth={handleAddMonth}
+                existingMonths={Object.keys(activePlan.months || {})}
+             />
+             <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+             <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
         </div>
     );
 }
 
-// FIX: Added App component wrapper for providers and the default export.
-function App() {
-    return (
-        <AuthProvider>
-            <LanguageProvider>
-                <ThemeProvider>
-                    <AppLogic />
-                </ThemeProvider>
-            </LanguageProvider>
-        </AuthProvider>
-    );
+export default function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AppLogic />
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
+  );
 }
-
-export default App;
