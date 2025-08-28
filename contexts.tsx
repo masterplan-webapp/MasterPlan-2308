@@ -54,30 +54,10 @@ export const useLanguage = (): LanguageContextType => {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-    const [theme, setTheme] = useState<Theme>(() => {
-        const savedTheme = localStorage.getItem('theme') as Theme | null;
-        if (savedTheme) {
-            return savedTheme;
-        }
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
-    });
+    const theme: Theme = 'dark'; // Hardcode theme to 'dark'
 
-    useEffect(() => {
-        const root = document.documentElement;
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        } else {
-            root.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
-
-    const toggleTheme = useCallback(() => {
-        setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-    }, []);
+    // Provide a dummy function to match the type, but it does nothing.
+    const toggleTheme = useCallback(() => {}, []);
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>

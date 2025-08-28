@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF } from './services';
@@ -20,7 +21,6 @@ import {
     ShareLinkModal,
     ShareablePlanViewer,
     LOGO_DARK,
-    LOGO_LIGHT,
     ICON_LOGO
 } from './components';
 
@@ -43,7 +43,6 @@ interface CustomSidebarProps {
 
 const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, activePlan, activeView, handleNavigate, handleBackToDashboard, setAddMonthModalOpen, setIsProfileModalOpen, user, signOut }) => {
     const { t } = useLanguage();
-    const { theme } = useTheme();
     const [isDetailingOpen, setIsDetailingOpen] = useState(true);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -189,34 +188,34 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
 
 
     return (
-        <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20">
+        <header className="bg-gray-800 shadow-sm sticky top-0 z-20">
             <div className="w-full mx-auto px-4 sm:px-6 lg:px-8"><div className="flex justify-between items-center h-16">
                 <div className="flex items-center">
-                     <button onClick={toggleSidebar} className="mr-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                     <button onClick={toggleSidebar} className="mr-3 text-gray-400 hover:text-gray-200">
                         <Menu size={24} />
                      </button>
-                    <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{getHeaderTitle()}</h1>
+                    <h1 className="text-xl font-semibold text-gray-200">{getHeaderTitle()}</h1>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
                      <button 
                         onClick={toggleLanguage} 
-                        className="p-2 text-2xl rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors"
+                        className="p-2 text-2xl rounded-full text-gray-400 hover:bg-gray-700/70 transition-colors"
                         title={t('language')}
                     >
                          {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
                      </button>
-                    <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
+                    <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
                     <div className="relative" ref={exportMenuRef}>
-                        <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
+                        <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
                            {isExporting ? <LoaderIcon size={16} className="animate-spin" /> : <FileDown size={16} />} 
                            <span className="hidden sm:inline">{isExporting ? t('generating_pdf') : t('export')}</span>
                         </button>
                         {isExportMenuOpen && (
-                             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
                                 <div className="py-1" role="menu" aria-orientation="vertical">
                                     <button
                                         onClick={() => { onExportPDF(); setIsExportMenuOpen(false); }}
-                                        className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                                         role="menuitem"
                                     >
                                         <FileText size={16} />
@@ -224,7 +223,7 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                                     </button>
                                      <button
                                         onClick={() => { onGetShareLink(); setIsExportMenuOpen(false); }}
-                                        className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                                         role="menuitem"
                                     >
                                         <Link2 size={16} />
@@ -275,22 +274,22 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
-                <div className="p-6 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('Editar Perfil')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+                <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Editar Perfil')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="flex flex-col items-center">
                         <img 
                             src={photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=random&color=fff&size=128`} 
                             alt="Avatar" 
-                            className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-200 dark:border-gray-700"
+                            className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-700"
                         />
                          <button 
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                            className="text-sm text-blue-400 hover:underline"
                         >
                             {t('Alterar foto')}
                         </button>
@@ -303,16 +302,16 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Nome')}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+                        <label className="block text-sm font-medium text-gray-300">{t('Nome')}</label>
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('URL da Foto')}</label>
-                        <input type="text" value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder={t('Ou cole a URL da imagem aqui')} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+                        <label className="block text-sm font-medium text-gray-300">{t('URL da Foto')}</label>
+                        <input type="text" value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder={t('Ou cole a URL da imagem aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
                     </div>
                 </div>
-                <div className="p-6 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">{t('cancel')}</button>
+                <div className="p-6 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">{t('cancel')}</button>
                     <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"><Save size={18}/> {t('save')}</button>
                 </div>
             </div>
@@ -572,7 +571,7 @@ function AppLogic() {
 
 
     if (loading) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
     }
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -625,7 +624,7 @@ function AppLogic() {
 
 
     return (
-        <div className={`flex h-screen bg-gray-100 dark:bg-gray-900 font-sans`}>
+        <div className={`flex h-screen bg-gray-900 font-sans`}>
              <Sidebar 
                 isCollapsed={isSidebarCollapsed}
                 isMobileOpen={isMobileSidebarOpen}

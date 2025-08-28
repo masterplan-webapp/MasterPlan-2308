@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
 import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
@@ -41,7 +41,7 @@ const ChannelDisplay: React.FC<{ channel: string, className?: string }> = ({ cha
 
 // --- Reusable UI Components ---
 export const Card: React.FC<CardProps> = ({ children, className, onClick }) => {
-    const baseClasses = "bg-white dark:bg-gray-800 shadow-sm rounded-lg p-6";
+    const baseClasses = "bg-gray-800 shadow-sm rounded-lg p-6";
     const clickableClasses = onClick ? "cursor-pointer hover:shadow-md transition-shadow" : "";
     return (
         <div className={`${baseClasses} ${clickableClasses} ${className}`} onClick={onClick}>
@@ -60,7 +60,7 @@ export const CharacterCountInput: React.FC<CharacterCountInputProps> = ({ value,
         maxLength,
         placeholder,
         onBlur,
-        className: `w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 ${isError ? 'ring-red-500 border-red-500' : 'focus:ring-blue-500 focus:border-transparent'}`
+        className: `w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 ${isError ? 'ring-red-500 border-red-500' : 'focus:ring-blue-500 focus:border-transparent'}`
     };
 
     return (
@@ -70,7 +70,7 @@ export const CharacterCountInput: React.FC<CharacterCountInputProps> = ({ value,
             ) : (
                 <input type="text" {...commonProps} />
             )}
-            <p className={`text-xs mt-1 text-right ${isError ? 'text-red-500 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}>
+            <p className={`text-xs mt-1 text-right ${isError ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
                 {remaining}
             </p>
         </div>
@@ -83,10 +83,10 @@ export const AIResponseModal: React.FC<AIResponseModalProps> = ({ isOpen, onClos
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2"><Sparkles className="text-blue-500"/> {title}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2"><Sparkles className="text-blue-500"/> {title}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6 max-h-[60vh] overflow-y-auto">
                     {isLoading ? (
@@ -95,15 +95,15 @@ export const AIResponseModal: React.FC<AIResponseModalProps> = ({ isOpen, onClos
                         </div>
                     ) : (
                         <div 
-                            className="dark:text-gray-300 space-y-4 
-                                       [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:dark:text-gray-100 [&_h3]:mb-4 [&_h3]:pb-2 [&_h3]:border-b [&_h3]:border-gray-200 [&_h3]:dark:border-gray-600
-                                       [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-gray-800 [&_h4]:dark:text-gray-200 [&_h4]:mt-6 [&_h4]:mb-2
+                            className="text-gray-300 space-y-4 
+                                       [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:text-gray-100 [&_h3]:mb-4 [&_h3]:pb-2 [&_h3]:border-b [&_h3]:border-gray-600
+                                       [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-gray-200 [&_h4]:mt-6 [&_h4]:mb-2
                                        [&_p]:text-base [&_p]:leading-relaxed [&_p]:mb-4"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
                     )}
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end">
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end">
                     <button onClick={onClose} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('close')}</button>
                 </div>
             </div>
@@ -198,27 +198,27 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-start z-50 p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8 animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{campaignData ? t('Editar Campanha') : t('Nova Campanha')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8 animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{campaignData ? t('Editar Campanha') : t('Nova Campanha')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
 
                 <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
                     {/* Coluna 1: Planejamento */}
                     <div className="md:col-span-2 space-y-4">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2 mb-2">Planejamento Estratégico</h3>
+                        <h3 className="text-lg font-medium text-gray-100 border-b pb-2 mb-2">Planejamento Estratégico</h3>
                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Tipo Campanha')}</label>
-                                <select value={campaign.tipoCampanha || ''} onChange={(e) => handleChange('tipoCampanha', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <label className="block text-sm font-medium text-gray-300">{t('Tipo Campanha')}</label>
+                                <select value={campaign.tipoCampanha || ''} onChange={(e) => handleChange('tipoCampanha', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="">{t('Selecione')}</option>
                                     {OPTIONS.tipoCampanha.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Etapa Funil')}</label>
-                                <select value={campaign.etapaFunil || ''} onChange={(e) => handleChange('etapaFunil', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <label className="block text-sm font-medium text-gray-300">{t('Etapa Funil')}</label>
+                                <select value={campaign.etapaFunil || ''} onChange={(e) => handleChange('etapaFunil', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="">{t('Selecione')}</option>
                                     {OPTIONS.etapaFunil.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
@@ -226,76 +226,76 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
                          </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Canal')}</label>
-                                <select value={campaign.canal || ''} onChange={(e) => handleChange('canal', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <label className="block text-sm font-medium text-gray-300">{t('Canal')}</label>
+                                <select value={campaign.canal || ''} onChange={(e) => handleChange('canal', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                      <option value="">{t('Selecione')}</option>
                                      {OPTIONS.canal.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
                              </div>
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Formato')}</label>
+                                <label className="block text-sm font-medium text-gray-300">{t('Formato')}</label>
                                 {isAddingFormat ? (
                                     <div className="flex gap-2">
                                         <input 
                                             type="text"
                                             value={newFormat}
                                             onChange={(e) => setNewFormat(e.target.value)}
-                                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200"
+                                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200"
                                             placeholder="Nome do formato"
                                             autoFocus
                                         />
                                         <button onClick={handleAddFormat} className="mt-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm">{t('save')}</button>
-                                        <button onClick={() => setIsAddingFormat(false)} className="mt-1 px-3 py-2 bg-gray-200 dark:bg-gray-600 rounded-md text-sm"><X size={16}/></button>
+                                        <button onClick={() => setIsAddingFormat(false)} className="mt-1 px-3 py-2 bg-gray-600 rounded-md text-sm"><X size={16}/></button>
                                     </div>
                                 ) : (
                                     <div className="flex gap-2">
                                         <select 
                                             value={campaign.formato || ''} 
                                             onChange={(e) => handleChange('formato', e.target.value)} 
-                                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             disabled={!campaign.canal}
                                         >
                                             <option value="">{t(campaign.canal ? 'Selecione' : 'Selecione um canal')}</option>
                                             {availableFormats.map(o => <option key={o} value={o}>{o}</option>)}
                                         </select>
-                                        <button onClick={() => setIsAddingFormat(true)} className="mt-1 p-2 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"><PlusCircle size={20} /></button>
+                                        <button onClick={() => setIsAddingFormat(true)} className="mt-1 p-2 bg-gray-600 rounded-md hover:bg-gray-500"><PlusCircle size={20} /></button>
                                     </div>
                                 )}
                              </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Objetivo')}</label>
-                            <input type="text" value={campaign.objetivo || ''} onChange={(e) => handleChange('objetivo', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <label className="block text-sm font-medium text-gray-300">{t('Objetivo')}</label>
+                            <input type="text" value={campaign.objetivo || ''} onChange={(e) => handleChange('objetivo', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('KPI')}</label>
-                            <input type="text" value={campaign.kpi || ''} onChange={(e) => handleChange('kpi', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <label className="block text-sm font-medium text-gray-300">{t('KPI')}</label>
+                            <input type="text" value={campaign.kpi || ''} onChange={(e) => handleChange('kpi', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         </div>
                         <div>
-                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Público-Alvo')}</label>
-                           <textarea value={campaign.publicoAlvo || ''} onChange={(e) => handleChange('publicoAlvo', e.target.value)} rows={3} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                           <button onClick={handleSuggestAudience} disabled={isAISuggestionLoading} className="mt-2 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 disabled:opacity-50">
+                           <label className="block text-sm font-medium text-gray-300">{t('Público-Alvo')}</label>
+                           <textarea value={campaign.publicoAlvo || ''} onChange={(e) => handleChange('publicoAlvo', e.target.value)} rows={3} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                           <button onClick={handleSuggestAudience} disabled={isAISuggestionLoading} className="mt-2 flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 disabled:opacity-50">
                                 {isAISuggestionLoading ? <LoaderIcon size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                 {t('Sugerir Público com IA')}
                            </button>
                            {aiSuggestion && (
-                               <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md text-sm text-blue-800 dark:text-blue-200">
+                               <div className="mt-2 p-3 bg-blue-900/20 border border-blue-800 rounded-md text-sm text-blue-200">
                                    <p>{aiSuggestion}</p>
                                    <button onClick={() => { handleChange('publicoAlvo', aiSuggestion); setAISuggestion(''); }} className="mt-2 text-xs font-bold hover:underline">{t('Aplicar')}</button>
                                </div>
                            )}
                         </div>
                         
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2 pt-4 mb-2">Orçamento e Compra</h3>
+                        <h3 className="text-lg font-medium text-gray-100 border-b pb-2 pt-4 mb-2">Orçamento e Compra</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Budget (R$)')}</label>
-                                <input type="number" step="100" value={campaign.budget || ''} onChange={(e) => handleChange('budget', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                <label className="block text-sm font-medium text-gray-300">{t('Budget (R$)')}</label>
+                                <input type="number" step="100" value={campaign.budget || ''} onChange={(e) => handleChange('budget', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                              </div>
                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Unidade de Compra')}</label>
-                                <select value={campaign.unidadeCompra || ''} onChange={(e) => handleChange('unidadeCompra', e.target.value)} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <label className="block text-sm font-medium text-gray-300">{t('Unidade de Compra')}</label>
+                                <select value={campaign.unidadeCompra || ''} onChange={(e) => handleChange('unidadeCompra', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="">{t('Selecione')}</option>
                                     {OPTIONS.unidadeCompra.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
@@ -305,55 +305,55 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
                     </div>
 
                     {/* Coluna 2: Métricas */}
-                    <div className="md:col-span-1 space-y-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border dark:border-gray-700">
-                         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2 mb-2">{t('Métricas Estimadas')}</h3>
+                    <div className="md:col-span-1 space-y-4 bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                         <h3 className="text-lg font-medium text-gray-100 border-b pb-2 mb-2">{t('Métricas Estimadas')}</h3>
                          <div className="grid grid-cols-2 gap-4">
                              <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Impressões')}</label>
-                                <input type="number" value={Math.round(campaign.impressoes || 0)} onChange={(e) => handleChange('impressoes', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('Impressões')}</label>
+                                <input type="number" value={Math.round(campaign.impressoes || 0)} onChange={(e) => handleChange('impressoes', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Cliques')}</label>
-                                <input type="number" value={Math.round(campaign.cliques || 0)} onChange={(e) => handleChange('cliques', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('Cliques')}</label>
+                                <input type="number" value={Math.round(campaign.cliques || 0)} onChange={(e) => handleChange('cliques', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('CTR (%)')}</label>
-                                <input type="number" step="0.01" value={campaign.ctr || ''} onChange={(e) => handleChange('ctr', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('CTR (%)')}</label>
+                                <input type="number" step="0.01" value={campaign.ctr || ''} onChange={(e) => handleChange('ctr', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('CPC (R$)')}</label>
-                                <input type="number" step="0.01" value={Number(campaign.cpc).toFixed(2) || ''} onChange={(e) => handleChange('cpc', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('CPC (R$)')}</label>
+                                <input type="number" step="0.01" value={Number(campaign.cpc).toFixed(2) || ''} onChange={(e) => handleChange('cpc', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('CPM (R$)')}</label>
-                                <input type="number" step="0.01" value={Number(campaign.cpm).toFixed(2) || ''} onChange={(e) => handleChange('cpm', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('CPM (R$)')}</label>
+                                <input type="number" step="0.01" value={Number(campaign.cpm).toFixed(2) || ''} onChange={(e) => handleChange('cpm', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                              <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Taxa de Conversão (%)')}</label>
-                                <input type="number" step="0.01" value={campaign.taxaConversao || ''} onChange={(e) => handleChange('taxaConversao', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('Taxa de Conversão (%)')}</label>
+                                <input type="number" step="0.01" value={campaign.taxaConversao || ''} onChange={(e) => handleChange('taxaConversao', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Connect Rate (%)')}</label>
-                                <input type="number" step="1" value={campaign.connectRate || ''} onChange={(e) => handleChange('connectRate', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm"/>
+                                <label className="block text-xs font-medium text-gray-400">{t('Connect Rate (%)')}</label>
+                                <input type="number" step="1" value={campaign.connectRate || ''} onChange={(e) => handleChange('connectRate', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Conversões')}</label>
-                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-200 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 text-sm font-semibold">{formatNumber(campaign.conversoes)}</p>
+                                <label className="block text-xs font-medium text-gray-400">{t('Conversões')}</label>
+                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-700/50 text-gray-200 text-sm font-semibold">{formatNumber(campaign.conversoes)}</p>
                              </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('Visitas')}</label>
-                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-200 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 text-sm font-semibold">{formatNumber(campaign.visitas)}</p>
+                                <label className="block text-xs font-medium text-gray-400">{t('Visitas')}</label>
+                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-700/50 text-gray-200 text-sm font-semibold">{formatNumber(campaign.visitas)}</p>
                              </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">{t('CPA (R$)')}</label>
-                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-200 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 text-sm font-semibold">{formatCurrency(campaign.cpa)}</p>
+                                <label className="block text-xs font-medium text-gray-400">{t('CPA (R$)')}</label>
+                                <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-700/50 text-gray-200 text-sm font-semibold">{formatCurrency(campaign.cpa)}</p>
                              </div>
                          </div>
                     </div>
                 </div>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">{t('cancel')}</button>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
                     <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"><Save size={18}/> {t('Salvar Campanha')}</button>
                 </div>
             </div>
@@ -393,22 +393,22 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onCl
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-xl animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('Configurações do Plano')}</h2>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-xl animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Configurações do Plano')}</h2>
                      <div className="flex items-center gap-2">
-                         <button onClick={() => onRename(planData)} className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white" title={t('Rename')}><Edit size={18} /></button>
-                         <button onClick={() => onDuplicate(planData)} className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white" title={t('Duplicate Plan')}><CopyIcon size={18} /></button>
-                         <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+                         <button onClick={() => onRename(planData)} className="p-2 text-gray-400 hover:text-white" title={t('Rename')}><Edit size={18} /></button>
+                         <button onClick={() => onDuplicate(planData)} className="p-2 text-gray-400 hover:text-white" title={t('Duplicate Plan')}><CopyIcon size={18} /></button>
+                         <button onClick={onClose} className="p-2 text-gray-400 hover:text-white"><X size={24} /></button>
                      </div>
                 </div>
                 <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                          <div className="sm:col-span-1">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Logotipo')}</label>
-                            <img src={details.logoUrl || 'https://placehold.co/400x300/e2e8f0/e2e8f0'} alt="Logo" className="mt-1 w-full aspect-square object-cover rounded-md bg-gray-200 dark:bg-gray-700"/>
+                            <label className="block text-sm font-medium text-gray-300">{t('Logotipo')}</label>
+                            <img src={details.logoUrl || 'https://placehold.co/400x300/e2e8f0/e2e8f0'} alt="Logo" className="mt-1 w-full aspect-square object-cover rounded-md bg-gray-700"/>
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                            <button onClick={() => fileInputRef.current?.click()} className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <button onClick={() => fileInputRef.current?.click()} className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-200 bg-gray-800 hover:bg-gray-700">
                                 <Upload size={16} /> {t('Upload')}
                             </button>
                             <input
@@ -416,43 +416,43 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onCl
                                 value={details.logoUrl || ''}
                                 onChange={(e) => setDetails(prev => ({ ...prev, logoUrl: e.target.value }))}
                                 placeholder={t('Cole a URL do logotipo aqui')}
-                                className="mt-2 w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                                className="mt-2 w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                             />
                          </div>
                          <div className="sm:col-span-2 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Nome da Campanha')}</label>
-                                <input type="text" value={details.campaignName || ''} readOnly className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 cursor-not-allowed"/>
+                                <label className="block text-sm font-medium text-gray-300">{t('Nome da Campanha')}</label>
+                                <input type="text" value={details.campaignName || ''} readOnly className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700/50 text-gray-200 cursor-not-allowed"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Objetivo Geral')}</label>
-                                <textarea value={details.objective || ''} onChange={(e) => setDetails(prev => ({...prev, objective: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                <label className="block text-sm font-medium text-gray-300">{t('Objetivo Geral')}</label>
+                                <textarea value={details.objective || ''} onChange={(e) => setDetails(prev => ({...prev, objective: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Público-Alvo Principal')}</label>
-                                <textarea value={details.targetAudience || ''} onChange={(e) => setDetails(prev => ({...prev, targetAudience: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                <label className="block text-sm font-medium text-gray-300">{t('Público-Alvo Principal')}</label>
+                                <textarea value={details.targetAudience || ''} onChange={(e) => setDetails(prev => ({...prev, targetAudience: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                             </div>
                          </div>
                      </div>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Praça')}</label>
-                            <input type="text" value={details.location || ''} onChange={(e) => setDetails(prev => ({...prev, location: e.target.value}))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <label className="block text-sm font-medium text-gray-300">{t('Praça')}</label>
+                            <input type="text" value={details.location || ''} onChange={(e) => setDetails(prev => ({...prev, location: e.target.value}))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Período')}</label>
-                             <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-gray-200 h-[42px] flex items-center">
+                            <label className="block text-sm font-medium text-gray-300">{t('Período')}</label>
+                             <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-700/50 text-gray-200 h-[42px] flex items-center">
                                 {Object.keys(planData.months || {}).length} {t('Meses')}
                             </p>
                         </div>
                      </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Investimento Total Planejado (R$)')}</label>
-                        <input type="number" value={details.totalInvestment || 0} onChange={(e) => setDetails(prev => ({...prev, totalInvestment: parseFloat(e.target.value) || 0}))} className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        <label className="block text-sm font-medium text-gray-300">{t('Investimento Total Planejado (R$)')}</label>
+                        <input type="number" value={details.totalInvestment || 0} onChange={(e) => setDetails(prev => ({...prev, totalInvestment: parseFloat(e.target.value) || 0}))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">{t('cancel')}</button>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
                     <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"><Save size={18}/> {t('save')}</button>
                 </div>
             </div>
@@ -479,23 +479,23 @@ export const RenamePlanModal: React.FC<RenamePlanModalProps> = ({ isOpen, onClos
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('Rename Plan')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Rename Plan')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
-                    <label htmlFor="plan-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Plan Name')}</label>
+                    <label htmlFor="plan-name" className="block text-sm font-medium text-gray-300">{t('Plan Name')}</label>
                     <input 
                         id="plan-name"
                         type="text" 
                         value={newName} 
                         onChange={e => setNewName(e.target.value)}
-                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">{t('cancel')}</button>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
                     <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"><Save size={18}/> {t('save')}</button>
                 </div>
             </div>
@@ -534,17 +534,17 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
                         <Sparkles className="text-blue-500"/>
                         {title || t('Sugestões de Criativos (IA)')}
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6 max-h-[70vh] overflow-y-auto">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                             <LoaderIcon className="animate-spin text-blue-500" size={40}/>
                             <p className="mt-4">{t('Gerando sugestões...')}</p>
                         </div>
@@ -554,11 +554,11 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
                                 {Object.entries(suggestions).map(([type, texts]) => (
                                     <div key={type}>
                                         <div className="flex justify-between items-center mb-2">
-                                            <h3 className="text-lg font-semibold capitalize text-gray-900 dark:text-gray-100">{t(type)}</h3>
+                                            <h3 className="text-lg font-semibold capitalize text-gray-100">{t(type)}</h3>
                                             {onApplyAllSuggestions && (
                                                 <button 
                                                     onClick={() => handleApplyAll(type, texts)} 
-                                                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                                    className="text-sm font-medium text-blue-400 hover:underline"
                                                 >
                                                     {t('Aplicar Todos')}
                                                 </button>
@@ -568,8 +568,8 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
                                             {texts.map((text, index) => {
                                                 const isApplied = applied[type]?.includes(index);
                                                 return (
-                                                    <li key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-                                                        <p className="text-gray-800 dark:text-gray-200">{text}</p>
+                                                    <li key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-md">
+                                                        <p className="text-gray-200">{text}</p>
                                                         <button 
                                                             onClick={() => handleApply(type, text, index)}
                                                             disabled={isApplied}
@@ -595,7 +595,7 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
                                 ))}
                             </div>
                         ) : (
-                             <div className="flex flex-col items-center justify-center h-64 text-gray-600 dark:text-gray-400">
+                             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                                 <AlertTriangle size={40} className="mb-4 text-yellow-500"/>
                                 <p>{t('Nenhuma sugestão gerada ou erro ao buscar sugestões.')}</p>
                              </div>
@@ -611,21 +611,20 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
 export const LoginPage: React.FC = () => {
     const { signInWithGoogle } = useAuth();
     const { t } = useLanguage();
-    const { theme } = useTheme();
 
     return (
-        <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+        <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
             <Card className="max-w-md w-full text-center shadow-2xl">
                 <img 
-                  src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} 
+                  src={LOGO_DARK} 
                   alt="MasterPlan Logo" 
                   className="mx-auto h-16 mb-4"
                 />
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
-                <p className="mt-2 mb-8 text-gray-600 dark:text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
+                <h1 className="text-3xl font-bold text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
+                <p className="mt-2 mb-8 text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
                 <button 
                     onClick={signInWithGoogle}
-                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-900 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
+                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
                 >
                     <svg className="w-6 h-6" viewBox="0 0 48 48">
                       <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
@@ -644,22 +643,22 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated })
     const { t } = useLanguage();
 
     return (
-        <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+        <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
             <Card className="max-w-4xl w-full text-center">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('welcome_to_masterplan')}</h1>
-                <p className="mt-2 mb-8 text-lg text-gray-600 dark:text-gray-400">{t('create_first_plan')}</p>
+                <h1 className="text-3xl font-bold text-gray-100">{t('welcome_to_masterplan')}</h1>
+                <p className="mt-2 mb-8 text-lg text-gray-400">{t('create_first_plan')}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button onClick={() => onPlanCreated('ai')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><Sparkles className="text-blue-500"/> {t('create_with_ai')}</h2>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">{t('ai_description')}</p>
+                    <button onClick={() => onPlanCreated('ai')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sparkles className="text-blue-500"/> {t('create_with_ai')}</h2>
+                        <p className="mt-2 text-gray-400">{t('ai_description')}</p>
                     </button>
-                    <button onClick={() => onPlanCreated('template')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><Sheet className="text-green-500"/> {t('create_from_template')}</h2>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">{t('template_description')}</p>
+                    <button onClick={() => onPlanCreated('template')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sheet className="text-green-500"/> {t('create_from_template')}</h2>
+                        <p className="mt-2 text-gray-400">{t('template_description')}</p>
                     </button>
-                    <button onClick={() => onPlanCreated('blank')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><FilePlus2 className="text-gray-500"/> {t('start_blank')}</h2>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">{t('blank_description')}</p>
+                    <button onClick={() => onPlanCreated('blank')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><FilePlus2 className="text-gray-500"/> {t('start_blank')}</h2>
+                        <p className="mt-2 text-gray-400">{t('blank_description')}</p>
                     </button>
                 </div>
             </Card>
@@ -678,24 +677,24 @@ export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = (
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('create_new_plan')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('create_new_plan')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <button onClick={() => handleChoice('ai')} className="text-left p-6 border rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all dark:border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><Sparkles className="text-blue-500"/> {t('create_with_ai')}</h2>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">{t('ai_description')}</p>
+                         <button onClick={() => handleChoice('ai')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all border-gray-700">
+                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sparkles className="text-blue-500"/> {t('create_with_ai')}</h2>
+                            <p className="mt-2 text-gray-400">{t('ai_description')}</p>
                         </button>
-                        <button onClick={() => handleChoice('template')} className="text-left p-6 border rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all dark:border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><Sheet className="text-green-500"/> {t('create_from_template')}</h2>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">{t('template_description')}</p>
+                        <button onClick={() => handleChoice('template')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all border-gray-700">
+                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sheet className="text-green-500"/> {t('create_from_template')}</h2>
+                            <p className="mt-2 text-gray-400">{t('template_description')}</p>
                         </button>
-                        <button onClick={() => handleChoice('blank')} className="text-left p-6 border rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all dark:border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100"><FilePlus2 className="text-gray-500"/> {t('start_blank')}</h2>
-                            <p className="mt-2 text-gray-600 dark:text-gray-400">{t('blank_description')}</p>
+                        <button onClick={() => handleChoice('blank')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all border-gray-700">
+                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><FilePlus2 className="text-gray-500"/> {t('start_blank')}</h2>
+                            <p className="mt-2 text-gray-400">{t('blank_description')}</p>
                         </button>
                     </div>
                 </div>
@@ -707,7 +706,6 @@ export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = (
 export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan }) => {
     const { t } = useLanguage();
     const { signOut } = useAuth();
-    const { theme } = useTheme();
     const [isChoiceModalOpen, setChoiceModalOpen] = useState(false);
     const [isRenameModalOpen, setRenameModalOpen] = useState(false);
     const [planToRename, setPlanToRename] = useState<PlanData | null>(null);
@@ -754,32 +752,32 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
         }, []);
 
         return (
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col">
+            <div className="bg-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col">
                 <div className="p-5 flex-grow">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-4">
                             <img src={plan.logoUrl || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=P'} alt="Logo" className="w-12 h-12 rounded-md object-cover bg-gray-200" />
                             <div>
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{plan.campaignName}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{plan.objective}</p>
+                                <h3 className="font-bold text-lg text-gray-100">{plan.campaignName}</h3>
+                                <p className="text-sm text-gray-400">{plan.objective}</p>
                             </div>
                         </div>
                         <div className="relative" ref={menuRef}>
-                             <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                             <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-full">
                                 <MoreVertical size={20}/>
                              </button>
                              {isMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10">
-                                    <button onClick={() => { setPlanToRename(plan); setRenameModalOpen(true); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('edit')}</button>
-                                    <button onClick={() => { handleDuplicate(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{t('duplicate')}</button>
-                                    <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                                    <button onClick={() => { handleDelete(plan.id); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">{t('delete')}</button>
+                                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10">
+                                    <button onClick={() => { setPlanToRename(plan); setRenameModalOpen(true); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('edit')}</button>
+                                    <button onClick={() => { handleDuplicate(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('duplicate')}</button>
+                                    <div className="border-t border-gray-700 my-1"></div>
+                                    <button onClick={() => { handleDelete(plan.id); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20">{t('delete')}</button>
                                 </div>
                              )}
                         </div>
                     </div>
                 </div>
-                <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/50">
+                <div className="px-5 py-3 bg-gray-800/50">
                     <button onClick={() => onSelectPlan(plan)} className="w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">{t('Abrir Plano')}</button>
                 </div>
             </div>
@@ -787,17 +785,17 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-            <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+        <div className="min-h-screen bg-gray-900">
+            <header className="bg-gray-800 shadow-sm sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <img src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} alt="MasterPlan Logo" className="h-8"/>
+                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8"/>
                          <div className="flex items-center gap-4">
                             <button onClick={onProfileClick} className="flex items-center gap-2">
                                 <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff`} alt="User avatar" className="w-8 h-8 rounded-full"/>
-                                <span className="hidden sm:inline font-medium text-gray-700 dark:text-gray-200">{user.displayName}</span>
+                                <span className="hidden sm:inline font-medium text-gray-200">{user.displayName}</span>
                             </button>
-                            <button onClick={signOut} className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" title={t('sign_out')}>
+                            <button onClick={signOut} className="p-2 text-gray-400 hover:bg-gray-700 rounded-full" title={t('sign_out')}>
                                 <LogOut size={20}/>
                             </button>
                          </div>
@@ -806,7 +804,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
             </header>
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('my_plans')}</h1>
+                    <h1 className="text-3xl font-bold text-gray-100">{t('my_plans')}</h1>
                     <button onClick={() => setChoiceModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors">
                         <PlusCircle size={20}/> {t('create_new_plan')}
                     </button>
@@ -818,8 +816,8 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                     </div>
                 ) : (
                     <div className="text-center py-20">
-                        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum plano encontrado')}</h2>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400">{t('Crie seu primeiro plano de mídia para começar.')}</p>
+                        <h2 className="text-2xl font-semibold text-gray-300">{t('Nenhum plano encontrado')}</h2>
+                        <p className="mt-2 text-gray-400">{t('Crie seu primeiro plano de mídia para começar.')}</p>
                     </div>
                 )}
             </main>
@@ -839,12 +837,12 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
 const MetricCard: React.FC<{ title: string; value: string | number; icon: React.ElementType, isCurrency?: boolean, isPercentage?: boolean, isReadOnly?: boolean }> = ({ title, value, icon: Icon, isReadOnly=false }) => {
     return (
         <Card className="flex items-start gap-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div className="p-3 bg-blue-900/30 rounded-lg">
+                <Icon className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+                <p className="text-sm text-gray-400">{title}</p>
+                <p className="text-2xl font-bold text-gray-100">{value}</p>
             </div>
         </Card>
     );
@@ -854,8 +852,8 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, cl
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white dark:bg-gray-800 p-2 border border-gray-200 dark:border-gray-700 rounded shadow-lg">
-                    <p className="label text-gray-900 dark:text-gray-100">{`${payload[0].name} : ${formatCurrency(payload[0].value)}`}</p>
+                <div className="bg-gray-800 p-2 border border-gray-700 rounded shadow-lg">
+                    <p className="label text-gray-100">{`${payload[0].name} : ${formatCurrency(payload[0].value)}`}</p>
                 </div>
             );
         }
@@ -892,7 +890,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, cl
     
     return (
         <Card className={`flex flex-col ${className}`}>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">{title}</h3>
             <div className="flex-grow w-full h-80">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -927,19 +925,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onProfileClick
     return (
         <div className="flex justify-between items-center mb-8">
             <div>
-                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('my_plans')}</h1>
+                 <h1 className="text-3xl font-bold text-gray-100">{t('my_plans')}</h1>
             </div>
             <div className="flex items-center gap-4">
                 <button 
                     onClick={onProfileClick}
-                    className="flex items-center gap-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    className="flex items-center gap-2 p-2 rounded-full hover:bg-gray-700"
                 >
                     <img 
                         src={user?.photoURL || ''} 
                         alt="User Avatar"
                         className="w-8 h-8 rounded-full"
                     />
-                    <span className="font-semibold hidden sm:inline text-gray-800 dark:text-gray-200">{user?.displayName}</span>
+                    <span className="font-semibold hidden sm:inline text-gray-200">{user?.displayName}</span>
                 </button>
             </div>
         </div>
@@ -986,7 +984,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ campaigns, title }) => {
 
     return (
         <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{title}</h2>
+            <h2 className="text-2xl font-bold text-gray-100 mb-6">{title}</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-6">
                 <ChartCard title={t("Investimento por Canal")} data={chartData.byChannel} dataKey="value" nameKey="name" />
                 <ChartCard title={t("Investimento por Tipo de Campanha")} data={chartData.byCampaignType} dataKey="value" nameKey="name" />
@@ -1078,12 +1076,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
             <Card>
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('Resumo do Plano')}</h2>
-                        <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <div><dt className="font-semibold text-gray-800 dark:text-gray-200 inline">{t('Objetivo')}:</dt> {planData.objective}</div>
-                            <div><dt className="font-semibold text-gray-800 dark:text-gray-200 inline">{t('Público-Alvo')}:</dt> {planData.targetAudience}</div>
-                            <div><dt className="font-semibold text-gray-800 dark:text-gray-200 inline">{t('Investimento Previsto')}:</dt> {formatCurrency(summary.budget)}</div>
-                            <div><dt className="font-semibold text-gray-800 dark:text-gray-200 inline">{t('Período')}:</dt> {sortedMonthKeys.length} {t('Meses')}</div>
+                        <h2 className="text-2xl font-bold text-gray-100">{t('Resumo do Plano')}</h2>
+                        <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-400">
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Objetivo')}:</dt> {planData.objective}</div>
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Público-Alvo')}:</dt> {planData.targetAudience}</div>
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Investimento Previsto')}:</dt> {formatCurrency(summary.budget)}</div>
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Período')}:</dt> {sortedMonthKeys.length} {t('Meses')}</div>
                         </dl>
                     </div>
                      <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -1111,11 +1109,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
 
              {/* Performance por Mês */}
             <div>
-                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{t('Performance por Mês')}</h2>
+                 <h2 className="text-2xl font-bold text-gray-100 mb-6">{t('Performance por Mês')}</h2>
                  <Card>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table className="w-full text-sm text-left text-gray-400">
+                            <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">{t('Mês')}</th>
                                     <th scope="col" className="px-6 py-3">{t('Invest. Total')}</th>
@@ -1133,9 +1131,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                     const [year, monthName] = month.split('-');
 
                                     return (
-                                        <tr key={month} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate(month); }} className="text-blue-600 dark:text-blue-500 hover:underline">
+                                        <tr key={month} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600">
+                                            <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">
+                                                <a href="#" onClick={(e) => { e.preventDefault(); onNavigate(month); }} className="text-blue-500 hover:underline">
                                                     {`${t(monthName)} ${year}`}
                                                 </a>
                                             </th>
@@ -1148,7 +1146,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                         </tr>
                                     );
                                 })}
-                                 <tr className="font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
+                                 <tr className="font-semibold text-white bg-gray-700">
                                     <th scope="row" className="px-6 py-3 text-base">{t('Totais')}</th>
                                     <td className="px-6 py-3">{formatCurrency(summary.budget)}</td>
                                     <td className="px-6 py-3">100%</td>
@@ -1161,7 +1159,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                         </table>
                     </div>
                      <div className="pt-4 text-center">
-                         <button onClick={onAddMonthClick} className="text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-2 mx-auto">
+                         <button onClick={onAddMonthClick} className="text-blue-400 hover:underline font-medium flex items-center gap-2 mx-auto">
                             <PlusCircle size={16}/> {t('Adicionar Mês')}
                          </button>
                     </div>
@@ -1230,23 +1228,23 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
         <div className="space-y-8">
             <Card>
                 <div className="flex flex-col sm:flex-row justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('Plano de Mídia - {month}', { month: `${t(monthName)} ${year}` })}</h2>
+                    <h2 className="text-2xl font-bold text-gray-100">{t('Plano de Mídia - {month}', { month: `${t(monthName)} ${year}` })}</h2>
                     <button onClick={handleNew} className="w-full mt-4 sm:mt-0 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
                         <PlusCircle size={18}/> {t('Nova Campanha')}
                     </button>
                 </div>
                  {campaigns.length === 0 ? (
                     <div className="text-center py-16">
-                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('Nenhuma campanha para este mês.')}</h3>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400">{t('Adicione a primeira campanha para começar o planejamento.')}</p>
+                        <h3 className="text-xl font-semibold text-gray-300">{t('Nenhuma campanha para este mês.')}</h3>
+                        <p className="mt-2 text-gray-400">{t('Adicione a primeira campanha para começar o planejamento.')}</p>
                         <button onClick={handleNew} className="mt-6 flex items-center justify-center gap-2 px-5 py-2.5 mx-auto bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
                             {t('Adicionar Primeira Campanha')}
                         </button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto mt-6">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table className="w-full text-sm text-left text-gray-400">
+                            <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                 <tr>
                                     <th className="px-4 py-3">{t('Tipo')}</th>
                                     <th className="px-4 py-3">{t('Funil')}</th>
@@ -1264,7 +1262,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                 {campaigns.map(c => {
                                     const share = totals.budget > 0 ? (Number(c.budget || 0) / totals.budget) * 100 : 0;
                                     return (
-                                        <tr key={c.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                        <tr key={c.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600">
                                             <td className="px-4 py-4">{c.tipoCampanha}</td>
                                             <td className="px-4 py-4">{c.etapaFunil}</td>
                                             <td className="px-4 py-4">{c.canal}</td>
@@ -1275,15 +1273,15 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                             <td className="px-4 py-4">{formatNumber(c.cliques)}</td>
                                             <td className="px-4 py-4">{formatNumber(c.conversoes)}</td>
                                             <td className="px-4 py-4 text-right">
-                                                 <button onClick={() => handleEdit(c)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"><Edit size={16}/></button>
-                                                 <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16}/></button>
+                                                 <button onClick={() => handleEdit(c)} className="p-2 text-gray-400 hover:text-blue-400"><Edit size={16}/></button>
+                                                 <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
                                             </td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                              <tfoot>
-                                <tr className="font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
+                                <tr className="font-semibold text-white bg-gray-700">
                                     <th colSpan={4} className="px-4 py-3 text-base">{t('Totais do Mês')}</th>
                                     <td className="px-4 py-3">{formatCurrency(totals.budget)}</td>
                                     <td className="px-4 py-3">{formatPercentage(totals.budget > 0 ? 100 : 0)}</td>
@@ -1460,20 +1458,20 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     return (
         <div className="space-y-6">
             <Card>
-                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('copy_builder')}</h2>
-                 <p className="mt-2 text-gray-600 dark:text-gray-400">Gere textos para seus anúncios com IA baseados no seu plano de mídia.</p>
+                 <h2 className="text-2xl font-bold text-gray-100">{t('copy_builder')}</h2>
+                 <p className="mt-2 text-gray-400">Gere textos para seus anúncios com IA baseados no seu plano de mídia.</p>
             </Card>
 
             {activeChannels.length > 0 ? (
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="lg:w-1/4">
-                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{t('Canal')}</h3>
+                         <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('Canal')}</h3>
                         <div className="space-y-2">
                              {activeChannels.map(channel => (
                                 <button
                                     key={channel}
                                     onClick={() => setActiveChannel(channel)}
-                                    className={`w-full text-left px-4 py-2 rounded-md font-medium transition-colors ${activeChannel === channel ? 'bg-blue-600 text-white shadow' : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                    className={`w-full text-left px-4 py-2 rounded-md font-medium transition-colors ${activeChannel === channel ? 'bg-blue-600 text-white shadow' : 'bg-gray-800 hover:bg-gray-700'}`}
                                 >
                                     {channel}
                                 </button>
@@ -1482,7 +1480,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                     </div>
                     <div className="lg:w-3/4">
                         <div className="flex justify-between items-center mb-4">
-                             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('Criativos para')} {activeChannel}</h3>
+                             <h3 className="text-lg font-semibold text-gray-100">{t('Criativos para')} {activeChannel}</h3>
                              <button onClick={handleAddGroup} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition-colors">
                                 <PlusCircle size={16}/> {t('Novo Grupo')}
                              </button>
@@ -1502,9 +1500,9 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                             ))}
 
                             {(!planData.creatives?.[activeChannel!] || planData.creatives?.[activeChannel!].length === 0) && (
-                                <div className="text-center py-12 border-2 border-dashed rounded-lg dark:border-gray-700">
-                                    <h4 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeChannel!})}</h4>
-                                    <p className="mt-2 text-gray-500 dark:text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
+                                <div className="text-center py-12 border-2 border-dashed rounded-lg border-gray-700">
+                                    <h4 className="text-xl font-semibold text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeChannel!})}</h4>
+                                    <p className="mt-2 text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
                                 </div>
                             )}
                         </div>
@@ -1513,8 +1511,8 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                 </div>
             ) : (
                 <Card className="text-center py-16">
-                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum canal ativo')}</h3>
-                    <p className="mt-2 text-gray-500 dark:text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
+                    <h3 className="text-xl font-semibold text-gray-300">{t('Nenhum canal ativo')}</h3>
+                    <p className="mt-2 text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
                 </Card>
             )}
 
@@ -1566,30 +1564,30 @@ export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestion
                     type="text" 
                     value={group.name} 
                     onChange={e => handleFieldChange('name', e.target.value)} 
-                    className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 text-gray-900 dark:text-gray-100"
+                    className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 text-gray-100"
                 />
                  <div className="flex items-center gap-2">
-                     <button onClick={onGenerateSuggestions} className="flex items-center gap-2 text-sm px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/60">
+                     <button onClick={onGenerateSuggestions} className="flex items-center gap-2 text-sm px-3 py-1.5 bg-blue-900/40 text-blue-300 rounded-md hover:bg-blue-900/60">
                          <Sparkles size={16}/> {t('Gerar Ideias')}
                      </button>
-                    <button onClick={() => onDelete(group.id)} className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"><Trash2 size={18}/></button>
+                    <button onClick={() => onDelete(group.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={18}/></button>
                  </div>
             </div>
              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('Contexto para a IA')}</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">{t('Contexto para a IA')}</label>
                 <textarea 
                     value={group.context} 
                     onChange={e => handleFieldChange('context', e.target.value)} 
                     placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
                     rows={3}
-                    className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {/* Headlines */}
                 <div>
-                    <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Títulos (Headlines)')} (30)</h4>
+                    <h4 className="font-semibold mb-2 text-gray-200">{t('Títulos (Headlines)')} (30)</h4>
                     <div className="space-y-2">
                         {group.headlines.map((h, i) => (
                              <div key={i} className="flex items-center gap-2">
@@ -1602,13 +1600,13 @@ export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestion
                                 {group.headlines.length > 1 && <button onClick={() => removeField('headlines', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
                             </div>
                         ))}
-                         <button onClick={() => addField('headlines')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('add')}</button>
+                         <button onClick={() => addField('headlines')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
                     </div>
                 </div>
 
                 {/* Long Headlines */}
                  <div>
-                    <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Títulos Longos (Long Headlines)')} (90)</h4>
+                    <h4 className="font-semibold mb-2 text-gray-200">{t('Títulos Longos (Long Headlines)')} (90)</h4>
                     <div className="space-y-2">
                         {(group.longHeadlines || []).map((h, i) => (
                              <div key={i} className="flex items-center gap-2">
@@ -1621,13 +1619,13 @@ export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestion
                                  {(group.longHeadlines || []).length > 1 && <button onClick={() => removeField('longHeadlines', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
                             </div>
                         ))}
-                         <button onClick={() => addField('longHeadlines')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('add')}</button>
+                         <button onClick={() => addField('longHeadlines')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
                     </div>
                 </div>
 
                 {/* Descriptions */}
                 <div>
-                    <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">{t('Descrições (Descriptions)')} (90)</h4>
+                    <h4 className="font-semibold mb-2 text-gray-200">{t('Descrições (Descriptions)')} (90)</h4>
                     <div className="space-y-2">
                         {group.descriptions.map((d, i) => (
                              <div key={i} className="flex items-center gap-2">
@@ -1640,7 +1638,7 @@ export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestion
                                 {group.descriptions.length > 1 && <button onClick={() => removeField('descriptions', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
                             </div>
                         ))}
-                         <button onClick={() => addField('descriptions')} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">{t('add')}</button>
+                         <button onClick={() => addField('descriptions')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
                     </div>
                 </div>
             </div>
@@ -1651,7 +1649,7 @@ export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestion
 const TooltipIcon: React.FC<{ tooltip: string }> = ({ tooltip }) => {
     return (
         <div className="relative flex items-center group">
-            <HelpCircle size={14} className="text-gray-400 dark:text-gray-500" />
+            <HelpCircle size={14} className="text-gray-500" />
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                 {tooltip}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
@@ -1736,50 +1734,52 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
         return [...(planData.utmLinks || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [planData.utmLinks]);
 
+    const inputStyle = "mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
                 <Card>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">{t('utm_builder')}</h2>
+                    <h2 className="text-2xl font-bold text-gray-100 mb-6">{t('utm_builder')}</h2>
                     <div className="space-y-4">
                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('URL do Site *')} <TooltipIcon tooltip={t('utm_url_helper')} /></label>
-                             <input type="url" value={utm.url} onChange={e => setUtm({...utm, url: e.target.value})} className="mt-1 block w-full input-style" placeholder="https://www.seusite.com.br"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('URL do Site *')} <TooltipIcon tooltip={t('utm_url_helper')} /></label>
+                             <input type="url" value={utm.url} onChange={e => setUtm({...utm, url: e.target.value})} className={inputStyle} placeholder="https://www.seusite.com.br"/>
                         </div>
                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('Campaign Source *')} <TooltipIcon tooltip={t('utm_source_helper')} /></label>
-                             <input type="text" value={utm.source} onChange={e => setUtm({...utm, source: e.target.value})} className="mt-1 block w-full input-style" placeholder="google"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Source *')} <TooltipIcon tooltip={t('utm_source_helper')} /></label>
+                             <input type="text" value={utm.source} onChange={e => setUtm({...utm, source: e.target.value})} className={inputStyle} placeholder="google"/>
                         </div>
                          <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('Campaign Medium *')} <TooltipIcon tooltip={t('utm_medium_helper')} /></label>
-                             <input type="text" value={utm.medium} onChange={e => setUtm({...utm, medium: e.target.value})} className="mt-1 block w-full input-style" placeholder="cpc"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Medium *')} <TooltipIcon tooltip={t('utm_medium_helper')} /></label>
+                             <input type="text" value={utm.medium} onChange={e => setUtm({...utm, medium: e.target.value})} className={inputStyle} placeholder="cpc"/>
                         </div>
                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('Campaign Name *')} <TooltipIcon tooltip={t('utm_campaign_helper')} /></label>
-                             <input type="text" value={utm.campaign} onChange={e => setUtm({...utm, campaign: e.target.value})} className="mt-1 block w-full input-style" placeholder="promocao_verao"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Name *')} <TooltipIcon tooltip={t('utm_campaign_helper')} /></label>
+                             <input type="text" value={utm.campaign} onChange={e => setUtm({...utm, campaign: e.target.value})} className={inputStyle} placeholder="promocao_verao"/>
                         </div>
                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('Campaign Term')} <TooltipIcon tooltip={t('utm_term_helper')} /></label>
-                             <input type="text" value={utm.term} onChange={e => setUtm({...utm, term: e.target.value})} className="mt-1 block w-full input-style" placeholder="tenis_corrida"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Term')} <TooltipIcon tooltip={t('utm_term_helper')} /></label>
+                             <input type="text" value={utm.term} onChange={e => setUtm({...utm, term: e.target.value})} className={inputStyle} placeholder="tenis_corrida"/>
                         </div>
                          <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('Campaign Content')} <TooltipIcon tooltip={t('utm_content_helper')} /></label>
-                             <input type="text" value={utm.content} onChange={e => setUtm({...utm, content: e.target.value})} className="mt-1 block w-full input-style" placeholder="banner_azul"/>
+                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Content')} <TooltipIcon tooltip={t('utm_content_helper')} /></label>
+                             <input type="text" value={utm.content} onChange={e => setUtm({...utm, content: e.target.value})} className={inputStyle} placeholder="banner_azul"/>
                         </div>
                     </div>
                     <button onClick={generateUrl} disabled={!isFormValid} className="mt-6 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed">{t('Gerar URL')}</button>
                     {generatedUrl && (
-                        <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('URL Gerada')}</label>
+                        <div className="mt-6 p-4 bg-gray-700 rounded-lg">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">{t('URL Gerada')}</label>
                             <div className="relative">
-                                <textarea readOnly value={generatedUrl} className="w-full p-2 pr-10 border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm" rows={4}></textarea>
-                                 <button onClick={copyToClipboard} className="absolute top-2 right-2 p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md">
+                                <textarea readOnly value={generatedUrl} className="w-full p-2 pr-10 border-gray-600 rounded-md bg-gray-800 text-sm" rows={4}></textarea>
+                                 <button onClick={copyToClipboard} className="absolute top-2 right-2 p-1.5 text-gray-500 hover:bg-gray-600 rounded-md">
                                     {copied ? <Check size={16} className="text-green-500" /> : <CopyIcon size={16} />}
                                 </button>
                             </div>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={handleSaveLink} className="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 text-sm">{t('Salvar Link')}</button>
-                                <button onClick={clearForm} className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-500 text-gray-800 dark:text-gray-200 font-semibold rounded-md hover:bg-gray-400 dark:hover:bg-gray-600 text-sm">{t('Limpar')}</button>
+                                <button onClick={clearForm} className="flex-1 px-4 py-2 bg-gray-500 text-gray-200 font-semibold rounded-md hover:bg-gray-600 text-sm">{t('Limpar')}</button>
                             </div>
                         </div>
                     )}
@@ -1788,9 +1788,9 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
             <div className="lg:col-span-2">
                  <Card>
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('Links Salvos')}</h2>
+                        <h2 className="text-2xl font-bold text-gray-100">{t('Links Salvos')}</h2>
                         <div className="relative">
-                             <button onClick={() => {}} className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-sm rounded-md hover:bg-gray-200 dark:hover:bg-gray-600">
+                             <button onClick={() => {}} className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600">
                                 {t('export')} <ChevronDown size={16} />
                              </button>
                              {/* Export dropdown menu to be added here */}
@@ -1799,7 +1799,7 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
                      {sortedLinks.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                     <tr>
                                         <th className="px-4 py-3">{t('Data')}</th>
                                         <th className="px-4 py-3">{t('Campaign Name *')}</th>
@@ -1809,14 +1809,14 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
                                 </thead>
                                 <tbody>
                                     {sortedLinks.map(link => (
-                                        <tr key={link.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600/30">
+                                        <tr key={link.id} className="border-b border-gray-700 hover:bg-gray-600/30">
                                             <td className="px-4 py-4">{new Date(link.createdAt).toLocaleDateString()}</td>
                                             <td className="px-4 py-4">{link.campaign}</td>
                                             <td className="px-4 py-4 max-w-xs truncate">
                                                  <a href={link.fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{link.fullUrl}</a>
                                             </td>
                                             <td className="px-4 py-4 text-right">
-                                                 <button onClick={() => handleDeleteLink(link.id)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"><Trash2 size={16}/></button>
+                                                 <button onClick={() => handleDeleteLink(link.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1824,9 +1824,9 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
                             </table>
                         </div>
                     ) : (
-                        <div className="text-center py-12 border-2 border-dashed rounded-lg dark:border-gray-700">
-                            <h4 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('Nenhum link salvo ainda.')}</h4>
-                            <p className="mt-2 text-gray-500 dark:text-gray-400">Use o construtor ao lado para começar.</p>
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg border-gray-700">
+                            <h4 className="text-xl font-semibold text-gray-300">{t('Nenhum link salvo ainda.')}</h4>
+                            <p className="mt-2 text-gray-400">Use o construtor ao lado para começar.</p>
                         </div>
                     )}
                  </Card>
@@ -1925,25 +1925,27 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
             return newPlan;
         });
     };
+    
+    const inputStyle = "w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
     return (
         <div className="space-y-6">
             <Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div>
-                        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                            <button onClick={() => setGenerationMode('seed')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'seed' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>{t('seed_keywords_label')}</button>
-                            <button onClick={() => setGenerationMode('prompt')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'prompt' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>{t('ai_prompt_label')}</button>
+                        <div className="flex border-b border-gray-700 mb-4">
+                            <button onClick={() => setGenerationMode('seed')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'seed' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}>{t('seed_keywords_label')}</button>
+                            <button onClick={() => setGenerationMode('prompt')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'prompt' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}>{t('ai_prompt_label')}</button>
                         </div>
                         {generationMode === 'seed' ? (
-                            <textarea value={seedKeywords} onChange={e => setSeedKeywords(e.target.value)} placeholder={t('seed_keywords_placeholder')} rows={4} className="w-full input-style"/>
+                            <textarea value={seedKeywords} onChange={e => setSeedKeywords(e.target.value)} placeholder={t('seed_keywords_placeholder')} rows={4} className={inputStyle}/>
                         ) : (
-                            <textarea value={aiPrompt} onChange={e => setAIPrompt(e.target.value)} placeholder={t('ai_prompt_placeholder')} rows={4} className="w-full input-style"/>
+                            <textarea value={aiPrompt} onChange={e => setAIPrompt(e.target.value)} placeholder={t('ai_prompt_placeholder')} rows={4} className={inputStyle}/>
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('number_of_suggestions')}</label>
-                        <select value={keywordCount} onChange={e => setKeywordCount(e.target.value)} className="w-full input-style mb-4">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">{t('number_of_suggestions')}</label>
+                        <select value={keywordCount} onChange={e => setKeywordCount(e.target.value)} className={`${inputStyle} mb-4`}>
                             <option value="25-50">25 - 50</option>
                             <option value="50-100">50 - 100</option>
                             <option value="100-150">100 - 150</option>
@@ -1960,11 +1962,11 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                     <Card>
-                         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">{t('Results')}</h3>
+                         <h3 className="text-xl font-bold text-gray-100 mb-4">{t('Results')}</h3>
                          {keywords.length > 0 ? (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                    <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                         <tr>
                                             <th className="px-4 py-3">{t('keyword')}</th>
                                             <th className="px-4 py-3">{t('search_volume')}</th>
@@ -1975,13 +1977,13 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                     </thead>
                                     <tbody>
                                         {keywords.map((kw, i) => (
-                                            <tr key={i} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600/30">
+                                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-600/30">
                                                 <td className="px-4 py-2 font-medium">{kw.keyword}</td>
                                                 <td className="px-4 py-2">{formatNumber(kw.volume)}</td>
                                                 <td className="px-4 py-2">{formatCurrency(kw.minCpc)}</td>
                                                 <td className="px-4 py-2">{formatCurrency(kw.maxCpc)}</td>
                                                 <td className="px-4 py-2">
-                                                    <select onChange={(e) => handleAssignToGroup(kw, e.target.value)} className="text-xs p-1 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                                                    <select onChange={(e) => handleAssignToGroup(kw, e.target.value)} className="text-xs p-1 rounded border-gray-600 bg-gray-700">
                                                         <option value="">{t('move_to')}</option>
                                                         {adGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                                     </select>
@@ -1992,20 +1994,20 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                 </table>
                             </div>
                          ) : (
-                            <p className="text-gray-500 dark:text-gray-400">{t('no_keywords_generated')}</p>
+                            <p className="text-gray-400">{t('no_keywords_generated')}</p>
                          )}
                     </Card>
                 </div>
                  <div className="lg:col-span-1">
                     <Card>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">{t('ad_groups')}</h3>
+                        <h3 className="text-xl font-bold text-gray-100 mb-4">{t('ad_groups')}</h3>
                         <div className="flex gap-2 mb-4">
                             <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow input-style text-sm" />
                             <button onClick={handleCreateAdGroup} className="px-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">{t('add')}</button>
                         </div>
                         <div className="space-y-4">
                             {adGroups.map(group => (
-                                <div key={group.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                                <div key={group.id} className="p-3 bg-gray-700/50 rounded-md">
                                     <div className="flex justify-between items-center">
                                         <h4 className="font-semibold">{group.name} ({group.keywords.length})</h4>
                                         <button onClick={() => handleDeleteAdGroup(group.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
@@ -2017,7 +2019,7 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                                     </ul>
                                 </div>
                             ))}
-                            {adGroups.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">{t('no_ad_groups')}</p>}
+                            {adGroups.length === 0 && <p className="text-sm text-gray-400">{t('no_ad_groups')}</p>}
                         </div>
                     </Card>
                 </div>
@@ -2034,6 +2036,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [error, setError] = useState<string | null>(null);
     const [uploadedImage, setUploadedImage] = useState<{ base64: string; mimeType: string; preview: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const inputStyle = "w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
     const handleGenerate = async () => {
         if (!prompt) return;
@@ -2077,14 +2080,14 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     return (
         <div className="space-y-6">
             <Card>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t('creative_builder')}</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">Gere imagens únicas para suas campanhas com IA.</p>
+                <h2 className="text-2xl font-bold text-gray-100 mb-1">{t('creative_builder')}</h2>
+                <p className="text-gray-400 mb-4">Gere imagens únicas para suas campanhas com IA.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-2 space-y-4">
                         <div>
-                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('Prompt para Geração de Imagem')}</label>
-                             <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="w-full input-style" placeholder={t('creative_prompt_placeholder')}></textarea>
+                             <label className="block text-sm font-medium text-gray-300 mb-1">{t('Prompt para Geração de Imagem')}</label>
+                             <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className={inputStyle} placeholder={t('creative_prompt_placeholder')}></textarea>
                         </div>
                         <button onClick={handleGenerate} disabled={isLoading || !prompt} className="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center justify-center gap-2">
                              {isLoading ? <LoaderIcon size={20} className="animate-spin" /> : <ImageIcon size={20} />}
@@ -2092,9 +2095,9 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                         </button>
                     </div>
                     <div>
-                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('Imagem de Referência (Opcional)')}</label>
+                         <label className="block text-sm font-medium text-gray-300 mb-1">{t('Imagem de Referência (Opcional)')}</label>
                          <div
-                            className="w-full h-full border-2 border-dashed dark:border-gray-600 rounded-lg flex items-center justify-center text-center p-4 min-h-[150px] cursor-pointer"
+                            className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-center p-4 min-h-[150px] cursor-pointer"
                             onClick={() => fileInputRef.current?.click()}
                          >
                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
@@ -2104,7 +2107,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                                     <button onClick={(e) => { e.stopPropagation(); setUploadedImage(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"><X size={14}/></button>
                                 </div>
                             ) : (
-                                <div className="text-gray-500 dark:text-gray-400">
+                                <div className="text-gray-400">
                                     <Upload size={32} className="mx-auto mb-2" />
                                     <p>{t('Clique para carregar uma imagem')}</p>
                                     <p className="text-xs">{t('ou')}</p>
@@ -2119,8 +2122,8 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {isLoading && Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="aspect-[1/1] bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
-                        <LoaderIcon className="text-gray-400 dark:text-gray-600 animate-spin" size={48} />
+                    <div key={i} className="aspect-[1/1] bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
+                        <LoaderIcon className="text-gray-600 animate-spin" size={48} />
                     </div>
                 ))}
                 
@@ -2135,9 +2138,9 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                     </div>
                 )) : !isLoading && (
                     <div className="sm:col-span-2 lg:col-span-4">
-                        <Card className="text-center py-20 border-2 border-dashed dark:border-gray-700">
-                            <ImageIcon size={48} className="mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-                            <p className="text-gray-600 dark:text-gray-400">{t('creative_builder_initial_prompt')}</p>
+                        <Card className="text-center py-20 border-2 border-dashed border-gray-700">
+                            <ImageIcon size={48} className="mx-auto text-gray-500 mb-4" />
+                            <p className="text-gray-400">{t('creative_builder_initial_prompt')}</p>
                         </Card>
                     </div>
                 )}
@@ -2159,19 +2162,19 @@ export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, o
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('Adicionar Mês ao Plano')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Adicionar Mês ao Plano')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
                     {availableMonths.length > 0 ? (
                         <>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('Mês')}</label>
+                        <label className="block text-sm font-medium text-gray-300">{t('Mês')}</label>
                         <select
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">{t('Selecione um mês')}</option>
                             {availableMonths.map(monthKey => {
@@ -2181,11 +2184,11 @@ export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, o
                         </select>
                         </>
                     ) : (
-                        <p className="text-center text-gray-600 dark:text-gray-400">{t('Todos os meses já foram adicionados.')}</p>
+                        <p className="text-center text-gray-400">{t('Todos os meses já foram adicionados.')}</p>
                     )}
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">{t('cancel')}</button>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
                     <button onClick={() => onAddMonth(selectedMonth)} disabled={!selectedMonth} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">{t('add')}</button>
                 </div>
             </div>
@@ -2206,24 +2209,24 @@ export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
                         <Sparkles className="text-blue-500" /> {title || t('Crie seu Plano com IA')}
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">{t('Descreva seu negócio, objetivos e público')}</p>
+                    <p className="text-gray-400 mb-4">{t('Descreva seu negócio, objetivos e público')}</p>
                     <textarea 
                         value={prompt}
                         onChange={e => setPrompt(e.target.value)}
                         rows={5}
-                        className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder={t('Ex: Uma cafeteria em São Paulo focada em jovens profissionais. Objetivo: aumentar o fluxo na loja.')}
                     />
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end">
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end">
                     <button 
                         onClick={() => onGenerate(prompt)} 
                         disabled={isLoading || !prompt}
@@ -2258,20 +2261,20 @@ export const ShareLinkModal: React.FC<{isOpen: boolean; onClose: () => void; lin
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
-                <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{t('share_plan_title')}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><X size={24} /></button>
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('share_plan_title')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">{t('share_plan_desc')}</p>
-                    <div className="flex items-center gap-2 p-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600">
-                        <Link2 size={18} className="text-gray-500 dark:text-gray-400" />
+                    <p className="text-gray-400 mb-4">{t('share_plan_desc')}</p>
+                    <div className="flex items-center gap-2 p-2 border rounded-md bg-gray-700 border-gray-600">
+                        <Link2 size={18} className="text-gray-400" />
                         <input 
                             type="text" 
                             readOnly 
                             value={link} 
-                            className="w-full bg-transparent text-sm text-gray-800 dark:text-gray-200 focus:outline-none"
+                            className="w-full bg-transparent text-sm text-gray-200 focus:outline-none"
                         />
                         <button 
                             onClick={copyToClipboard}
@@ -2290,7 +2293,6 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
     const [plan, setPlan] = useState<PlanData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { t } = useLanguage();
-    const { theme } = useTheme();
 
     useEffect(() => {
         const fetchPlan = () => {
@@ -2302,26 +2304,26 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
     }, [userId, planId]);
     
     if (isLoading) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-lg text-gray-700 dark:text-gray-300">{t('loading_plan')}</span></div>;
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-lg text-gray-300">{t('loading_plan')}</span></div>;
     }
 
     if (!plan) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-xl text-red-500">{t('plan_not_found')}</div>;
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-xl text-red-500">{t('plan_not_found')}</div>;
     }
     
     // Create a mock user object for display purposes
     const presenterUser = { displayName: 'Apresentador', photoURL: plan.logoUrl };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-             <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+        <div className="min-h-screen bg-gray-900">
+             <header className="bg-gray-800 shadow-sm sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <img src={theme === 'dark' ? LOGO_DARK : LOGO_LIGHT} alt="MasterPlan Logo" className="h-8"/>
-                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8"/>
+                         <div className="flex items-center gap-2 text-sm text-gray-400">
                             <span>{t('shared_by')}:</span>
                             <img src={plan.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(plan.campaignName[0])}`} alt="Presenter avatar" className="w-8 h-8 rounded-full object-cover"/>
-                            <span className="font-medium text-gray-800 dark:text-gray-200">{plan.campaignName}</span>
+                            <span className="font-medium text-gray-200">{plan.campaignName}</span>
                          </div>
                     </div>
                 </div>
