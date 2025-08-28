@@ -998,7 +998,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ campaigns, title }) => {
     );
 };
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNavigate, onAddMonthClick, onRegeneratePlan, isRegenerating }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNavigate, onAddMonthClick, onRegeneratePlan, isRegenerating, isReadOnly }) => {
     const { t } = useLanguage();
     const { summary, monthlySummary } = useMemo(() => calculatePlanSummary(planData), [planData]);
     const [isAIAnalysisModalOpen, setAIAnalysisModalOpen] = useState(false);
@@ -1089,13 +1089,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                         </dl>
                     </div>
                      <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <button onClick={handleAnalyzePlan} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
-                           <Sparkles size={18} /> {t('Analisar Plano com IA')}
-                        </button>
-                        {planData.aiPrompt && (
-                             <button onClick={() => setIsAIPlanAdjustModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 transition-colors">
-                               <Wand2 size={18} /> {t('Ajustar Plano com IA')}
-                            </button>
+                        {!isReadOnly && (
+                            <>
+                                <button onClick={handleAnalyzePlan} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+                                <Sparkles size={18} /> {t('Analisar Plano com IA')}
+                                </button>
+                                {planData.aiPrompt && (
+                                    <button onClick={() => setIsAIPlanAdjustModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 transition-colors">
+                                    <Wand2 size={18} /> {t('Ajustar Plano com IA')}
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -1163,9 +1167,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                         </table>
                     </div>
                      <div className="pt-4 text-center">
-                         <button onClick={onAddMonthClick} className="text-blue-400 hover:underline font-medium flex items-center gap-2 mx-auto">
-                            <PlusCircle size={16}/> {t('Adicionar Mês')}
-                         </button>
+                         {!isReadOnly && (
+                            <button onClick={onAddMonthClick} className="text-blue-400 hover:underline font-medium flex items-center gap-2 mx-auto">
+                                <PlusCircle size={16}/> {t('Adicionar Mês')}
+                            </button>
+                         )}
                     </div>
                  </Card>
             </div>
@@ -1195,7 +1201,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
     );
 };
 
-export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaigns, onSave, onDelete, planObjective, customFormats, onAddFormat, totalInvestment }) => {
+export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaigns, onSave, onDelete, planObjective, customFormats, onAddFormat, totalInvestment, isReadOnly }) => {
     const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -1233,17 +1239,21 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
             <Card>
                 <div className="flex flex-col sm:flex-row justify-between items-center">
                     <h2 className="text-2xl font-bold text-gray-100">{t('Plano de Mídia - {month}', { month: `${t(monthName)} ${year}` })}</h2>
-                    <button onClick={handleNew} className="w-full mt-4 sm:mt-0 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
-                        <PlusCircle size={18}/> {t('Nova Campanha')}
-                    </button>
+                    {!isReadOnly && (
+                        <button onClick={handleNew} className="w-full mt-4 sm:mt-0 sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+                            <PlusCircle size={18}/> {t('Nova Campanha')}
+                        </button>
+                    )}
                 </div>
                  {campaigns.length === 0 ? (
                     <div className="text-center py-16">
                         <h3 className="text-xl font-semibold text-gray-300">{t('Nenhuma campanha para este mês.')}</h3>
                         <p className="mt-2 text-gray-400">{t('Adicione a primeira campanha para começar o planejamento.')}</p>
-                        <button onClick={handleNew} className="mt-6 flex items-center justify-center gap-2 px-5 py-2.5 mx-auto bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
-                            {t('Adicionar Primeira Campanha')}
-                        </button>
+                        {!isReadOnly && (
+                            <button onClick={handleNew} className="mt-6 flex items-center justify-center gap-2 px-5 py-2.5 mx-auto bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+                                {t('Adicionar Primeira Campanha')}
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="overflow-x-auto mt-6">
@@ -1277,8 +1287,12 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                             <td className="px-4 py-4">{formatNumber(c.cliques)}</td>
                                             <td className="px-4 py-4">{formatNumber(c.conversoes)}</td>
                                             <td className="px-4 py-4 text-right">
-                                                 <button onClick={() => handleEdit(c)} className="p-2 text-gray-400 hover:text-blue-400"><Edit size={16}/></button>
-                                                 <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
+                                                {!isReadOnly && (
+                                                    <>
+                                                        <button onClick={() => handleEdit(c)} className="p-2 text-gray-400 hover:text-blue-400"><Edit size={16}/></button>
+                                                        <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     );
@@ -1302,16 +1316,18 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
 
             <ChartsSection campaigns={campaigns} title={t("Distribuição de Investimento ({month})", { month: `${t(monthName)} ${year}` })}/>
 
-            <CampaignModal 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSave={onSave}
-                campaignData={selectedCampaign}
-                month={month}
-                planObjective={planObjective}
-                customFormats={customFormats}
-                onAddFormat={onAddFormat}
-            />
+            {!isReadOnly && (
+                <CampaignModal 
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={onSave}
+                    campaignData={selectedCampaign}
+                    month={month}
+                    planObjective={planObjective}
+                    customFormats={customFormats}
+                    onAddFormat={onAddFormat}
+                />
+            )}
         </div>
     );
 };
@@ -2296,6 +2312,7 @@ export const ShareLinkModal: React.FC<{isOpen: boolean; onClose: () => void; lin
 export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = ({ userId, planId }) => {
     const [plan, setPlan] = useState<PlanData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeView, setActiveView] = useState('Overview');
     const { t } = useLanguage();
 
     useEffect(() => {
@@ -2306,6 +2323,10 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
         };
         fetchPlan();
     }, [userId, planId]);
+
+    const handleNavigate = (view: string) => {
+        setActiveView(view);
+    };
     
     if (isLoading) {
         return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-lg text-gray-300">{t('loading_plan')}</span></div>;
@@ -2314,9 +2335,6 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
     if (!plan) {
         return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-xl text-red-500">{t('plan_not_found')}</div>;
     }
-    
-    // Create a mock user object for display purposes
-    const presenterUser = { displayName: 'Apresentador', photoURL: plan.logoUrl };
 
     return (
         <div className="min-h-screen bg-gray-900">
@@ -2333,7 +2351,35 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
                 </div>
             </header>
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                 <DashboardPage planData={plan} onNavigate={() => {}} onAddMonthClick={() => {}} onRegeneratePlan={async () => {}} isRegenerating={false} isReadOnly={true} />
+                {activeView === 'Overview' && (
+                    <DashboardPage 
+                        planData={plan} 
+                        onNavigate={handleNavigate} 
+                        onAddMonthClick={() => {}} 
+                        onRegeneratePlan={async () => {}} 
+                        isRegenerating={false} 
+                        isReadOnly={true} 
+                    />
+                )}
+                {Object.keys(plan.months || {}).includes(activeView) && (
+                    <>
+                        <button onClick={() => setActiveView('Overview')} className="flex items-center gap-2 mb-6 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                            <ArrowLeft size={16} />
+                            {t('Voltar ao Dashboard')}
+                        </button>
+                        <MonthlyPlanPage 
+                            month={activeView}
+                            campaigns={plan.months[activeView]}
+                            onSave={() => {}}
+                            onDelete={() => {}}
+                            planObjective={plan.objective}
+                            customFormats={plan.customFormats || []}
+                            onAddFormat={() => {}}
+                            totalInvestment={plan.totalInvestment}
+                            isReadOnly={true}
+                        />
+                    </>
+                 )}
             </main>
         </div>
     );
