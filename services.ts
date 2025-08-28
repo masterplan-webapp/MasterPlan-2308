@@ -1,6 +1,6 @@
 
 
-import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, Type, Modality } from "@google/genai";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeTextData, AdGroup, UTMLink, GeneratedImage, AspectRatio, SummaryData, MonthlySummary } from './types';
@@ -152,6 +152,15 @@ export const recalculateCampaignMetrics = (campaign: Partial<Campaign>, changedF
 };
 
 export const calculateKPIs = (campaign: Partial<Campaign>): Campaign => {
+    // If the campaign from AI is missing core metrics, apply defaults based on its type.
+    const objective = campaign.tipoCampanha;
+    if (objective && DEFAULT_METRICS_BY_OBJECTIVE[objective]) {
+        const defaults = DEFAULT_METRICS_BY_OBJECTIVE[objective];
+        // The order here is important. `...campaign` comes last so its values (like budget) overwrite the defaults.
+        const campaignWithDefaults = { ...defaults, ...campaign };
+        return recalculateCampaignMetrics(campaignWithDefaults);
+    }
+    // Fallback for campaigns without a matching type or for manual creation
     return recalculateCampaignMetrics(campaign);
 };
 
@@ -865,49 +874,72 @@ export const callGeminiAPI = async (prompt: string, isJsonOutput: boolean = fals
 export const generateAIPlan = async (prompt: string, language: LanguageCode): Promise<Partial<PlanData>> => {
     const langInstruction = language === 'pt-BR' ? 'Responda em Português do Brasil.' : 'Respond in English.';
 
+    // Step 1: Dynamically determine the months for the plan from the user's prompt
+    const periodRegex = /(\d+)\s*(meses|mês|months|month)/i;
+    const periodMatch = prompt.match(periodRegex);
+    // Use a robust default of 3 months if not specified
+    const numberOfMonths = periodMatch ? parseInt(periodMatch[1], 10) : 3;
+
     const currentYear = new Date().getFullYear();
     const currentMonthIndex = new Date().getMonth();
-    const nextThreeMonths = Array.from({ length: 3 }, (_, i) => {
+    const planMonths = Array.from({ length: numberOfMonths }, (_, i) => {
         const monthIndex = (currentMonthIndex + i) % 12;
         const year = currentYear + Math.floor((currentMonthIndex + i) / 12);
         return `${year}-${MONTHS_LIST[monthIndex]}`;
     });
 
+    const monthsJsonStructure = planMonths.map(month => `"${month}": [ /* list of campaigns for ${month} */ ]`).join(',\n            ');
+    
+    // Step 2: Extract budget information to guide the AI
+    const budgetRegex = /(?:R\$|R\$ ?|budget of|orçamento de)\s*([\d.,]+(?:,\d{2})?)\s*(?:por mês|mensal|monthly)/i;
+    const budgetMatch = prompt.match(budgetRegex);
+    let totalInvestmentInstruction = `totalInvestment: A number representing the total estimated budget for the ${numberOfMonths} months. You must calculate this from the user's prompt.`;
+    if (budgetMatch) {
+        // Handle numbers like "5.000,00" or "6000"
+        const monthlyBudget = parseFloat(budgetMatch[1].replace(/\./g, '').replace(',', '.'));
+        if (!isNaN(monthlyBudget)) {
+            const totalBudget = monthlyBudget * numberOfMonths;
+            totalInvestmentInstruction = `totalInvestment: ${totalBudget}, /* This was pre-calculated from the user's monthly budget of ${monthlyBudget} for ${numberOfMonths} months. Use this exact total. */`;
+        }
+    }
+
     const aiPrompt = `
-        You are a media planning expert. Based on the user's prompt, create a comprehensive media plan.
+        You are a world-class media planning expert. Your task is to create a detailed, strategic media plan based on the user's prompt.
         User prompt: "${prompt}"
 
-        The output MUST be a valid JSON object. Do not include any text, explanation, or markdown fences like \`\`\`json around the JSON output.
-        The JSON object should have the following structure:
+        **CRITICAL INSTRUCTIONS:**
+        1.  **Period:** The plan MUST span exactly ${numberOfMonths} months. This is a strict requirement.
+        2.  **Budget:** Adhere strictly to the budget specified in the user prompt. The total sum of all campaign budgets MUST equal the final 'totalInvestment'.
+        3.  **Output Format:** The output MUST be a single, valid JSON object. Do not include any text, explanations, or markdown fences like \`\`\`json before or after the JSON.
+
+        **JSON Structure:**
         {
-          "campaignName": "A creative and relevant name for the plan",
-          "objective": "A clear, measurable main objective for the plan",
-          "targetAudience": "A description of the main target audience",
-          "location": "The main location for the campaigns (e.g., Brazil, São Paulo)",
-          "totalInvestment": A number representing the total estimated budget for the 3 months,
-          "logoUrl": "A placeholder logo URL from a service like placehold.co based on the business type",
-          "aiImagePrompt": "A detailed DALL-E or Midjourney style prompt to generate a hero image for this campaign.",
+          "campaignName": "A creative and relevant name for the plan based on the user prompt",
+          "objective": "A clear, measurable main objective, derived from the user prompt",
+          "targetAudience": "A detailed description of the main target audience from the prompt",
+          "location": "The main location for the campaigns (e.g., Brazil, São Paulo), extracted from the prompt",
+          ${totalInvestmentInstruction}
+          "logoUrl": "A placeholder logo URL from a service like placehold.co that semantically matches the business type",
+          "aiImagePrompt": "A detailed, vivid DALL-E or Midjourney style prompt to generate a hero image for this campaign.",
           "months": {
-            "${nextThreeMonths[0]}": [ /* list of campaigns for month 1 */ ],
-            "${nextThreeMonths[1]}": [ /* list of campaigns for month 2 */ ],
-            "${nextThreeMonths[2]}": [ /* list of campaigns for month 3 */ ]
+            ${monthsJsonStructure}
           }
         }
 
-        For each campaign inside the 'months' arrays, create a campaign object with these fields:
-        - "tipoCampanha": Choose from ${JSON.stringify(OPTIONS.tipoCampanha)}
-        - "etapaFunil": Choose from ${JSON.stringify(OPTIONS.etapaFunil)}
-        - "canal": Choose from ${JSON.stringify(OPTIONS.canal)}
-        - "formato": Based on the channel, choose a suitable format from ${JSON.stringify(CHANNEL_FORMATS)}
+        **Campaign Object Structure (for each campaign inside the 'months' arrays):**
+        - "tipoCampanha": Strategically choose from: ${JSON.stringify(OPTIONS.tipoCampanha)}. A good strategy often starts with Awareness/Alcance in early months and moves to Conversão/Retargeting in later months.
+        - "etapaFunil": Choose from ${JSON.stringify(OPTIONS.etapaFunil)}, corresponding to the 'tipoCampanha'.
+        - "canal": Choose the most appropriate channel from: ${JSON.stringify(OPTIONS.canal)}.
+        - "formato": Based on the channel, choose a suitable format from the list: ${JSON.stringify(CHANNEL_FORMATS)}.
         - "objetivo": A specific, short objective for this particular campaign.
-        - "kpi": The main Key Performance Indicator for this campaign.
-        - "publicoAlvo": A specific audience for this campaign.
-        - "budget": A portion of the totalInvestment. The sum of all campaign budgets should roughly equal totalInvestment.
-        - "unidadeCompra": Choose from ${JSON.stringify(OPTIONS.unidadeCompra)}
-        
+        - "kpi": The main Key Performance Indicator for this campaign (e.g., "CPM", "CPC", "CPA", "CTR").
+        - "publicoAlvo": A specific audience segment for this campaign (e.g., "Retargeting de visitantes do site", "Público de interesse em moda sustentável").
+        - "budget": A numeric portion of the totalInvestment. Distribute it logically across all months and campaigns.
+        - "unidadeCompra": Choose from ${JSON.stringify(OPTIONS.unidadeCompra)} based on the campaign objective.
+
         ${langInstruction}
-        Distribute the budget logically across the months and campaigns based on a ramp-up strategy (e.g., less in month 1, more in months 2 & 3).
     `;
+    
     return callGeminiAPI(aiPrompt, true);
 };
 
@@ -949,25 +981,9 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
 
 export const generateAIImages = async (prompt: string, image?: { base64: string; mimeType: string }): Promise<GeneratedImage[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    let finalPrompt = prompt;
 
     if (image) {
-        // Step 1: Use a multimodal model to generate a detailed prompt.
-        const metaPrompt = `
-You are an expert creative director and prompt engineer for advanced text-to-image AI models.
-The user has provided a base image and a text prompt. Your task is to analyze both and create a new, single, highly-detailed text-to-image prompt.
-This new prompt should describe a new image that incorporates the user's instructions while retaining the key subjects, style, composition, and mood of the reference image.
-
-- Analyze the reference image for its core elements: subject, style (e.g., photorealistic, illustration, anime), lighting, color palette, and overall composition.
-- Analyze the user's text prompt for the desired modification, addition, or change.
-- Combine these analyses into a coherent, descriptive paragraph. Be specific about details. Describe the scene, the characters, the actions, the environment, the lighting, and the camera angle.
-
-Reference Image: [User's image is attached]
-User's Text Prompt: "${prompt}"
-
-Your output should be ONLY the final, detailed text-to-image prompt, with no extra explanations or preamble.
-`;
-        
+        // --- Image Editing Task ---
         try {
             const imagePart = {
                 inlineData: {
@@ -975,55 +991,69 @@ Your output should be ONLY the final, detailed text-to-image prompt, with no ext
                     data: image.base64,
                 },
             };
-            const textPart = { text: metaPrompt };
+            const textPart = { text: prompt };
 
             const response: GenerateContentResponse = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: 'gemini-2.5-flash-image-preview',
                 contents: { parts: [imagePart, textPart] },
+                config: {
+                    responseModalities: [Modality.IMAGE, Modality.TEXT],
+                },
             });
-            
-            finalPrompt = response.text;
-            console.log("Generated a new prompt for image generation:", finalPrompt);
+
+            const imageParts = response.candidates[0].content.parts.filter(part => part.inlineData);
+
+            if (imageParts.length > 0 && imageParts[0].inlineData) {
+                // The model returns one image; we return it in an array to match the function signature.
+                // The aspect ratio of the edited image will be the same as the input. 
+                // We use '1:1' as a placeholder since the exact ratio isn't known and the type requires a value.
+                const generatedImage: GeneratedImage = {
+                    base64: imageParts[0].inlineData.data,
+                    aspectRatio: '1:1',
+                };
+                return [generatedImage];
+            } else {
+                 throw new Error("Image editing failed or returned no image part.");
+            }
         } catch (error) {
-            console.error("Error generating detailed prompt from image:", error);
-            // Fallback to using the original prompt if the analysis fails
-            finalPrompt = prompt; 
+            console.error("Error calling Gemini Image Editing API:", error);
+            throw error;
         }
+    } else {
+        // --- Image Generation Task ---
+        const aspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "3:4"];
+
+        const imagePromises = aspectRatios.map(async (aspectRatio) => {
+            try {
+                const response = await ai.models.generateImages({
+                    model: 'imagen-4.0-generate-001',
+                    prompt: prompt,
+                    config: {
+                        numberOfImages: 1,
+                        outputMimeType: 'image/png',
+                        aspectRatio: aspectRatio,
+                    },
+                });
+
+                if (response.generatedImages && response.generatedImages.length > 0) {
+                    return {
+                        base64: response.generatedImages[0].image.imageBytes,
+                        aspectRatio: aspectRatio,
+                    };
+                }
+            } catch (error) {
+                console.error(`Error generating image for aspect ratio ${aspectRatio}:`, error);
+            }
+            return null;
+        });
+
+        const results = await Promise.all(imagePromises);
+        const validImages = results.filter((img): img is GeneratedImage => img !== null);
+
+        if (validImages.length === 0) {
+            throw new Error("Image generation failed or returned no images.");
+        }
+
+        return validImages;
     }
-
-    // Step 2: Generate images using the final prompt.
-    const aspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "3:4"];
-
-   const imagePromises = aspectRatios.map(async (aspectRatio) => {
-       try {
-           const response = await ai.models.generateImages({
-               model: 'imagen-4.0-generate-001',
-               prompt: finalPrompt,
-               config: {
-                   numberOfImages: 1,
-                   outputMimeType: 'image/png',
-                   aspectRatio: aspectRatio,
-               },
-           });
-
-           if (response.generatedImages && response.generatedImages.length > 0) {
-               return {
-                   base64: response.generatedImages[0].image.imageBytes,
-                   aspectRatio: aspectRatio,
-               };
-           }
-       } catch (error) {
-           console.error(`Error generating image for aspect ratio ${aspectRatio}:`, error);
-       }
-       return null;
-   });
-
-   const results = await Promise.all(imagePromises);
-   const validImages = results.filter((img): img is GeneratedImage => img !== null);
-
-   if (validImages.length === 0) {
-       throw new Error("Image generation failed or returned no images.");
-   }
-
-   return validImages;
 };
