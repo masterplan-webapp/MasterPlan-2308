@@ -322,6 +322,7 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 margin: 0 auto;
                 page-break-after: always;
                 background-color: white;
+                box-sizing: border-box;
             }
             .page:last-child {
                 page-break-after: avoid;
@@ -551,53 +552,69 @@ export const exportPlanAsPDF = async (plan: PlanData, t: (key: string, substitut
     const { summary, monthlySummary } = calculatePlanSummary(plan);
     const reportHTML = buildPdfHtml(plan, summary, monthlySummary, t);
     
+    // Create a temporary container for rendering the HTML
     const container = document.createElement('div');
     container.style.position = 'absolute';
-    container.style.left = '-9999px';
+    container.style.left = '-9999px'; // Position off-screen
     container.style.top = '0';
     container.innerHTML = reportHTML;
     document.body.appendChild(container);
 
     try {
-        const canvas = await html2canvas(container.querySelector('#pdf-report-content')!, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            width: container.querySelector('.page')?.scrollWidth,
-            windowWidth: container.querySelector('.page')?.scrollWidth,
-        });
-
-        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pdf = new jsPDF('l', 'mm', 'a4'); // landscape, millimeters, A4
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / pdfWidth;
-        const canvasPageHeight = pageHeight * ratio;
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // Select all elements that should be a separate page
+        const pages = container.querySelectorAll('.page');
+        
+        // Loop through each page element and add it to the PDF
+        for (let i = 0; i < pages.length; i++) {
+            const pageElement = pages[i] as HTMLElement;
+            
+            // Use html2canvas to render the element to a canvas
+            const canvas = await html2canvas(pageElement, {
+                scale: 2, // Higher scale for better quality
+                useCORS: true, // For external images like logos
+                logging: false,
+                width: pageElement.scrollWidth,
+                height: pageElement.scrollHeight,
+                windowWidth: pageElement.scrollWidth,
+                windowHeight: pageElement.scrollHeight,
+            });
+            
+            // Calculate the aspect ratio to fit the canvas image onto the PDF page
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const aspectRatio = imgWidth / imgHeight;
+            
+            let finalWidth = pdfWidth;
+            let finalHeight = pdfWidth / aspectRatio;
+            
+            // If the calculated height is greater than the PDF page height, scale by height instead
+            if (finalHeight > pdfHeight) {
+                finalHeight = pdfHeight;
+                finalWidth = pdfHeight * aspectRatio;
+            }
 
-        let yPos = 0;
-        let pages = 0;
-        while (yPos < canvasHeight) {
-            if (pages > 0) {
+            // Add a new page for all but the first element
+            if (i > 0) {
                 pdf.addPage();
             }
-            const pageCanvas = document.createElement('canvas');
-            pageCanvas.width = canvasWidth;
-            pageCanvas.height = canvasPageHeight;
-            const pageCtx = pageCanvas.getContext('2d');
-            pageCtx?.drawImage(canvas, 0, yPos, canvasWidth, canvasPageHeight, 0, 0, canvasWidth, canvasPageHeight);
-            
-            pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pageHeight);
-            
-            yPos += canvasPageHeight;
-            pages++;
+
+            // Add the canvas image to the PDF, centered if it's smaller than the page
+            const xOffset = (pdfWidth - finalWidth) / 2;
+            const yOffset = (pdfHeight - finalHeight) / 2;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, yOffset, finalWidth, finalHeight);
         }
 
+        // Save the generated PDF
         pdf.save(`${plan.campaignName.replace(/ /g, '_') || 'media-plan'}.pdf`);
     } catch (error) {
         console.error("Error generating PDF:", error);
         alert('An error occurred while generating the PDF.');
     } finally {
+        // Clean up by removing the temporary container from the DOM
         document.body.removeChild(container);
     }
 };
