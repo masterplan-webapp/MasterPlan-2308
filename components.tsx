@@ -1080,7 +1080,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                         <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-400">
                             <div><dt className="font-semibold text-gray-200 inline">{t('Objetivo')}:</dt> {planData.objective}</div>
                             <div><dt className="font-semibold text-gray-200 inline">{t('Público-Alvo')}:</dt> {planData.targetAudience}</div>
-                            <div><dt className="font-semibold text-gray-200 inline">{t('Investimento Previsto')}:</dt> {formatCurrency(summary.budget)}</div>
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Investimento Previsto')}:</dt> {formatCurrency(planData.totalInvestment)}</div>
+                            <div><dt className="font-semibold text-gray-200 inline">{t('Investimento Planejado')}:</dt> {formatCurrency(summary.budget)}</div>
                             <div><dt className="font-semibold text-gray-200 inline">{t('Período')}:</dt> {sortedMonthKeys.length} {t('Meses')}</div>
                         </dl>
                     </div>
