@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, Sun, Moon, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
@@ -93,7 +94,13 @@ export const AIResponseModal: React.FC<AIResponseModalProps> = ({ isOpen, onClos
                             <LoaderIcon className="animate-spin text-blue-500" size={40}/>
                         </div>
                     ) : (
-                        <div className="prose prose-sm sm:prose-base dark:prose-invert" dangerouslySetInnerHTML={{ __html: content }}/>
+                        <div 
+                            className="dark:text-gray-300 space-y-4 
+                                       [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:dark:text-gray-100 [&_h3]:mb-4 [&_h3]:pb-2 [&_h3]:border-b [&_h3]:border-gray-200 [&_h3]:dark:border-gray-600
+                                       [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:text-gray-800 [&_h4]:dark:text-gray-200 [&_h4]:mt-6 [&_h4]:mb-2
+                                       [&_p]:text-base [&_p]:leading-relaxed [&_p]:mb-4"
+                            dangerouslySetInnerHTML={{ __html: content }}
+                        />
                     )}
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-700 flex justify-end">
@@ -1014,20 +1021,41 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                 months: planData.months,
             }, null, 2);
 
-            const prompt = `You are a world-class media planning strategist. Analyze the following media plan JSON data. Provide a concise, actionable strategic analysis in HTML format.
-            Focus on:
-            1.  **Alignment**: Is the budget and channel allocation aligned with the main objective?
-            2.  **Strategy**: What is the apparent strategy (e.g., awareness push, conversion focus)? Is it sound?
-            3.  **Opportunities**: What are 2-3 specific, actionable recommendations for improvement? (e.g., "Consider reallocating budget from month 1 to month 3 for a stronger conversion push," or "Introduce a Retargeting campaign in Meta Ads for month 2 to capture lost traffic.")
-            4.  **Risks**: What is one potential risk or blind spot in this plan?
+            const prompt = `You are a world-class media planning strategist. Analyze the following media plan JSON data. Provide a concise, actionable strategic analysis in valid, clean HTML format.
 
-            Keep the analysis to under 300 words. Use headings (<h4>), paragraphs (<p>), and bulleted lists (<ul><li>) for clarity.
+        The HTML output must strictly follow these rules:
+        1.  The entire output must be valid HTML.
+        2.  Use one, and only one, <h3> tag for the main title of the analysis.
+        3.  Use <h4> tags for each sub-topic title (e.g., "1. Alinhamento", "2. Estratégia"). These titles should be bold and larger than the paragraph text.
+        4.  Wrap every single paragraph in its own <p> tag. This is crucial for creating visual separation between blocks of text. Do not combine multiple paragraphs into one <p> tag.
+        5.  Do NOT include \`\`\`html, \`\`\`, or any other markdown fences or explanatory text around the final HTML output.
 
-            Media Plan Data:
-            \`\`\`json
-            ${planJson}
-            \`\`\`
-            `;
+        Here is a perfect example of the required output structure:
+        \`\`\`html
+        <h3>Análise Estratégica do Plano de Lançamento</h3>
+        <h4>1. Alinhamento Estratégico</h4>
+        <p>O plano demonstra um bom alinhamento com o objetivo de lançamento. O investimento inicial em Julho focado em Meta Ads para awareness é uma escolha acertada para construir a base do funil.</p>
+        <p>A maior parte do orçamento está corretamente concentrada em canais de alta intenção como Google Search no mês seguinte, visando a conversão.</p>
+        <h4>2. Estratégia de Funil</h4>
+        <p>A abordagem de funil "Topo > Fundo" é clássica e eficaz. O primeiro mês constrói audiência, e o segundo capitaliza esse interesse com retargeting e busca, o que constitui uma base sólida.</p>
+        <h4>3. Oportunidades de Melhoria</h4>
+        <p>Considere diversificar os canais de topo de funil. Alocar uma parte do orçamento de Julho para o TikTok pode gerar entusiasmo e afinidade com a marca a um CPM potencialmente menor, dado o público-alvo.</p>
+        <p>Adicionar uma campanha de "Branded Search" no Google Ads, mesmo com um orçamento pequeno, pode proteger a marca e capturar usuários com alta intenção de compra no final da jornada.</p>
+        \`\`\`
+
+        Your analysis must focus on:
+        - **Alinhamento**: Is the budget and channel allocation aligned with the main objective?
+        - **Estratégia**: What is the apparent strategy? Is it sound?
+        - **Oportunidades**: What are 2-3 specific, actionable recommendations for improvement?
+        - **Riscos**: What is one potential risk or blind spot in this plan?
+
+        Responda em Português do Brasil.
+
+        Media Plan Data:
+        \`\`\`json
+        ${planJson}
+        \`\`\`
+        `;
 
             const analysis = await callGeminiAPI(prompt);
             setAIAnalysisContent(analysis);

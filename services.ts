@@ -837,22 +837,19 @@ export const callGeminiAPI = async (prompt: string, isJsonOutput: boolean = fals
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
-            model: "gemini-2.5-pro",
+            model: "gemini-2.5-flash",
             contents: prompt,
             ...(isJsonOutput && { config: { responseMimeType: "application/json" } })
         });
 
-        let textResponse = response.text;
+        let textResponse = response.text.trim();
+        
+        // More robust stripping of markdown fences (e.g., ```json or ```html)
+        textResponse = textResponse.replace(/^```(?:json|html)?\s*\n/, '').replace(/\n?```$/, '').trim();
         
         if (isJsonOutput) {
-            let jsonStr = textResponse.trim();
-            const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
-            const match = jsonStr.match(fenceRegex);
-            if (match && match[2]) {
-                jsonStr = match[2].trim();
-            }
             try {
-                return JSON.parse(jsonStr);
+                return JSON.parse(textResponse);
             } catch (e) {
                 console.error("Failed to parse JSON response from Gemini:", e, "Raw response:", textResponse);
                 throw new Error("Invalid JSON response from AI.");
@@ -981,7 +978,7 @@ Your output should be ONLY the final, detailed text-to-image prompt, with no ext
             const textPart = { text: metaPrompt };
 
             const response: GenerateContentResponse = await ai.models.generateContent({
-                model: "gemini-2.5-pro",
+                model: "gemini-2.5-flash",
                 contents: { parts: [imagePart, textPart] },
             });
             
@@ -1000,7 +997,7 @@ Your output should be ONLY the final, detailed text-to-image prompt, with no ext
    const imagePromises = aspectRatios.map(async (aspectRatio) => {
        try {
            const response = await ai.models.generateImages({
-               model: 'imagen-3.0-generate-002',
+               model: 'imagen-4.0-generate-001',
                prompt: finalPrompt,
                config: {
                    numberOfImages: 1,
