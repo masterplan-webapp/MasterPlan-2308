@@ -473,13 +473,18 @@ function AppLogic() {
     const handleSaveCampaign = (month: string, campaign: Campaign) => {
         if (!activePlan) return;
         const updatedMonths = { ...(activePlan.months || {}) };
-        if (!updatedMonths[month]) updatedMonths[month] = [];
         
-        const campaignIndex = updatedMonths[month].findIndex(c => c.id === campaign.id);
+        const originalMonthCampaigns = updatedMonths[month] || [];
+        const campaignIndex = originalMonthCampaigns.findIndex(c => c.id === campaign.id);
+        
         if (campaignIndex > -1) {
-            updatedMonths[month][campaignIndex] = campaign;
+            // UPDATE: Create a new array using .map() for immutability
+            updatedMonths[month] = originalMonthCampaigns.map((c) =>
+                c.id === campaign.id ? campaign : c
+            );
         } else {
-            updatedMonths[month].push(campaign);
+            // ADD: Create a new array using spread syntax for immutability
+            updatedMonths[month] = [...originalMonthCampaigns, campaign];
         }
         updateActivePlan({ ...activePlan, months: updatedMonths });
     };
