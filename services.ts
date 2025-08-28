@@ -78,8 +78,8 @@ export const dbService = {
 
 
 // --- Core Business Logic ---
-export const recalculateCampaignMetrics = (campaign: Partial<Campaign>, changedField?: keyof Campaign, value?: any): Campaign => {
-    let newCampaign: Partial<Campaign> = changedField ? { ...campaign, [changedField]: value } : { ...campaign };
+export const recalculateCampaignMetrics = (campaign: Partial<Campaign>): Campaign => {
+    let newCampaign: Partial<Campaign> = { ...campaign };
     
     let budget = Number(newCampaign.budget) || 0;
     let ctr = (Number(newCampaign.ctr) || 0) / 100;

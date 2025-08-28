@@ -139,16 +139,19 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
 
     const handleChange = (field: keyof Campaign, value: any) => {
         if (!campaign) return;
-
-        let newCampaign: Campaign = { ...campaign, [field]: value };
-
+    
+        let campaignWithUpdate = { ...campaign, [field]: value };
+    
         if (field === 'tipoCampanha') {
             const defaults = DEFAULT_METRICS_BY_OBJECTIVE[value as string] || {};
-            newCampaign = { ...newCampaign, ...defaults };
+            campaignWithUpdate = { ...defaults, ...campaignWithUpdate };
         }
         
-        const recalculated = recalculateCampaignMetrics(newCampaign, field, value);
-        setCampaign(recalculated);
+        const recalculatedCampaign = recalculateCampaignMetrics(campaignWithUpdate);
+        
+        const finalCampaignState = { ...recalculatedCampaign, [field]: value };
+        
+        setCampaign(finalCampaignState);
     };
 
     const handleSave = () => {
@@ -291,7 +294,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div>
                                 <label className="block text-sm font-medium text-gray-300">{t('Budget (R$)')}</label>
-                                <input type="number" step="100" value={campaign.budget || ''} onChange={(e) => handleChange('budget', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                                <input type="number" step="100" value={campaign.budget || ''} onChange={(e) => handleChange('budget', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                              </div>
                              <div>
                                 <label className="block text-sm font-medium text-gray-300">{t('Unidade de Compra')}</label>
@@ -310,31 +313,31 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
                          <div className="grid grid-cols-2 gap-4">
                              <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('Impressões')}</label>
-                                <input type="number" value={Math.round(campaign.impressoes || 0)} onChange={(e) => handleChange('impressoes', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" value={campaign.impressoes || ''} onChange={(e) => handleChange('impressoes', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('Cliques')}</label>
-                                <input type="number" value={Math.round(campaign.cliques || 0)} onChange={(e) => handleChange('cliques', parseInt(e.target.value, 10))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" value={campaign.cliques || ''} onChange={(e) => handleChange('cliques', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('CTR (%)')}</label>
-                                <input type="number" step="0.01" value={campaign.ctr || ''} onChange={(e) => handleChange('ctr', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" step="0.01" value={campaign.ctr || ''} onChange={(e) => handleChange('ctr', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('CPC (R$)')}</label>
-                                <input type="number" step="0.01" value={Number(campaign.cpc).toFixed(2) || ''} onChange={(e) => handleChange('cpc', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" step="0.01" value={campaign.cpc || ''} onChange={(e) => handleChange('cpc', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('CPM (R$)')}</label>
-                                <input type="number" step="0.01" value={Number(campaign.cpm).toFixed(2) || ''} onChange={(e) => handleChange('cpm', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" step="0.01" value={campaign.cpm || ''} onChange={(e) => handleChange('cpm', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                               </div>
                              <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('Taxa de Conversão (%)')}</label>
-                                <input type="number" step="0.01" value={campaign.taxaConversao || ''} onChange={(e) => handleChange('taxaConversao', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" step="0.01" value={campaign.taxaConversao || ''} onChange={(e) => handleChange('taxaConversao', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('Connect Rate (%)')}</label>
-                                <input type="number" step="1" value={campaign.connectRate || ''} onChange={(e) => handleChange('connectRate', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
+                                <input type="number" step="1" value={campaign.connectRate || ''} onChange={(e) => handleChange('connectRate', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm"/>
                              </div>
                              <div>
                                 <label className="block text-xs font-medium text-gray-400">{t('Conversões')}</label>
