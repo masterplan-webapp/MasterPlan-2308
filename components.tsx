@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
@@ -840,12 +839,12 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
 const MetricCard: React.FC<{ title: string; value: string | number; icon: React.ElementType, isCurrency?: boolean, isPercentage?: boolean, isReadOnly?: boolean }> = ({ title, value, icon: Icon, isReadOnly=false }) => {
     return (
         <Card className="flex items-start gap-4">
-            <div className="p-3 bg-blue-900/30 rounded-lg">
+            <div className="p-3 bg-blue-900/30 rounded-lg shrink-0">
                 <Icon className="w-6 h-6 text-blue-400" />
             </div>
-            <div>
-                <p className="text-sm text-gray-400">{title}</p>
-                <p className="text-2xl font-bold text-gray-100">{value}</p>
+            <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-400 truncate">{title}</p>
+                <p className="text-2xl xl:text-xl font-bold text-gray-100 break-words">{value}</p>
             </div>
         </Card>
     );
