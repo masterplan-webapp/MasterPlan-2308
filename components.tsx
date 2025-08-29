@@ -844,7 +844,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-400 truncate">{title}</p>
-                <p className="text-2xl xl:text-xl font-bold text-gray-100 break-words">{value}</p>
+                <p className="text-2xl xl:text-lg font-bold text-gray-100">{value}</p>
             </div>
         </Card>
     );
