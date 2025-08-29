@@ -2265,8 +2265,10 @@ export const ShareLinkModal: React.FC<{isOpen: boolean; onClose: () => void; lin
     const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
 
+    const isError = link === t('link_generation_error') || link === t('link_generation_error_too_long');
+
     const copyToClipboard = () => {
-        if (link !== t('link_generation_error')) {
+        if (!isError) {
             navigator.clipboard.writeText(link);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
@@ -2288,41 +2290,59 @@ export const ShareLinkModal: React.FC<{isOpen: boolean; onClose: () => void; lin
                 </div>
                 <div className="p-6">
                     <p className="text-gray-400 mb-4">{t('share_plan_desc')}</p>
-                    <div className="flex items-center gap-2 p-2 border rounded-md bg-gray-700 border-gray-600">
-                        <Link2 size={18} className="text-gray-400" />
-                        <input 
-                            type="text" 
-                            readOnly 
-                            value={link} 
-                            className="w-full bg-transparent text-sm text-gray-200 focus:outline-none"
-                        />
-                        <button 
-                            onClick={copyToClipboard}
-                            className={`px-3 py-1 text-sm font-semibold rounded-md ${copied ? 'bg-green-500' : 'bg-blue-600'} text-white transition-colors`}
-                        >
-                            {copied ? t('copied') : t('copy_link')}
-                        </button>
-                    </div>
+                    {isError ? (
+                        <div className="p-4 bg-red-900/30 border border-red-700 rounded-md text-red-300 text-center">
+                            {link}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 p-2 border rounded-md bg-gray-700 border-gray-600">
+                            <Link2 size={18} className="text-gray-400" />
+                            <input 
+                                type="text" 
+                                readOnly 
+                                value={link} 
+                                className="w-full bg-transparent text-sm text-gray-200 focus:outline-none"
+                            />
+                            <button 
+                                onClick={copyToClipboard}
+                                className={`px-3 py-1 text-sm font-semibold rounded-md ${copied ? 'bg-green-500' : 'bg-blue-600'} text-white transition-colors`}
+                            >
+                                {copied ? t('copied') : t('copy_link')}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = ({ userId, planId }) => {
+export const ShareablePlanViewer: React.FC<{encodedPlanData: string}> = ({ encodedPlanData }) => {
     const [plan, setPlan] = useState<PlanData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeView, setActiveView] = useState('Overview');
     const { t } = useLanguage();
 
     useEffect(() => {
-        const fetchPlan = () => {
-            const planData = dbService.getPlanById(userId, planId);
+        try {
+            // Make the base64 string valid again by replacing URL-safe characters and adding padding
+            let base64 = encodedPlanData.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) {
+                base64 += '=';
+            }
+            
+            // Decode from base64 and then URI component to handle UTF-8 characters
+            const planJson = decodeURIComponent(escape(atob(base64)));
+            const planData = JSON.parse(planJson);
             setPlan(planData);
+        } catch (e) {
+            console.error("Failed to decode or parse plan data from URL:", e);
+            setError(t('plan_not_found'));
+        } finally {
             setIsLoading(false);
-        };
-        fetchPlan();
-    }, [userId, planId]);
+        }
+    }, [encodedPlanData, t]);
 
     const handleNavigate = (view: string) => {
         setActiveView(view);
@@ -2332,8 +2352,8 @@ export const ShareablePlanViewer: React.FC<{userId: string; planId: string}> = (
         return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-lg text-gray-300">{t('loading_plan')}</span></div>;
     }
 
-    if (!plan) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-xl text-red-500">{t('plan_not_found')}</div>;
+    if (error || !plan) {
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-xl text-red-500">{error || t('plan_not_found')}</div>;
     }
 
     return (
