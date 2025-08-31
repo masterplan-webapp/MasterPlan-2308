@@ -443,6 +443,11 @@ function AppLogic() {
         updateActivePlan(updatedPlan);
     };
 
+    const handleRenameRequest = (plan: PlanData) => {
+        setPlanToRename(plan);
+        setRenameModalOpen(true);
+    };
+    
     const handleRenamePlan = (planId: string, newName: string) => {
         if(!user) return;
         const planToUpdate = allPlans.find(p => p.id === planId);
@@ -635,6 +640,8 @@ function AppLogic() {
                     user={user} 
                     onProfileClick={() => setIsProfileModalOpen(true)} 
                     onDeletePlan={handleDeletePlan}
+                    onRenamePlan={handleRenamePlan}
+                    onRenameRequest={handleRenameRequest}
                 />
                  <AIPlanCreationModal 
                     isOpen={isAIPlanCreationModalOpen}
@@ -642,6 +649,14 @@ function AppLogic() {
                     onGenerate={handleAIPlanGenerated}
                     isLoading={isRegeneratingPlan}
                 />
+                {isRenameModalOpen && planToRename && (
+                    <RenamePlanModal
+                        isOpen={isRenameModalOpen}
+                        onClose={() => { setRenameModalOpen(false); setPlanToRename(null); }}
+                        plan={planToRename}
+                        onSave={handleRenamePlan}
+                    />
+                )}
                 <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
             </>
          );
@@ -698,15 +713,14 @@ function AppLogic() {
                     onClose={() => setPlanDetailsModalOpen(false)}
                     onSave={handleSavePlanDetails}
                     planData={activePlan}
-                    onRename={(plan) => { setPlanToRename(plan); setRenameModalOpen(true); }}
+                    onRename={handleRenameRequest}
                     onDuplicate={handleDuplicatePlan}
                 />
              )}
             {isRenameModalOpen && planToRename && (
-                // FIX: Changed component name from RenameModal to RenamePlanModal to match the import.
                 <RenamePlanModal 
                     isOpen={isRenameModalOpen} 
-                    onClose={() => setRenameModalOpen(false)}
+                    onClose={() => { setRenameModalOpen(false); setPlanToRename(null); }}
                     plan={planToRename}
                     onSave={handleRenamePlan}
                 />

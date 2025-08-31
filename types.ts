@@ -308,6 +308,8 @@ export interface PlanSelectorPageProps {
     user: User;
     onProfileClick: () => void;
     onDeletePlan: (planId: string) => void;
+    onRenamePlan: (planId: string, newName: string) => void;
+    onRenameRequest: (plan: PlanData) => void;
 }
 
 export interface PlanCreationChoiceModalProps {

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
@@ -705,30 +706,16 @@ export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = (
     );
 };
 
-export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan }) => {
+export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan, onRenamePlan, onRenameRequest }) => {
     const { t } = useLanguage();
     const { signOut } = useAuth();
     const [isChoiceModalOpen, setChoiceModalOpen] = useState(false);
-    const [isRenameModalOpen, setRenameModalOpen] = useState(false);
-    const [planToRename, setPlanToRename] = useState<PlanData | null>(null);
-
-    const handleRename = (planId: string, newName: string) => {
-        // This is a bit of a workaround since this component doesn't own the state.
-        // The parent App component will handle the actual renaming logic.
-        // For now, we just close the modal. A more robust solution would involve lifting state up.
-        const plan = plans.find(p => p.id === planId);
-        if (plan) {
-            plan.campaignName = newName; // locally update for now
-            dbService.savePlan(user.uid, plan); // Directly save
-        }
-        setRenameModalOpen(false);
-    };
 
     const handleDuplicate = (planToDuplicate: PlanData) => {
         const newPlan: PlanData = {
             ...JSON.parse(JSON.stringify(planToDuplicate)), // Deep copy
             id: `plan_${new Date().getTime()}`,
-            campaignName: t("{campaignName} {copy}", { campaignName: planToDuplicate.campaignName, copy: t("Copy") }),
+            campaignName: `${planToDuplicate.campaignName} ${t('Copy')}`,
         };
         onPlanCreated(newPlan);
     }
@@ -770,7 +757,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                              </button>
                              {isMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10">
-                                    <button onClick={() => { setPlanToRename(plan); setRenameModalOpen(true); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('edit')}</button>
+                                    <button onClick={() => { onRenameRequest(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('Rename')}</button>
                                     <button onClick={() => { handleDuplicate(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('duplicate')}</button>
                                     <div className="border-t border-gray-700 my-1"></div>
                                     <button onClick={() => { handleDelete(plan.id); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20">{t('delete')}</button>
@@ -824,14 +811,6 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                 )}
             </main>
             <PlanCreationChoiceModal isOpen={isChoiceModalOpen} onClose={() => setChoiceModalOpen(false)} onPlanCreated={onPlanCreated} />
-            {isRenameModalOpen && planToRename && (
-                <RenamePlanModal 
-                    isOpen={isRenameModalOpen} 
-                    onClose={() => setRenameModalOpen(false)}
-                    plan={planToRename}
-                    onSave={handleRename}
-                />
-            )}
         </div>
     );
 };
@@ -844,7 +823,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-400 truncate">{title}</p>
-                <p className="text-2xl xl:text-lg font-bold text-gray-100">{value}</p>
+                <p className="truncate text-2xl lg:text-xl xl:text-lg font-bold text-gray-100">{value}</p>
             </div>
         </Card>
     );
@@ -1984,25 +1963,27 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                          <h3 className="text-xl font-bold text-gray-100 mb-4">{t('Results')}</h3>
                          {keywords.length > 0 ? (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="text-xs uppercase bg-gray-700 text-gray-400">
+                                <table className="w-full text-sm text-left text-gray-300">
+                                    <thead className="text-xs uppercase bg-gray-700/50 text-gray-400">
                                         <tr>
-                                            <th className="px-4 py-3">{t('keyword')}</th>
-                                            <th className="px-4 py-3">{t('search_volume')}</th>
-                                            <th className="px-4 py-3">{t('min_cpc')}</th>
-                                            <th className="px-4 py-3">{t('max_cpc')}</th>
-                                            <th className="px-4 py-3">{t('assign_to_group')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('keyword')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('search_volume')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('estimated_clicks')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('min_cpc')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('max_cpc')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('assign_to_group')}</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-gray-700">
                                         {keywords.map((kw, i) => (
-                                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-600/30">
-                                                <td className="px-4 py-2 font-medium">{kw.keyword}</td>
-                                                <td className="px-4 py-2">{formatNumber(kw.volume)}</td>
-                                                <td className="px-4 py-2">{formatCurrency(kw.minCpc)}</td>
-                                                <td className="px-4 py-2">{formatCurrency(kw.maxCpc)}</td>
-                                                <td className="px-4 py-2">
-                                                    <select onChange={(e) => handleAssignToGroup(kw, e.target.value)} className="text-xs p-1 rounded border-gray-600 bg-gray-700">
+                                            <tr key={i} className="hover:bg-gray-700/40">
+                                                <td className="px-4 py-3 font-semibold text-gray-100">{kw.keyword}</td>
+                                                <td className="px-4 py-3">{formatNumber(kw.volume)}</td>
+                                                <td className="px-4 py-3">{formatNumber(kw.clickPotential)}</td>
+                                                <td className="px-4 py-3">{formatCurrency(kw.minCpc)}</td>
+                                                <td className="px-4 py-3">{formatCurrency(kw.maxCpc)}</td>
+                                                <td className="px-4 py-3">
+                                                    <select onChange={(e) => handleAssignToGroup(kw, e.target.value)} className="text-xs p-1.5 rounded-md border-gray-600 bg-gray-700 text-gray-200 focus:ring-blue-500 focus:border-blue-500">
                                                         <option value="">{t('move_to')}</option>
                                                         {adGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                                     </select>
