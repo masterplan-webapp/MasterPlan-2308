@@ -1228,63 +1228,59 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                         <h3 className="text-xl font-semibold text-gray-300">{t('Nenhuma campanha para este mês.')}</h3>
                         <p className="mt-2 text-gray-400">{t('Adicione a primeira campanha para começar o planejamento.')}</p>
                         {!isReadOnly && (
-                            <button onClick={handleNew} className="mt-6 flex items-center justify-center gap-2 px-5 py-2.5 mx-auto bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
-                                {t('Adicionar Primeira Campanha')}
-                            </button>
+                           <button onClick={handleNew} className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors mx-auto">
+                                <PlusCircle size={18}/> {t('Adicionar Primeira Campanha')}
+                           </button>
                         )}
                     </div>
                 ) : (
                     <div className="overflow-x-auto mt-6">
                         <table className="w-full text-sm text-left text-gray-400">
-                            <thead className="text-xs uppercase bg-gray-700 text-gray-400">
+                            <thead className="text-xs uppercase bg-gray-700/50 text-gray-400">
                                 <tr>
-                                    <th className="px-4 py-3">{t('Tipo')}</th>
-                                    <th className="px-4 py-3">{t('Funil')}</th>
-                                    <th className="px-4 py-3">{t('Canal')}</th>
-                                    <th className="px-4 py-3">{t('Formato')}</th>
-                                    <th className="px-4 py-3">{t('Budget')}</th>
-                                    <th className="px-4 py-3">{t('% Share')}</th>
-                                    <th className="px-4 py-3">{t('Impressões')}</th>
-                                    <th className="px-4 py-3">{t('Cliques')}</th>
-                                    <th className="px-4 py-3">{t('Conversões')}</th>
-                                    <th className="px-4 py-3"></th>
+                                    <th scope="col" className="px-6 py-3">{t('Tipo')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Funil')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Canal')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Formato')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Budget')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Impressões')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Cliques')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Conversões')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('Orçamento Diário')}</th>
+                                    {!isReadOnly && <th scope="col" className="px-6 py-3">{t('actions')}</th>}
                                 </tr>
                             </thead>
                             <tbody>
-                                {campaigns.map(c => {
-                                    const share = totals.budget > 0 ? (Number(c.budget || 0) / totals.budget) * 100 : 0;
-                                    return (
-                                        <tr key={c.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600">
-                                            <td className="px-4 py-4">{c.tipoCampanha}</td>
-                                            <td className="px-4 py-4">{c.etapaFunil}</td>
-                                            <td className="px-4 py-4">{c.canal}</td>
-                                            <td className="px-4 py-4">{c.formato}</td>
-                                            <td className="px-4 py-4">{formatCurrency(c.budget)}</td>
-                                            <td className="px-4 py-4">{formatPercentage(share)}</td>
-                                            <td className="px-4 py-4">{formatNumber(c.impressoes)}</td>
-                                            <td className="px-4 py-4">{formatNumber(c.cliques)}</td>
-                                            <td className="px-4 py-4">{formatNumber(c.conversoes)}</td>
-                                            <td className="px-4 py-4 text-right">
-                                                {!isReadOnly && (
-                                                    <>
-                                                        <button onClick={() => handleEdit(c)} className="p-2 text-gray-400 hover:text-blue-400"><Edit size={16}/></button>
-                                                        <button onClick={() => handleDelete(c.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
-                                                    </>
-                                                )}
+                                {campaigns.filter(Boolean).map(campaign => (
+                                    <tr key={campaign.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600/50">
+                                        <td className="px-6 py-4 text-white">{campaign.tipoCampanha}</td>
+                                        <td className="px-6 py-4">{campaign.etapaFunil}</td>
+                                        <td className="px-6 py-4"><ChannelDisplay channel={campaign.canal || 'N/A'} /></td>
+                                        <td className="px-6 py-4">{campaign.formato}</td>
+                                        <td className="px-6 py-4">{formatCurrency(campaign.budget)}</td>
+                                        <td className="px-6 py-4">{formatNumber(campaign.impressoes)}</td>
+                                        <td className="px-6 py-4">{formatNumber(campaign.cliques)}</td>
+                                        <td className="px-6 py-4">{formatNumber(campaign.conversoes)}</td>
+                                        <td className="px-6 py-4">{formatCurrency(campaign.orcamentoDiario)}</td>
+                                        {!isReadOnly && (
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => handleEdit(campaign)} className="p-1.5 text-blue-400 hover:bg-gray-700 rounded-md"><Edit size={16}/></button>
+                                                    <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:bg-gray-700 rounded-md"><Trash2 size={16}/></button>
+                                                </div>
                                             </td>
-                                        </tr>
-                                    );
-                                })}
+                                        )}
+                                    </tr>
+                                ))}
                             </tbody>
-                             <tfoot>
-                                <tr className="font-semibold text-white bg-gray-700">
-                                    <th colSpan={4} className="px-4 py-3 text-base">{t('Totais do Mês')}</th>
-                                    <td className="px-4 py-3">{formatCurrency(totals.budget)}</td>
-                                    <td className="px-4 py-3">{formatPercentage(totals.budget > 0 ? 100 : 0)}</td>
-                                    <td className="px-4 py-3">{formatNumber(totals.impressoes)}</td>
-                                    <td className="px-4 py-3">{formatNumber(totals.cliques)}</td>
-                                    <td className="px-4 py-3">{formatNumber(totals.conversoes)}</td>
-                                    <td></td>
+                             <tfoot className="font-semibold text-white bg-gray-700/50">
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-3 text-base">{t('Totais do Mês')}</td>
+                                    <td className="px-6 py-3">{formatCurrency(totals.budget)}</td>
+                                    <td className="px-6 py-3">{formatNumber(totals.impressoes)}</td>
+                                    <td className="px-6 py-3">{formatNumber(totals.cliques)}</td>
+                                    <td className="px-6 py-3">{formatNumber(totals.conversoes)}</td>
+                                    <td colSpan={isReadOnly ? 1 : 2} className="px-6 py-3">{formatCurrency(totals.budget / 30.4)}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -1292,13 +1288,13 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                 )}
             </Card>
 
-            <ChartsSection campaigns={campaigns} title={t("Distribuição de Investimento ({month})", { month: `${t(monthName)} ${year}` })}/>
+            <ChartsSection campaigns={campaigns} title={t('Distribuição de Investimento ({month})', { month: `${t(monthName)} ${year}` })} />
 
-            {!isReadOnly && (
+            {isModalOpen && (
                 <CampaignModal 
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSave={onSave}
+                    isOpen={isModalOpen} 
+                    onClose={() => setIsModalOpen(false)} 
+                    onSave={onSave} 
                     campaignData={selectedCampaign}
                     month={month}
                     planObjective={planObjective}
@@ -1310,720 +1306,770 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
     );
 };
 
-export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setPlanData }) => {
-    const { t, language } = useLanguage();
-    const { user } = useAuth();
-    const [activeChannel, setActiveChannel] = useState<string | null>(null);
-    const [context, setContext] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [isSuggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
-    const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-    const [currentGroup, setCurrentGroup] = useState<CreativeTextData | null>(null);
-
-    const activeChannels = useMemo(() => {
-        const channels = new Set<string>();
-        Object.values(planData.months || {}).flat().forEach(campaign => {
-            if (campaign.canal) channels.add(campaign.canal);
-        });
-        return Array.from(channels);
-    }, [planData.months]);
+export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, onUpdate, onDelete, planData }) => {
+    const { t } = useLanguage();
+    const [localGroup, setLocalGroup] = useState<CreativeTextData>(group);
+    const [isAISuggestionsModalOpen, setIsAISuggestionsModalOpen] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [suggestions, setSuggestions] = useState<Record<string, string[]> | null>(null);
+    const [suggestionType, setSuggestionType] = useState<'headlines' | 'descriptions' | 'longHeadlines' | null>(null);
+    const [isEditingName, setIsEditingName] = useState(false);
 
     useEffect(() => {
-        if (!activeChannel && activeChannels.length > 0) {
-            setActiveChannel(activeChannels[0]);
-        } else if (activeChannels.length > 0 && activeChannel && !activeChannels.includes(activeChannel)) {
-            // If the active channel was removed from the plan, switch to the first available one
-            setActiveChannel(activeChannels[0]);
-        } else if (activeChannels.length === 0) {
-            setActiveChannel(null);
-        }
-    }, [activeChannels, activeChannel]);
+        setLocalGroup(group);
+    }, [group]);
+
+    const handleChange = (type: 'headlines' | 'longHeadlines' | 'descriptions', index: number, value: string) => {
+        const updatedValues = [...(localGroup[type] || [])];
+        updatedValues[index] = value;
+        setLocalGroup(prev => ({ ...prev, [type]: updatedValues }));
+    };
+
+    const handleAddField = (type: 'headlines' | 'longHeadlines' | 'descriptions') => {
+        setLocalGroup(prev => ({ ...prev, [type]: [...(prev[type] || []), ''] }));
+    };
+
+    const handleRemoveField = (type: 'headlines' | 'longHeadlines' | 'descriptions', index: number) => {
+        const updatedValues = (localGroup[type] || []).filter((_, i) => i !== index);
+        setLocalGroup(prev => ({ ...prev, [type]: updatedValues }));
+    };
     
-    const handleAddGroup = () => {
-        if(!activeChannel) return;
-        
-        const newGroup: CreativeTextData = {
-            id: Date.now(),
-            name: t('Novo Grupo de Criativos') + ' ' + ((planData.creatives?.[activeChannel]?.length || 0) + 1),
-            context: '',
-            headlines: [''],
-            longHeadlines: [''],
-            descriptions: ['']
-        };
-
-        setPlanData(prev => {
-            if(!prev) return null;
-            const newPlan = {...prev};
-            if(!newPlan.creatives) newPlan.creatives = {};
-            if(!newPlan.creatives[activeChannel]) newPlan.creatives[activeChannel] = [];
-            newPlan.creatives[activeChannel].push(newGroup);
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
-    }
-
-    const handleUpdateGroup = (updatedGroup: CreativeTextData) => {
-         if(!activeChannel) return;
-         setPlanData(prev => {
-            if(!prev) return null;
-            const newPlan = {...prev};
-            const groupIndex = newPlan.creatives?.[activeChannel]?.findIndex(g => g.id === updatedGroup.id);
-            if(groupIndex !== undefined && groupIndex > -1) {
-                newPlan.creatives[activeChannel][groupIndex] = updatedGroup;
-                dbService.savePlan(user!.uid, newPlan);
-            }
-            return newPlan;
-         });
-    }
-    
-    const handleDeleteGroup = (id: number) => {
-         if(!activeChannel) return;
-         if(!window.confirm('Tem certeza que deseja apagar este grupo de criativos?')) return;
-         setPlanData(prev => {
-            if(!prev) return null;
-            const newPlan = {...prev};
-            newPlan.creatives[activeChannel] = newPlan.creatives[activeChannel].filter(g => g.id !== id);
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-         });
-    }
-
-    const generateSuggestions = async (group: CreativeTextData) => {
-        setIsLoading(true);
-        setSuggestionsModalOpen(true);
-        setCurrentGroup(group);
-
-        const langInstruction = language === 'pt-BR' ? 'Responda em Português do Brasil.' : 'Respond in English.';
-
+    const handleGenerateSuggestions = async (type: 'headlines' | 'descriptions' | 'longHeadlines' | null = null) => {
+        setSuggestionType(type);
+        setIsGenerating(true);
+        setIsAISuggestionsModalOpen(true);
+        setSuggestions(null);
         try {
-            const prompt = `
-            You are an expert copywriter for paid media campaigns. Based on the provided context, generate creative suggestions for Google Ads or Meta Ads.
-            The output MUST be a valid JSON object with three keys: "Títulos (Headlines)", "Títulos Longos (Long Headlines)", and "Descrições (Descriptions)". Each key should have an array of 5 unique string suggestions.
-            Do not include any text, explanation, or markdown fences like \`\`\`json around the JSON output.
+            const contextPrompt = `
+                **Contexto Geral do Plano:**
+                - **Objetivo Principal:** ${planData.objective}
+                - **Público-Alvo Principal:** ${planData.targetAudience}
+                - **Canal de Mídia:** ${channel}
 
-            Context:
-            - Plan Objective: ${planData.objective}
-            - Target Audience: ${planData.targetAudience}
-            - Channel: ${activeChannel}
-            - Creative Group Context: ${group.context}
-
-            ${langInstruction}
-            
-            Example JSON output:
-            {
-              "Títulos (Headlines)": ["Suggestion 1", "Suggestion 2", "Suggestion 3", "Suggestion 4", "Suggestion 5"],
-              "Títulos Longos (Long Headlines)": ["Long Suggestion 1", "Long Suggestion 2", "Long Suggestion 3", "Long Suggestion 4", "Long Suggestion 5"],
-              "Descrições (Descriptions)": ["Description Suggestion 1", "Description Suggestion 2", "Description Suggestion 3", "Description Suggestion 4", "Description Suggestion 5"]
-            }
+                **Contexto Específico do Grupo de Criativos:** ${localGroup.context}
             `;
-            const result = await callGeminiAPI(prompt, true);
+
+            let generationPrompt;
+            if (type) {
+                const typeMap = {
+                    headlines: { name: "títulos (headlines)", count: 5, constraint: "máximo de 30 caracteres" },
+                    longHeadlines: { name: "títulos longos (long headlines)", count: 3, constraint: "máximo de 90 caracteres" },
+                    descriptions: { name: "descrições (descriptions)", count: 3, constraint: "máximo de 90 caracteres" }
+                };
+                const currentType = typeMap[type];
+                generationPrompt = `Gere uma lista de ${currentType.count} ${currentType.name} para um anúncio, seguindo a regra de ${currentType.constraint}.`;
+            } else {
+                 generationPrompt = `Gere sugestões de criativos para um anúncio, incluindo 5 títulos (máx 30 caracteres), 3 títulos longos (máx 90 caracteres) e 3 descrições (máx 90 caracteres).`;
+            }
+
+            const finalPrompt = `
+                ${contextPrompt}
+                
+                **Tarefa:** ${generationPrompt}
+
+                **Instruções de Saída:**
+                - A saída DEVE ser um objeto JSON válido.
+                - Não inclua NENHUM texto, explicação ou markdown fences (como \`\`\`json) antes ou depois do JSON.
+                - As chaves do JSON devem ser "headlines", "longHeadlines", e "descriptions".
+                - Cada chave deve conter um array de strings.
+                
+                Exemplo de saída:
+                {
+                  "headlines": ["Título 1", "Título 2"],
+                  "longHeadlines": ["Título Longo 1"],
+                  "descriptions": ["Descrição 1", "Descrição 2"]
+                }
+            `;
+            const result = await callGeminiAPI(finalPrompt, true);
             setSuggestions(result);
+
         } catch (error) {
             console.error(error);
-            setSuggestions({});
             alert(t('Falha ao gerar sugestões.'));
         } finally {
-            setIsLoading(false);
+            setIsGenerating(false);
         }
     };
     
-    const handleApplySuggestion = (type: string, text: string) => {
-        if (!currentGroup) return;
-
-        let field: keyof CreativeTextData | null = null;
-        if (type === 'Títulos (Headlines)') field = 'headlines';
-        if (type === 'Títulos Longos (Long Headlines)') field = 'longHeadlines';
-        if (type === 'Descrições (Descriptions)') field = 'descriptions';
-        
-        if (field) {
-            const updatedGroup = { ...currentGroup };
-            let values = [...(updatedGroup[field as keyof CreativeTextData] as string[] || [])];
-            
-            // Find the first empty string and replace it, otherwise add to the end
-            const emptyIndex = values.indexOf('');
-            if (emptyIndex !== -1) {
-                values[emptyIndex] = text;
-            } else {
-                values.push(text);
-            }
-
-            (updatedGroup as any)[field] = values;
-            handleUpdateGroup(updatedGroup);
+    const applySuggestion = (type: string, text: string) => {
+        const T = type.toLowerCase() as 'headlines' | 'descriptions' | 'longHeadlines';
+        if (T === 'headlines' || T === 'descriptions' || T === 'longHeadlines') {
+            setLocalGroup(prev => ({...prev, [T]: [...(prev[T] || []), text]}));
         }
     };
+    
+    const applyAllSuggestions = (type: string, texts: string[]) => {
+         const T = type.toLowerCase() as 'headlines' | 'descriptions' | 'longHeadlines';
+        if (T === 'headlines' || T === 'descriptions' || T === 'longHeadlines') {
+            setLocalGroup(prev => ({...prev, [T]: [...(prev[T] || []), ...texts]}));
+        }
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-start mb-4">
+                {isEditingName ? (
+                     <input 
+                        type="text" 
+                        value={localGroup.name}
+                        onChange={(e) => setLocalGroup(prev => ({ ...prev, name: e.target.value }))}
+                        onBlur={() => { onUpdate(localGroup); setIsEditingName(false); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { onUpdate(localGroup); setIsEditingName(false); }}}
+                        className="text-xl font-semibold text-gray-100 bg-gray-700 p-1 -m-1 rounded"
+                        autoFocus
+                     />
+                ) : (
+                    <h3 onClick={() => setIsEditingName(true)} className="text-xl font-semibold text-gray-100 cursor-pointer">{localGroup.name}</h3>
+                )}
+
+                <div className="flex items-center gap-2">
+                    <button onClick={() => onUpdate(localGroup)} className="p-2 text-gray-400 hover:text-white" title={t('save')}><Save size={18}/></button>
+                    <button onClick={() => onDelete(group.id)} className="p-2 text-red-400 hover:text-red-300" title={t('delete')}><Trash2 size={18}/></button>
+                </div>
+            </div>
+            
+            <div className="space-y-6">
+                 <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">{t('Contexto para a IA')}</label>
+                    <textarea 
+                        value={localGroup.context}
+                        onChange={(e) => setLocalGroup(prev => ({...prev, context: e.target.value}))}
+                        onBlur={() => onUpdate(localGroup)}
+                        rows={3}
+                        placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
+                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                     <button onClick={() => handleGenerateSuggestions()} disabled={isGenerating} className="mt-2 flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 disabled:opacity-50">
+                        {isGenerating && !suggestionType ? <LoaderIcon size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        {t('Gerar Sugestões com IA')}
+                    </button>
+                </div>
+                
+                {['headlines', 'longHeadlines', 'descriptions'].map(type => {
+                    const T = type as 'headlines' | 'longHeadlines' | 'descriptions';
+                    const titleMap = { headlines: 'Títulos (Headlines)', longHeadlines: 'Títulos Longos (Long Headlines)', descriptions: 'Descrições (Descriptions)'};
+                    const charMap = { headlines: 30, longHeadlines: 90, descriptions: 90};
+
+                    // Don't render Long Headlines section if channel is not Google Ads, for instance
+                    if (T === 'longHeadlines' && !['Google Ads', 'Microsoft Ads'].includes(channel)) return null;
+                    
+                    return (
+                        <div key={T}>
+                             <div className="flex items-center justify-between mb-2">
+                                 <label className="block text-sm font-medium text-gray-300">{t(titleMap[T])}</label>
+                                 <button onClick={() => handleGenerateSuggestions(T)} className="flex items-center gap-1 text-xs text-blue-400 hover:underline" title={t('Gerar Sugestões com IA para este campo')}>
+                                     <Sparkles size={14} /> {t('Gerar Ideias')}
+                                 </button>
+                             </div>
+                             <div className="space-y-2">
+                                {(localGroup[T] || []).map((value, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <CharacterCountInput 
+                                            value={value}
+                                            onChange={(e) => handleChange(T, index, e.target.value)}
+                                            onBlur={() => onUpdate(localGroup)}
+                                            maxLength={charMap[T]}
+                                            placeholder="..."
+                                        />
+                                        <button onClick={() => handleRemoveField(T, index)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
+                                    </div>
+                                ))}
+                             </div>
+                             <button onClick={() => handleAddField(T)} className="mt-2 text-sm text-blue-400 hover:underline">{`+ ${t('add')}`}</button>
+                        </div>
+                    );
+                })}
+
+            </div>
+             <AISuggestionsModal 
+                isOpen={isAISuggestionsModalOpen}
+                onClose={() => setIsAISuggestionsModalOpen(false)}
+                isLoading={isGenerating}
+                suggestions={suggestions}
+                onApplySuggestion={applySuggestion}
+                onApplyAllSuggestions={applyAllSuggestions}
+             />
+        </Card>
+    )
+}
+
+export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setPlanData }) => {
+    const { t } = useLanguage();
+    
+    const channels = useMemo(() => {
+        const allChannels = new Set<string>();
+        Object.values(planData.months || {}).flat().forEach(campaign => {
+            if (campaign?.canal) {
+                allChannels.add(campaign.canal);
+            }
+        });
+        return Array.from(allChannels);
+    }, [planData.months]);
+    
+    const [activeChannel, setActiveChannel] = useState<string>(channels[0] || '');
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!activeChannel && channels.length > 0) {
+            setActiveChannel(channels[0]);
+        } else if (channels.length > 0 && !channels.includes(activeChannel)) {
+            setActiveChannel(channels[0]);
+        } else if (channels.length === 0) {
+            setActiveChannel('');
+        }
+    }, [channels, activeChannel]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setIsExportMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    if (channels.length === 0) {
+        return (
+            <Card className="text-center">
+                <h2 className="text-xl font-semibold text-gray-200">{t('Nenhum canal ativo')}</h2>
+                <p className="mt-2 text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
+            </Card>
+        );
+    }
+    
+    const creativeGroups = planData.creatives?.[activeChannel] || [];
+
+    const handleAddGroup = () => {
+        const newGroup: CreativeTextData = {
+            id: new Date().getTime(),
+            name: `${t('Novo Grupo')} ${creativeGroups.length + 1}`,
+            context: '',
+            headlines: [''],
+            descriptions: ['']
+        };
+        const updatedCreatives = {
+            ...(planData.creatives || {}),
+            [activeChannel]: [...creativeGroups, newGroup]
+        };
+        setPlanData({ ...planData, creatives: updatedCreatives });
+    };
+
+    const handleUpdateGroup = (updatedGroup: CreativeTextData) => {
+        const updatedGroups = creativeGroups.map(g => g.id === updatedGroup.id ? updatedGroup : g);
+        const updatedCreatives = { ...planData.creatives, [activeChannel]: updatedGroups };
+        setPlanData({ ...planData, creatives: updatedCreatives });
+    };
+
+    const handleDeleteGroup = (groupId: number) => {
+        const updatedGroups = creativeGroups.filter(g => g.id !== groupId);
+        const updatedCreatives = { ...planData.creatives, [activeChannel]: updatedGroups };
+        setPlanData({ ...planData, creatives: updatedCreatives });
+    };
+
+    const cleanCreativeGroups = useMemo(() => (planData.creatives?.[activeChannel] || []).filter(Boolean), [planData.creatives, activeChannel]);
 
 
     return (
         <div className="space-y-6">
             <Card>
-                 <h2 className="text-2xl font-bold text-gray-100">{t('copy_builder')}</h2>
-                 <p className="mt-2 text-gray-400">Gere textos para seus anúncios com IA baseados no seu plano de mídia.</p>
-            </Card>
-
-            {activeChannels.length > 0 ? (
-                <div className="flex flex-col lg:flex-row gap-6">
-                    <div className="lg:w-1/4">
-                         <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('Canal')}</h3>
-                        <div className="space-y-2">
-                             {activeChannels.map(channel => (
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                     <div>
+                        <h2 className="text-2xl font-bold text-gray-100">{t('Criativos para')} {activeChannel}</h2>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {channels.map(channel => (
                                 <button
                                     key={channel}
                                     onClick={() => setActiveChannel(channel)}
-                                    className={`w-full text-left px-4 py-2 rounded-md font-medium transition-colors ${activeChannel === channel ? 'bg-blue-600 text-white shadow' : 'bg-gray-800 hover:bg-gray-700'}`}
+                                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${activeChannel === channel ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
                                 >
                                     {channel}
                                 </button>
                             ))}
                         </div>
-                    </div>
-                    <div className="lg:w-3/4">
-                        <div className="flex justify-between items-center mb-4">
-                             <h3 className="text-lg font-semibold text-gray-100">{t('Criativos para')} {activeChannel}</h3>
-                             <button onClick={handleAddGroup} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition-colors">
-                                <PlusCircle size={16}/> {t('Novo Grupo')}
-                             </button>
-                        </div>
-                        
-                        <div className="space-y-6">
-                            {(planData.creatives?.[activeChannel!] || []).map(group => (
-                                <CreativeGroup 
-                                    key={group.id} 
-                                    group={group} 
-                                    channel={activeChannel!}
-                                    onUpdate={handleUpdateGroup}
-                                    onDelete={handleDeleteGroup}
-                                    onGenerateSuggestions={() => generateSuggestions(group)}
-                                    planData={planData}
-                                />
-                            ))}
-
-                            {(!planData.creatives?.[activeChannel!] || planData.creatives?.[activeChannel!].length === 0) && (
-                                <div className="text-center py-12 border-2 border-dashed rounded-lg border-gray-700">
-                                    <h4 className="text-xl font-semibold text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeChannel!})}</h4>
-                                    <p className="mt-2 text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
+                     </div>
+                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button onClick={handleAddGroup} className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+                            <PlusCircle size={18}/> {t('Novo Grupo de Criativos')}
+                        </button>
+                        <div className="relative" ref={exportMenuRef}>
+                            <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="p-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors"><FileDown size={18}/></button>
+                             {isExportMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                                    <div className="py-1" role="menu">
+                                        <button onClick={() => exportCreativesAsCSV(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" role="menuitem">
+                                            {t('export_as_csv')}
+                                        </button>
+                                        <button onClick={() => exportCreativesAsTXT(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" role="menuitem">
+                                            {t('export_as_txt')}
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
+                             )}
                         </div>
+                     </div>
+                </div>
+            </Card>
 
-                    </div>
+            {cleanCreativeGroups.length > 0 ? (
+                <div className="space-y-6">
+                    {cleanCreativeGroups.map(group => (
+                        <CreativeGroup 
+                            key={group.id}
+                            group={group}
+                            channel={activeChannel}
+                            onUpdate={handleUpdateGroup}
+                            onDelete={handleDeleteGroup}
+                            planData={planData}
+                        />
+                    ))}
                 </div>
             ) : (
                 <Card className="text-center py-16">
-                    <h3 className="text-xl font-semibold text-gray-300">{t('Nenhum canal ativo')}</h3>
-                    <p className="mt-2 text-gray-400">{t('Para começar, adicione campanhas com canais definidos no seu plano de mídia.')}</p>
+                    <h3 className="text-xl font-semibold text-gray-300">{t('Nenhum grupo de criativos para {channel}', {channel: activeChannel})}</h3>
+                    <p className="mt-2 text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
                 </Card>
             )}
-
-            <AISuggestionsModal 
-                isOpen={isSuggestionsModalOpen}
-                onClose={() => setSuggestionsModalOpen(false)}
-                isLoading={isLoading}
-                suggestions={suggestions}
-                onApplySuggestion={handleApplySuggestion}
-            />
         </div>
     );
 };
 
-export const CreativeGroup: React.FC<CreativeGroupProps & { onGenerateSuggestions: () => void }> = ({ group, channel, onUpdate, onDelete, onGenerateSuggestions, planData }) => {
+export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t } = useLanguage();
+    const [utm, setUtm] = useState<Omit<UTMLink, 'id' | 'createdAt' | 'fullUrl'>>({
+        url: '',
+        source: '',
+        medium: '',
+        campaign: '',
+        term: '',
+        content: '',
+    });
+    const [fullUrl, setFullUrl] = useState('');
+    const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
 
-    const handleFieldChange = (field: keyof CreativeTextData, value: string, index?: number) => {
-        const newGroup = { ...group };
-        if (index !== undefined && Array.isArray(newGroup[field])) {
-            const newArray = [...(newGroup[field] as string[])];
-            newArray[index] = value;
-            (newGroup as any)[field] = newArray;
-        } else {
-            (newGroup as any)[field] = value;
-        }
-        onUpdate(newGroup);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setUtm(prev => ({ ...prev, [name]: value }));
+        setError('');
     };
 
-    const addField = (field: 'headlines' | 'longHeadlines' | 'descriptions') => {
-        const newGroup = { ...group };
-        const newArray = [...(newGroup[field] || []), ''];
-        (newGroup as any)[field] = newArray;
-        onUpdate(newGroup);
+    const generateUrl = () => {
+        if (!utm.url || !utm.source || !utm.medium || !utm.campaign) {
+            setError(t('Por favor, preencha todos os campos obrigatórios (*) e gere a URL.'));
+            return;
+        }
+        const params = new URLSearchParams();
+        params.append('utm_source', utm.source);
+        params.append('utm_medium', utm.medium);
+        params.append('utm_campaign', utm.campaign);
+        if (utm.term) params.append('utm_term', utm.term);
+        if (utm.content) params.append('utm_content', utm.content);
+        
+        let baseUrl = utm.url;
+        if (!baseUrl.startsWith('http')) {
+            baseUrl = `https://${baseUrl}`;
+        }
+
+        const finalUrl = `${baseUrl}?${params.toString()}`;
+        setFullUrl(finalUrl);
+        setError('');
+    };
+
+    const saveLink = () => {
+        if (!fullUrl) {
+            generateUrl();
+            if (!utm.url || !utm.source || !utm.medium || !utm.campaign) return;
+        }
+
+        const newLink: UTMLink = {
+            id: new Date().getTime(),
+            createdAt: new Date(),
+            fullUrl: fullUrl,
+            ...utm,
+        };
+        const updatedLinks = [...(planData.utmLinks || []), newLink];
+        setPlanData({ ...planData, utmLinks: updatedLinks });
+    };
+
+    const clearForm = () => {
+        setUtm({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
+        setFullUrl('');
+        setError('');
     };
     
-    const removeField = (field: 'headlines' | 'longHeadlines' | 'descriptions', index: number) => {
-        const newGroup = { ...group };
-        const newArray = [...(newGroup[field] as string[])];
-        newArray.splice(index, 1);
-        (newGroup as any)[field] = newArray;
-        onUpdate(newGroup);
+    const deleteLink = (id: number) => {
+        const updatedLinks = (planData.utmLinks || []).filter(link => link.id !== id);
+        setPlanData({...planData, utmLinks: updatedLinks});
+    };
+    
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setIsExportMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const UTMInputField: React.FC<{name: keyof typeof utm, label: string, required?: boolean, helperText?: string}> = ({name, label, required, helperText}) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-300">
+                <div className="flex items-center gap-1.5">
+                    <span>{label} {required && '*'}</span>
+                    {helperText && (
+                        <div className="group relative flex">
+                            <HelpCircle size={14} className="text-gray-400 cursor-help" />
+                            <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-900 text-gray-200 text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                                {helperText}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </label>
+            <input type="text" name={name} value={utm[name] || ''} onChange={handleChange} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+    );
+
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <Card className="lg:col-span-2">
+                    <div className="space-y-4">
+                        <UTMInputField name="url" label={t('URL do Site *')} required helperText={t('utm_url_helper')} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <UTMInputField name="source" label={t('Campaign Source *')} required helperText={t('utm_source_helper')} />
+                            <UTMInputField name="medium" label={t('Campaign Medium *')} required helperText={t('utm_medium_helper')} />
+                        </div>
+                        <UTMInputField name="campaign" label={t('Campaign Name *')} required helperText={t('utm_campaign_helper')} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <UTMInputField name="term" label={t('Campaign Term')} helperText={t('utm_term_helper')} />
+                            <UTMInputField name="content" label={t('Campaign Content')} helperText={t('utm_content_helper')} />
+                        </div>
+                    </div>
+                </Card>
+                 <Card>
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('URL Gerada')}</h3>
+                    <div className="relative w-full h-40 p-3 bg-gray-700 rounded-md break-words text-gray-200 text-sm overflow-y-auto">
+                        {fullUrl || <span className="text-gray-400">{t('Preencha os campos para gerar a URL.')}</span>}
+                        {fullUrl && (
+                             <button onClick={copyToClipboard} className="absolute top-2 right-2 p-1.5 bg-gray-600 rounded-md hover:bg-gray-500" title={t('Copiar URL')}>
+                                 {copied ? <Check size={16} className="text-green-400"/> : <CopyIcon size={16}/>}
+                             </button>
+                        )}
+                    </div>
+                    {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+                    <div className="mt-4 flex flex-col gap-2">
+                        <button onClick={generateUrl} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('Gerar Ideias')}</button>
+                        <div className="flex gap-2">
+                            <button onClick={saveLink} className="flex-1 px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('Salvar Link')}</button>
+                            <button onClick={clearForm} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('Limpar')}</button>
+                        </div>
+                    </div>
+                 </Card>
+            </div>
+             <Card>
+                <div className="flex justify-between items-center mb-4">
+                     <h3 className="text-lg font-semibold text-gray-100">{t('Links Salvos')}</h3>
+                    <div className="relative" ref={exportMenuRef}>
+                        <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="flex items-center gap-1.5 text-sm text-gray-300 hover:text-white">
+                           {t('Exportar como:')} <ChevronDown size={16}/>
+                        </button>
+                        {isExportMenuOpen && (
+                             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                                <div className="py-1" role="menu">
+                                    <button onClick={() => exportUTMLinksAsCSV(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" role="menuitem">
+                                        {t('export_as_csv')}
+                                    </button>
+                                    <button onClick={() => exportUTMLinksAsTXT(planData, t)} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" role="menuitem">
+                                        {t('export_as_txt')}
+                                    </button>
+                                </div>
+                            </div>
+                         )}
+                    </div>
+                </div>
+                 <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-400">
+                        <thead className="text-xs uppercase bg-gray-700/50">
+                            <tr>
+                                <th className="px-4 py-2">{t('Data')}</th>
+                                <th className="px-4 py-2">{t('Campanha')}</th>
+                                <th className="px-4 py-2">{t('URL Completa')}</th>
+                                <th className="px-4 py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(planData.utmLinks || []).map(link => (
+                                <tr key={link.id} className="border-b border-gray-700">
+                                    <td className="px-4 py-2">{new Date(link.createdAt).toLocaleDateString()}</td>
+                                    <td className="px-4 py-2">{link.campaign}</td>
+                                    <td className="px-4 py-2"><span className="truncate block max-w-xs">{link.fullUrl}</span></td>
+                                    <td className="px-4 py-2 text-right">
+                                        <button onClick={() => deleteLink(link.id)} className="p-1 text-red-400 hover:text-red-300"><Trash2 size={16} /></button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {(planData.utmLinks || []).length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-8 text-gray-500">{t('Nenhum link salvo ainda.')}</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                 </div>
+            </Card>
+        </div>
+    );
+};
+
+// ... KeywordBuilderPage, CreativeBuilderPage, and other components follow ...
+const AdGroupComponent: React.FC<{
+    group: AdGroup;
+    allGroups: AdGroup[];
+    onRename: (groupId: string, newName: string) => void;
+    onDelete: (groupId: string) => void;
+    onMove: (keyword: KeywordSuggestion, toGroupId: string) => void;
+}> = ({ group, allGroups, onRename, onDelete, onMove }) => {
+    const { t } = useLanguage();
+    const [isEditing, setIsEditing] = useState(false);
+    const [name, setName] = useState(group.name);
+
+    const handleRename = () => {
+        if (name.trim()) {
+            onRename(group.id, name.trim());
+        }
+        setIsEditing(false);
     };
 
     return (
-        <Card>
+        <Card className="flex-1">
             <div className="flex justify-between items-center mb-4">
-                <input 
-                    type="text" 
-                    value={group.name} 
-                    onChange={e => handleFieldChange('name', e.target.value)} 
-                    className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0 text-gray-100"
-                />
-                 <div className="flex items-center gap-2">
-                     <button onClick={onGenerateSuggestions} className="flex items-center gap-2 text-sm px-3 py-1.5 bg-blue-900/40 text-blue-300 rounded-md hover:bg-blue-900/60">
-                         <Sparkles size={16}/> {t('Gerar Ideias')}
-                     </button>
-                    <button onClick={() => onDelete(group.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={18}/></button>
-                 </div>
+                {isEditing ? (
+                    <input 
+                        type="text"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        onBlur={handleRename}
+                        onKeyDown={e => e.key === 'Enter' && handleRename()}
+                        className="text-lg font-semibold bg-gray-700 p-1 -m-1 rounded text-white"
+                        autoFocus
+                    />
+                ) : (
+                    <h3 onClick={() => setIsEditing(true)} className="text-lg font-semibold text-gray-100 cursor-pointer">{group.name}</h3>
+                )}
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setIsEditing(true)} className="p-1 text-gray-400 hover:text-white"><Edit size={16}/></button>
+                    {group.id !== 'unassigned' && <button onClick={() => onDelete(group.id)} className="p-1 text-red-400 hover:text-red-300"><Trash2 size={16}/></button>}
+                </div>
             </div>
-             <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">{t('Contexto para a IA')}</label>
-                <textarea 
-                    value={group.context} 
-                    onChange={e => handleFieldChange('context', e.target.value)} 
-                    placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
-                    rows={3}
-                    className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {/* Headlines */}
-                <div>
-                    <h4 className="font-semibold mb-2 text-gray-200">{t('Títulos (Headlines)')} (30)</h4>
-                    <div className="space-y-2">
-                        {group.headlines.map((h, i) => (
-                             <div key={i} className="flex items-center gap-2">
-                                <CharacterCountInput 
-                                    value={h} 
-                                    onChange={e => handleFieldChange('headlines', e.target.value, i)} 
-                                    maxLength={30} 
-                                    placeholder={`${t('Título')} ${i + 1}`}
-                                />
-                                {group.headlines.length > 1 && <button onClick={() => removeField('headlines', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
-                            </div>
-                        ))}
-                         <button onClick={() => addField('headlines')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {group.keywords.length > 0 ? group.keywords.map(kw => (
+                    <div key={kw.keyword} className="group flex items-center justify-between p-2 bg-gray-700/50 rounded-md text-sm">
+                        <span className="text-gray-200">{kw.keyword}</span>
+                        <div className="relative">
+                            <select 
+                                onChange={(e) => onMove(kw, e.target.value)}
+                                className="bg-gray-600 text-white text-xs rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                value={group.id}
+                            >
+                                <option disabled>{t('move_to')}</option>
+                                {allGroups.map(g => (
+                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                </div>
-
-                {/* Long Headlines */}
-                 <div>
-                    <h4 className="font-semibold mb-2 text-gray-200">{t('Títulos Longos (Long Headlines)')} (90)</h4>
-                    <div className="space-y-2">
-                        {(group.longHeadlines || []).map((h, i) => (
-                             <div key={i} className="flex items-center gap-2">
-                                <CharacterCountInput 
-                                    value={h} 
-                                    onChange={e => handleFieldChange('longHeadlines', e.target.value, i)} 
-                                    maxLength={90} 
-                                    placeholder={`${t('Título Longo')} ${i + 1}`}
-                                />
-                                 {(group.longHeadlines || []).length > 1 && <button onClick={() => removeField('longHeadlines', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
-                            </div>
-                        ))}
-                         <button onClick={() => addField('longHeadlines')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
-                    </div>
-                </div>
-
-                {/* Descriptions */}
-                <div>
-                    <h4 className="font-semibold mb-2 text-gray-200">{t('Descrições (Descriptions)')} (90)</h4>
-                    <div className="space-y-2">
-                        {group.descriptions.map((d, i) => (
-                             <div key={i} className="flex items-center gap-2">
-                                <CharacterCountInput 
-                                    value={d} 
-                                    onChange={e => handleFieldChange('descriptions', e.target.value, i)} 
-                                    maxLength={90} 
-                                    placeholder={`${t('Descrição')} ${i + 1}`}
-                                />
-                                {group.descriptions.length > 1 && <button onClick={() => removeField('descriptions', i)} className="text-gray-400 hover:text-red-500"><X size={16}/></button>}
-                            </div>
-                        ))}
-                         <button onClick={() => addField('descriptions')} className="text-sm text-blue-400 hover:underline">{t('add')}</button>
-                    </div>
-                </div>
+                )) : (
+                    <p className="text-gray-500 text-sm">{t(group.id === 'unassigned' ? 'no_keywords_generated' : 'no_keywords_in_group')}</p>
+                )}
             </div>
         </Card>
     );
 };
 
-const TooltipIcon: React.FC<{ tooltip: string }> = ({ tooltip }) => {
-    return (
-        <div className="relative flex items-center group">
-            <HelpCircle size={14} className="text-gray-500" />
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-2 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                {tooltip}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
-            </div>
-        </div>
-    );
-};
-
-
-export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPlanData }) => {
-    const { t } = useLanguage();
-    const { user } = useAuth();
-    const [utm, setUtm] = useState<Partial<Omit<UTMLink, 'id'|'createdAt'|'fullUrl'>>>({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
-    const [generatedUrl, setGeneratedUrl] = useState('');
-    const [copied, setCopied] = useState(false);
-    
-    const isFormValid = utm.url && utm.source && utm.medium && utm.campaign;
-
-    const generateUrl = () => {
-        if (!isFormValid) {
-            alert(t('Por favor, preencha todos os campos obrigatórios (*) e gere a URL.'));
-            return;
-        }
-        const baseUrl = utm.url!.includes('?') ? `${utm.url}&` : `${utm.url}?`;
-        const params = new URLSearchParams({
-            utm_source: utm.source!,
-            utm_medium: utm.medium!,
-            utm_campaign: utm.campaign!,
-            ...(utm.term && { utm_term: utm.term }),
-            ...(utm.content && { utm_content: utm.content }),
-        });
-        setGeneratedUrl(baseUrl + params.toString());
-    };
-
-    const handleSaveLink = () => {
-        if (!generatedUrl) return;
-        const newLink: UTMLink = {
-            id: Date.now(),
-            createdAt: new Date(),
-            fullUrl: generatedUrl,
-            url: utm.url!,
-            source: utm.source!,
-            medium: utm.medium!,
-            campaign: utm.campaign!,
-            term: utm.term,
-            content: utm.content
-        };
-        setPlanData(prev => {
-            if(!prev) return null;
-            const newPlan = {...prev};
-            if(!newPlan.utmLinks) newPlan.utmLinks = [];
-            newPlan.utmLinks.unshift(newLink); // Add to the top
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
-        clearForm();
-    };
-    
-    const handleDeleteLink = (id: number) => {
-        if (!window.confirm(t('Tem certeza que deseja apagar este link?'))) return;
-        setPlanData(prev => {
-            if (!prev) return null;
-            const newPlan = { ...prev };
-            newPlan.utmLinks = (newPlan.utmLinks || []).filter(link => link.id !== id);
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
-    };
-
-    const clearForm = () => {
-        setUtm({ url: '', source: '', medium: '', campaign: '', term: '', content: '' });
-        setGeneratedUrl('');
-    };
-
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(generatedUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-    
-    const sortedLinks = useMemo(() => {
-        return [...(planData.utmLinks || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [planData.utmLinks]);
-
-    const inputStyle = "mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-                <Card>
-                    <h2 className="text-2xl font-bold text-gray-100 mb-6">{t('utm_builder')}</h2>
-                    <div className="space-y-4">
-                        <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('URL do Site *')} <TooltipIcon tooltip={t('utm_url_helper')} /></label>
-                             <input type="url" value={utm.url} onChange={e => setUtm({...utm, url: e.target.value})} className={inputStyle} placeholder="https://www.seusite.com.br"/>
-                        </div>
-                        <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Source *')} <TooltipIcon tooltip={t('utm_source_helper')} /></label>
-                             <input type="text" value={utm.source} onChange={e => setUtm({...utm, source: e.target.value})} className={inputStyle} placeholder="google"/>
-                        </div>
-                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Medium *')} <TooltipIcon tooltip={t('utm_medium_helper')} /></label>
-                             <input type="text" value={utm.medium} onChange={e => setUtm({...utm, medium: e.target.value})} className={inputStyle} placeholder="cpc"/>
-                        </div>
-                        <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Name *')} <TooltipIcon tooltip={t('utm_campaign_helper')} /></label>
-                             <input type="text" value={utm.campaign} onChange={e => setUtm({...utm, campaign: e.target.value})} className={inputStyle} placeholder="promocao_verao"/>
-                        </div>
-                        <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Term')} <TooltipIcon tooltip={t('utm_term_helper')} /></label>
-                             <input type="text" value={utm.term} onChange={e => setUtm({...utm, term: e.target.value})} className={inputStyle} placeholder="tenis_corrida"/>
-                        </div>
-                         <div>
-                             <label className="flex items-center gap-2 text-sm font-medium text-gray-300">{t('Campaign Content')} <TooltipIcon tooltip={t('utm_content_helper')} /></label>
-                             <input type="text" value={utm.content} onChange={e => setUtm({...utm, content: e.target.value})} className={inputStyle} placeholder="banner_azul"/>
-                        </div>
-                    </div>
-                    <button onClick={generateUrl} disabled={!isFormValid} className="mt-6 w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed">{t('Gerar URL')}</button>
-                    {generatedUrl && (
-                        <div className="mt-6 p-4 bg-gray-700 rounded-lg">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">{t('URL Gerada')}</label>
-                            <div className="relative">
-                                <textarea readOnly value={generatedUrl} className="w-full p-2 pr-10 border-gray-600 rounded-md bg-gray-800 text-sm" rows={4}></textarea>
-                                 <button onClick={copyToClipboard} className="absolute top-2 right-2 p-1.5 text-gray-500 hover:bg-gray-600 rounded-md">
-                                    {copied ? <Check size={16} className="text-green-500" /> : <CopyIcon size={16} />}
-                                </button>
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={handleSaveLink} className="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 text-sm">{t('Salvar Link')}</button>
-                                <button onClick={clearForm} className="flex-1 px-4 py-2 bg-gray-500 text-gray-200 font-semibold rounded-md hover:bg-gray-600 text-sm">{t('Limpar')}</button>
-                            </div>
-                        </div>
-                    )}
-                </Card>
-            </div>
-            <div className="lg:col-span-2">
-                 <Card>
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-100">{t('Links Salvos')}</h2>
-                        <div className="relative">
-                             <button onClick={() => {}} className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600">
-                                {t('export')} <ChevronDown size={16} />
-                             </button>
-                             {/* Export dropdown menu to be added here */}
-                        </div>
-                    </div>
-                     {sortedLinks.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="text-xs uppercase bg-gray-700 text-gray-400">
-                                    <tr>
-                                        <th className="px-4 py-3">{t('Data')}</th>
-                                        <th className="px-4 py-3">{t('Campaign Name *')}</th>
-                                        <th className="px-4 py-3">{t('URL Completa')}</th>
-                                        <th className="px-4 py-3"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedLinks.map(link => (
-                                        <tr key={link.id} className="border-b border-gray-700 hover:bg-gray-600/30">
-                                            <td className="px-4 py-4">{new Date(link.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-4 py-4">{link.campaign}</td>
-                                            <td className="px-4 py-4 max-w-xs truncate">
-                                                 <a href={link.fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{link.fullUrl}</a>
-                                            </td>
-                                            <td className="px-4 py-4 text-right">
-                                                 <button onClick={() => handleDeleteLink(link.id)} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16}/></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 border-2 border-dashed rounded-lg border-gray-700">
-                            <h4 className="text-xl font-semibold text-gray-300">{t('Nenhum link salvo ainda.')}</h4>
-                            <p className="mt-2 text-gray-400">Use o construtor ao lado para começar.</p>
-                        </div>
-                    )}
-                 </Card>
-            </div>
-        </div>
-    );
-};
 
 export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t, language } = useLanguage();
-    const { user } = useAuth();
-    
-    const [generationMode, setGenerationMode] = useState<'seed' | 'prompt'>('seed');
+    const [mode, setMode] = useState<'seed' | 'prompt'>('seed');
     const [seedKeywords, setSeedKeywords] = useState('');
-    const [aiPrompt, setAIPrompt] = useState('');
-    const [keywordCount, setKeywordCount] = useState('25-50');
+    const [aiPrompt, setAIPrompt] = useState(planData.aiPrompt || '');
+    const [keywordCount, setKeywordCount] = useState('20');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [newGroupName, setNewGroupName] = useState('');
 
-    const [keywords, setKeywords] = useState<KeywordSuggestion[]>([]);
-    const [adGroups, setAdGroups] = useState<AdGroup[]>(planData.adGroups || []);
-    
-    useEffect(() => {
-        setAdGroups(planData.adGroups || []);
+    const suggestions = useMemo(() => {
+        const unassignedGroup = planData.adGroups?.find(g => g.id === 'unassigned');
+        return unassignedGroup?.keywords || [];
     }, [planData.adGroups]);
+    
+    const adGroups = useMemo(() => planData.adGroups || [], [planData.adGroups]);
 
-    const handleGenerateKeywords = async () => {
+    const handleGenerate = async () => {
+        const input = mode === 'seed' ? seedKeywords : aiPrompt;
+        if (!input) return;
+        
         setIsLoading(true);
         setError(null);
         try {
-            const input = generationMode === 'seed' ? seedKeywords : aiPrompt;
-            if (!input) return;
+            const results = await generateAIKeywords(planData, mode, input, language, keywordCount);
+            const newUnassignedGroup: AdGroup = {
+                id: 'unassigned',
+                name: t('unassigned_keywords'),
+                keywords: results,
+            };
+            
+            const existingGroups = (planData.adGroups || []).filter(g => g.id !== 'unassigned');
+            setPlanData({ ...planData, adGroups: [newUnassignedGroup, ...existingGroups] });
 
-            const result = await generateAIKeywords(planData, generationMode, input, language, keywordCount);
-            setKeywords(result);
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
             setError(t('error_generating_keywords'));
+            console.error(e);
         } finally {
             setIsLoading(false);
         }
     };
     
-    const handleCreateAdGroup = () => {
+    const updateAdGroups = (newGroups: AdGroup[]) => {
+        setPlanData({ ...planData, adGroups: newGroups });
+    };
+
+    const handleCreateGroup = () => {
         if (!newGroupName.trim()) return;
-        
         const newGroup: AdGroup = {
-            id: `group_${Date.now()}`,
+            id: `group_${new Date().getTime()}`,
             name: newGroupName.trim(),
-            keywords: []
+            keywords: [],
         };
-        
-        const updatedAdGroups = [...adGroups, newGroup];
-        
-        setPlanData(prev => {
-            if (!prev) return null;
-            const newPlan = { ...prev, adGroups: updatedAdGroups };
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
-        
+        updateAdGroups([...adGroups, newGroup]);
         setNewGroupName('');
     };
     
-     const handleDeleteAdGroup = (groupId: string) => {
-        if (!window.confirm(t('confirm_delete_group'))) return;
-
-        const groupToDelete = adGroups.find(g => g.id === groupId);
-        if (!groupToDelete) return;
-        
-        // Move keywords from the deleted group back to the unassigned list
-        setKeywords(prev => [...prev, ...groupToDelete.keywords]);
-        
-        const updatedAdGroups = adGroups.filter(g => g.id !== groupId);
-
-        setPlanData(prev => {
-            if (!prev) return null;
-            const newPlan = { ...prev, adGroups: updatedAdGroups };
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
-    };
-
-    const handleAssignToGroup = (keyword: KeywordSuggestion, groupId: string) => {
-        const group = adGroups.find(g => g.id === groupId);
-        if (!group) return;
-
-        group.keywords.push(keyword);
-        setKeywords(prev => prev.filter(kw => kw.keyword !== keyword.keyword));
-        
-        setPlanData(prev => {
-            if (!prev) return null;
-            const newPlan = { ...prev, adGroups: [...adGroups] };
-            dbService.savePlan(user!.uid, newPlan);
-            return newPlan;
-        });
+    const handleDeleteGroup = (groupId: string) => {
+        if(window.confirm(t('confirm_delete_group'))){
+            const groupToDelete = adGroups.find(g => g.id === groupId);
+            if (!groupToDelete) return;
+            
+            const unassignedGroup = adGroups.find(g => g.id === 'unassigned') || { id: 'unassigned', name: t('unassigned_keywords'), keywords: [] };
+            unassignedGroup.keywords = [...unassignedGroup.keywords, ...groupToDelete.keywords];
+            
+            const remainingGroups = adGroups.filter(g => g.id !== groupId && g.id !== 'unassigned');
+            updateAdGroups([unassignedGroup, ...remainingGroups]);
+        }
     };
     
-    const inputStyle = "w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
+    const handleRenameGroup = (groupId: string, newName: string) => {
+        const newGroups = adGroups.map(g => g.id === groupId ? { ...g, name: newName } : g);
+        updateAdGroups(newGroups);
+    };
+
+    const handleMoveKeywords = (keyword: KeywordSuggestion, toGroupId: string) => {
+        const newGroups = JSON.parse(JSON.stringify(adGroups)) as AdGroup[];
+
+        // Find and remove from all groups (should only be in one)
+        newGroups.forEach(g => {
+            g.keywords = g.keywords.filter(kw => kw.keyword !== keyword.keyword);
+        });
+        
+        // Add to the new group
+        const targetGroup = newGroups.find(g => g.id === toGroupId);
+        if (targetGroup) {
+            targetGroup.keywords.push(keyword);
+        }
+        
+        updateAdGroups(newGroups);
+    };
 
     return (
         <div className="space-y-6">
-            <Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+             <Card>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                        <div className="flex border-b border-gray-700 mb-4">
-                            <button onClick={() => setGenerationMode('seed')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'seed' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}>{t('seed_keywords_label')}</button>
-                            <button onClick={() => setGenerationMode('prompt')} className={`px-4 py-2 text-sm font-medium ${generationMode === 'prompt' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}>{t('ai_prompt_label')}</button>
+                         <div className="flex border-b border-gray-700 mb-4">
+                            <button onClick={() => setMode('seed')} className={`px-4 py-2 text-sm font-medium ${mode === 'seed' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>{t('seed_keywords_label')}</button>
+                            <button onClick={() => setMode('prompt')} className={`px-4 py-2 text-sm font-medium ${mode === 'prompt' ? 'border-b-2 border-blue-500 text-white' : 'text-gray-400'}`}>{t('ai_prompt_label')}</button>
                         </div>
-                        {generationMode === 'seed' ? (
-                            <textarea value={seedKeywords} onChange={e => setSeedKeywords(e.target.value)} placeholder={t('seed_keywords_placeholder')} rows={4} className={inputStyle}/>
+                        {mode === 'seed' ? (
+                            <textarea value={seedKeywords} onChange={e => setSeedKeywords(e.target.value)} placeholder={t('seed_keywords_placeholder')} rows={4} className="w-full border-gray-600 rounded-md shadow-sm p-2 bg-gray-700 text-gray-200" />
                         ) : (
-                            <textarea value={aiPrompt} onChange={e => setAIPrompt(e.target.value)} placeholder={t('ai_prompt_placeholder')} rows={4} className={inputStyle}/>
+                            <textarea value={aiPrompt} onChange={e => setAIPrompt(e.target.value)} placeholder={t('ai_prompt_placeholder')} rows={4} className="w-full border-gray-600 rounded-md shadow-sm p-2 bg-gray-700 text-gray-200" />
                         )}
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">{t('number_of_suggestions')}</label>
-                        <select value={keywordCount} onChange={e => setKeywordCount(e.target.value)} className={`${inputStyle} mb-4`}>
-                            <option value="25-50">25 - 50</option>
-                            <option value="50-100">50 - 100</option>
-                            <option value="100-150">100 - 150</option>
-                        </select>
-                        <button onClick={handleGenerateKeywords} disabled={isLoading} className="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center justify-center gap-2">
-                            {isLoading ? <LoaderIcon size={20} className="animate-spin" /> : <KeyRound size={20} />}
-                            {isLoading ? t('generating_keywords') : t('generate_keywords')}
+                    <div className="flex flex-col justify-between">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-300">{t('number_of_suggestions')}</label>
+                            <select value={keywordCount} onChange={e => setKeywordCount(e.target.value)} className="mt-1 w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200">
+                                <option>10</option>
+                                <option>20</option>
+                                <option>50</option>
+                                <option>100</option>
+                            </select>
+                         </div>
+                        <button onClick={handleGenerate} disabled={isLoading} className="w-full flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-50">
+                            {isLoading ? <><LoaderIcon size={20} className="animate-spin" />{t('generating_keywords')}</> : t('generate_keywords')}
                         </button>
                     </div>
                 </div>
-                {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-            </Card>
+                {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
+             </Card>
+            
+            <div className="flex flex-col lg:flex-row gap-6">
+                <AdGroupComponent 
+                    group={adGroups.find(g => g.id === 'unassigned') || { id: 'unassigned', name: t('unassigned_keywords'), keywords: [] }}
+                    allGroups={adGroups}
+                    onRename={handleRenameGroup}
+                    onDelete={handleDeleteGroup}
+                    onMove={handleMoveKeywords}
+                />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <Card>
-                         <h3 className="text-xl font-bold text-gray-100 mb-4">{t('Results')}</h3>
-                         {keywords.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left text-gray-300">
-                                    <thead className="text-xs uppercase bg-gray-700/50 text-gray-400">
-                                        <tr>
-                                            <th className="px-4 py-3 font-medium">{t('keyword')}</th>
-                                            <th className="px-4 py-3 font-medium">{t('search_volume')}</th>
-                                            <th className="px-4 py-3 font-medium">{t('estimated_clicks')}</th>
-                                            <th className="px-4 py-3 font-medium">{t('min_cpc')}</th>
-                                            <th className="px-4 py-3 font-medium">{t('max_cpc')}</th>
-                                            <th className="px-4 py-3 font-medium">{t('assign_to_group')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-700">
-                                        {keywords.map((kw, i) => (
-                                            <tr key={i} className="hover:bg-gray-700/40">
-                                                <td className="px-4 py-3 font-semibold text-gray-100">{kw.keyword}</td>
-                                                <td className="px-4 py-3">{formatNumber(kw.volume)}</td>
-                                                <td className="px-4 py-3">{formatNumber(kw.clickPotential)}</td>
-                                                <td className="px-4 py-3">{formatCurrency(kw.minCpc)}</td>
-                                                <td className="px-4 py-3">{formatCurrency(kw.maxCpc)}</td>
-                                                <td className="px-4 py-3">
-                                                    <select onChange={(e) => handleAssignToGroup(kw, e.target.value)} className="text-xs p-1.5 rounded-md border-gray-600 bg-gray-700 text-gray-200 focus:ring-blue-500 focus:border-blue-500">
-                                                        <option value="">{t('move_to')}</option>
-                                                        {adGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                                                    </select>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                <div className="lg:col-span-2 flex-1 space-y-4">
+                    <div className="flex gap-2">
+                        <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200"/>
+                        <button onClick={handleCreateGroup} className="px-4 py-2 bg-blue-600 text-white rounded-md">{t('create_ad_group')}</button>
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {adGroups.filter(g => g.id !== 'unassigned').map(group => (
+                             <AdGroupComponent 
+                                key={group.id}
+                                group={group}
+                                allGroups={adGroups}
+                                onRename={handleRenameGroup}
+                                onDelete={handleDeleteGroup}
+                                onMove={handleMoveKeywords}
+                            />
+                        ))}
+                         {adGroups.filter(g => g.id !== 'unassigned').length === 0 && (
+                            <div className="md:col-span-2 text-center text-gray-500 py-8">
+                                {t('no_ad_groups')}
                             </div>
-                         ) : (
-                            <p className="text-gray-400">{t('no_keywords_generated')}</p>
                          )}
-                    </Card>
-                </div>
-                 <div className="lg:col-span-1">
-                    <Card>
-                        <h3 className="text-xl font-bold text-gray-100 mb-4">{t('ad_groups')}</h3>
-                        <div className="flex gap-2 mb-4">
-                            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow input-style text-sm" />
-                            <button onClick={handleCreateAdGroup} className="px-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">{t('add')}</button>
-                        </div>
-                        <div className="space-y-4">
-                            {adGroups.map(group => (
-                                <div key={group.id} className="p-3 bg-gray-700/50 rounded-md">
-                                    <div className="flex justify-between items-center">
-                                        <h4 className="font-semibold">{group.name} ({group.keywords.length})</h4>
-                                        <button onClick={() => handleDeleteAdGroup(group.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={16}/></button>
-                                    </div>
-                                    <ul className="text-sm mt-2 space-y-1">
-                                        {group.keywords.slice(0, 5).map(kw => <li key={kw.keyword} className="truncate">- {kw.keyword}</li>)}
-                                        {group.keywords.length > 5 && <li className="text-xs text-gray-500">... e mais {group.keywords.length - 5}</li>}
-                                        {group.keywords.length === 0 && <li className="text-xs text-gray-500">{t('no_keywords_in_group')}</li>}
-                                    </ul>
-                                </div>
-                            ))}
-                            {adGroups.length === 0 && <p className="text-sm text-gray-400">{t('no_ad_groups')}</p>}
-                        </div>
-                    </Card>
+                    </div>
                 </div>
             </div>
+             <Card>
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-100">{t('Results')}</h3>
+                    <div className="flex gap-2">
+                         <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_as_csv')}</button>
+                         <button onClick={() => exportGroupedKeywordsAsTXT(planData, t)} className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_as_txt')}</button>
+                    </div>
+                </div>
+             </Card>
+
         </div>
     );
 };
@@ -2031,120 +2077,122 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
 export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData }) => {
     const { t } = useLanguage();
     const [prompt, setPrompt] = useState(planData.aiImagePrompt || '');
-    const [images, setImages] = useState<GeneratedImage[]>([]);
+    const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [uploadedImage, setUploadedImage] = useState<{ base64: string; mimeType: string; preview: string } | null>(null);
+    const [editingImage, setEditingImage] = useState<{ base64: string; mimeType: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const inputStyle = "w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
     const handleGenerate = async () => {
         if (!prompt) return;
         setIsLoading(true);
         setError(null);
-        setImages([]);
+        setGeneratedImages([]);
         try {
-            const result = await generateAIImages(prompt, uploadedImage ? { base64: uploadedImage.base64, mimeType: uploadedImage.mimeType } : undefined);
-            setImages(result);
-        } catch (err) {
-            console.error(err);
+            const results = await generateAIImages(prompt, editingImage || undefined);
+            setGeneratedImages(results);
+        } catch (e) {
             setError(t('error_generating_images'));
+            console.error(e);
         } finally {
             setIsLoading(false);
         }
     };
     
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                const base64String = (reader.result as string).split(',')[1];
-                setUploadedImage({
-                    base64: base64String,
-                    mimeType: file.type,
-                    preview: URL.createObjectURL(file)
-                });
+                if (typeof reader.result === 'string') {
+                    // The result includes the Base64 prefix, we need to remove it for the API
+                    const base64Data = reader.result.split(',')[1];
+                    setEditingImage({ base64: base64Data, mimeType: file.type });
+                }
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const downloadImage = (base64: string, aspectRatio: AspectRatio) => {
+    const downloadImage = (base64: string, format: 'png' | 'jpeg') => {
         const link = document.createElement('a');
-        link.href = `data:image/png;base64,${base64}`;
-        link.download = `${prompt.slice(0, 30).replace(/\s/g, '_')}_${aspectRatio}.png`;
+        link.href = `data:image/${format};base64,${base64}`;
+        link.download = `masterplan-creative.${format}`;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     };
 
     return (
         <div className="space-y-6">
-            <Card>
-                <h2 className="text-2xl font-bold text-gray-100 mb-1">{t('creative_builder')}</h2>
-                <p className="text-gray-400 mb-4">Gere imagens únicas para suas campanhas com IA.</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2 space-y-4">
-                        <div>
-                             <label className="block text-sm font-medium text-gray-300 mb-1">{t('Prompt para Geração de Imagem')}</label>
-                             <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className={inputStyle} placeholder={t('creative_prompt_placeholder')}></textarea>
-                        </div>
-                        <button onClick={handleGenerate} disabled={isLoading || !prompt} className="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center justify-center gap-2">
-                             {isLoading ? <LoaderIcon size={20} className="animate-spin" /> : <ImageIcon size={20} />}
-                             {isLoading ? t('generating_images') : t('generate_images')}
+             <Card>
+                <h3 className="text-lg font-semibold text-gray-100 mb-2">{t('Prompt para Geração de Imagem')}</h3>
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-grow space-y-4">
+                         <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder={t('creative_prompt_placeholder')}
+                            rows={8}
+                            className="w-full border-gray-600 rounded-md shadow-sm p-2 bg-gray-700 text-gray-200"
+                        />
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isLoading}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {isLoading ? <><LoaderIcon size={20} className="animate-spin" />{t('generating_images')}</> : <><ImageIcon size={18}/> {t('generate_images')}</>}
                         </button>
                     </div>
-                    <div>
-                         <label className="block text-sm font-medium text-gray-300 mb-1">{t('Imagem de Referência (Opcional)')}</label>
-                         <div
-                            className="w-full h-full border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-center p-4 min-h-[150px] cursor-pointer"
-                            onClick={() => fileInputRef.current?.click()}
-                         >
-                            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-                            {uploadedImage ? (
-                                <div className="relative group">
-                                    <img src={uploadedImage.preview} alt="Uploaded preview" className="max-h-40 rounded-md object-contain" />
-                                    <button onClick={(e) => { e.stopPropagation(); setUploadedImage(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"><X size={14}/></button>
+                    <div 
+                        className="w-full md:w-64 flex-shrink-0 border-2 border-dashed border-gray-600 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/20 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/>
+                         <div className="relative w-full h-full">
+                             {editingImage ? (
+                                <>
+                                    <img src={`data:${editingImage.mimeType};base64,${editingImage.base64}`} alt="Preview" className="w-full h-full object-contain rounded-md"/>
+                                     <button onClick={(e) => {e.stopPropagation(); setEditingImage(null);}} className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700">
+                                        <X size={14} />
+                                    </button>
+                                </>
+                             ) : (
+                                <div className="text-center text-gray-400">
+                                    <Upload size={32} className="mx-auto mb-2"/>
+                                    <p className="text-sm">{t('ou')} {t('Upload')}</p>
                                 </div>
-                            ) : (
-                                <div className="text-gray-400">
-                                    <Upload size={32} className="mx-auto mb-2" />
-                                    <p>{t('Clique para carregar uma imagem')}</p>
-                                    <p className="text-xs">{t('ou')}</p>
-                                    <p className="text-xs">{t('Arraste e solte')}</p>
-                                </div>
-                            )}
+                             )}
                          </div>
                     </div>
                 </div>
-                 {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+                {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
             </Card>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {isLoading && Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="aspect-[1/1] bg-gray-800 rounded-lg animate-pulse flex items-center justify-center">
-                        <LoaderIcon className="text-gray-600 animate-spin" size={48} />
-                    </div>
-                ))}
-                
-                {images.length > 0 ? images.map((img, i) => (
-                    <div key={i} className="group relative rounded-lg overflow-hidden shadow-lg">
-                        <img src={`data:image/png;base64,${img.base64}`} alt={`Generated image ${i + 1}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
-                            <button onClick={() => downloadImage(img.base64, img.aspectRatio)} className="opacity-0 group-hover:opacity-100 transition-opacity px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2">
-                                <FileDown size={18} /> {t('download')} ({img.aspectRatio})
-                            </button>
+            {isLoading ? (
+                <div className="text-center py-10">
+                    <LoaderIcon size={40} className="mx-auto animate-spin text-blue-500" />
+                    <p className="mt-4 text-gray-400">{t('generating_images')}</p>
+                </div>
+            ) : generatedImages.length > 0 ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {generatedImages.map((image, index) => (
+                        <div key={index} className="group relative">
+                             <img src={`data:image/png;base64,${image.base64}`} alt={`Generated image ${index + 1}`} className="w-full h-auto rounded-lg shadow-md aspect-[${image.aspectRatio.replace(':', '/')}] object-cover"/>
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                                <button onClick={() => downloadImage(image.base64, 'png')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('download_as_png')}</button>
+                                <button onClick={() => downloadImage(image.base64, 'jpeg')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('download_as_jpg')}</button>
+                                <button onClick={() => setEditingImage({ base64: image.base64, mimeType: 'image/png'})} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('edit')}</button>
+                            </div>
                         </div>
-                    </div>
-                )) : !isLoading && (
-                    <div className="sm:col-span-2 lg:col-span-4">
-                        <Card className="text-center py-20 border-2 border-dashed border-gray-700">
-                            <ImageIcon size={48} className="mx-auto text-gray-500 mb-4" />
-                            <p className="text-gray-400">{t('creative_builder_initial_prompt')}</p>
-                        </Card>
-                    </div>
-                )}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                 <Card className="text-center py-16">
+                    <ImageIcon size={48} className="mx-auto text-gray-500 mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-300">{t('creative_builder_initial_prompt')}</h3>
+                 </Card>
+            )}
         </div>
     );
 };
@@ -2153,16 +2201,40 @@ export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, o
     const { t } = useLanguage();
     const [selectedMonth, setSelectedMonth] = useState('');
 
+    const availableMonths = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const futureMonths = [];
+        for (let y = currentYear; y < currentYear + 3; y++) {
+            for (const monthName of MONTHS_LIST) {
+                const monthKey = `${y}-${monthName}`;
+                if (!existingMonths.includes(monthKey)) {
+                    futureMonths.push({ key: monthKey, name: `${t(monthName)} ${y}`});
+                }
+            }
+        }
+        return futureMonths;
+    }, [existingMonths, t]);
+    
+    useEffect(() => {
+        if (isOpen && availableMonths.length > 0) {
+            setSelectedMonth(availableMonths[0].key);
+        } else if (isOpen) {
+            setSelectedMonth('');
+        }
+    }, [isOpen, availableMonths]);
+    
     if (!isOpen) return null;
 
-    const currentYear = new Date().getFullYear();
-    const availableMonths = MONTHS_LIST.map(monthName => `${currentYear}-${monthName}`)
-                                      .concat(MONTHS_LIST.map(monthName => `${currentYear + 1}-${monthName}`))
-                                      .filter(monthKey => !existingMonths.includes(monthKey));
+    const handleAdd = () => {
+        if(selectedMonth) {
+            onAddMonth(selectedMonth);
+            onClose();
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm animate-modalFadeIn">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-gray-200">{t('Adicionar Mês ao Plano')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
@@ -2170,70 +2242,81 @@ export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, o
                 <div className="p-6">
                     {availableMonths.length > 0 ? (
                         <>
-                        <label className="block text-sm font-medium text-gray-300">{t('Mês')}</label>
-                        <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">{t('Selecione um mês')}</option>
-                            {availableMonths.map(monthKey => {
-                                const [year, monthName] = monthKey.split('-');
-                                return <option key={monthKey} value={monthKey}>{`${t(monthName)} ${year}`}</option>
-                            })}
-                        </select>
+                            <label htmlFor="month-select" className="block text-sm font-medium text-gray-300">{t('Mês')}</label>
+                            <select 
+                                id="month-select"
+                                value={selectedMonth} 
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="" disabled>{t('Selecione um mês')}</option>
+                                {availableMonths.map(month => (
+                                    <option key={month.key} value={month.key}>{month.name}</option>
+                                ))}
+                            </select>
                         </>
                     ) : (
-                        <p className="text-center text-gray-400">{t('Todos os meses já foram adicionados.')}</p>
+                        <p className="text-gray-400 text-center">{t('Todos os meses já foram adicionados.')}</p>
                     )}
                 </div>
                 <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
-                    <button onClick={() => onAddMonth(selectedMonth)} disabled={!selectedMonth} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">{t('add')}</button>
+                    {availableMonths.length > 0 && (
+                       <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('add')}</button>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-
 export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen, onClose, onGenerate, isLoading, initialPrompt, title, buttonText, loadingText }) => {
     const { t } = useLanguage();
     const [prompt, setPrompt] = useState(initialPrompt || '');
 
     useEffect(() => {
-        setPrompt(initialPrompt || '');
-    }, [initialPrompt, isOpen]);
+        if(isOpen) {
+            setPrompt(initialPrompt || '');
+        }
+    }, [isOpen, initialPrompt]);
 
     if (!isOpen) return null;
 
+    const handleGenerate = () => {
+        if (prompt.trim()) {
+            onGenerate(prompt);
+        }
+    };
+    
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
-                        <Sparkles className="text-blue-500" /> {title || t('Crie seu Plano com IA')}
-                    </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2"><Sparkles className="text-blue-500"/>{title || t('Crie seu Plano com IA')}</h2>
+                    {!isLoading && <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>}
                 </div>
                 <div className="p-6">
-                    <p className="text-gray-400 mb-4">{t('Descreva seu negócio, objetivos e público')}</p>
+                    <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-300 mb-2">{t('Descreva seu negócio, objetivos e público')}</label>
                     <textarea 
+                        id="ai-prompt"
                         value={prompt}
                         onChange={e => setPrompt(e.target.value)}
-                        rows={5}
-                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={6}
+                        className="w-full border-gray-600 rounded-md shadow-sm p-2 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder={t('Ex: Uma cafeteria em São Paulo focada em jovens profissionais. Objetivo: aumentar o fluxo na loja.')}
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end">
-                    <button 
-                        onClick={() => onGenerate(prompt)} 
-                        disabled={isLoading || !prompt}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-70 flex items-center justify-center gap-2"
-                    >
-                        {isLoading && <LoaderIcon className="animate-spin" size={20} />}
-                        {isLoading ? (loadingText || t('Gerando seu plano...')) : (buttonText || t('Gerar Plano'))}
+                    <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                        {isLoading ? (
+                            <>
+                                <LoaderIcon className="animate-spin" size={20} />
+                                {loadingText || t('Gerando seu plano...')}
+                            </>
+                        ) : (
+                            <>{buttonText || t('Gerar Plano')}</>
+                        )}
                     </button>
                 </div>
             </div>
@@ -2241,145 +2324,86 @@ export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen
     );
 };
 
-export const ShareLinkModal: React.FC<{isOpen: boolean; onClose: () => void; link: string;}> = ({ isOpen, onClose, link }) => {
+export const ShareLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; link: string }> = ({ isOpen, onClose, link }) => {
     const { t } = useLanguage();
     const [copied, setCopied] = useState(false);
 
-    const isError = link === t('link_generation_error') || link === t('link_generation_error_too_long');
-
-    const copyToClipboard = () => {
-        if (!isError) {
-            navigator.clipboard.writeText(link);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(link).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        }
+        });
     };
-    
-    useEffect(() => {
-        if(isOpen) setCopied(false);
-    }, [isOpen]);
-    
-    if(!isOpen) return null;
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-gray-200">{t('share_plan_title')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
-                    <p className="text-gray-400 mb-4">{t('share_plan_desc')}</p>
-                    {isError ? (
-                        <div className="p-4 bg-red-900/30 border border-red-700 rounded-md text-red-300 text-center">
-                            {link}
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2 p-2 border rounded-md bg-gray-700 border-gray-600">
-                            <Link2 size={18} className="text-gray-400" />
-                            <input 
-                                type="text" 
-                                readOnly 
-                                value={link} 
-                                className="w-full bg-transparent text-sm text-gray-200 focus:outline-none"
-                            />
-                            <button 
-                                onClick={copyToClipboard}
-                                className={`px-3 py-1 text-sm font-semibold rounded-md ${copied ? 'bg-green-500' : 'bg-blue-600'} text-white transition-colors`}
-                            >
-                                {copied ? t('copied') : t('copy_link')}
-                            </button>
-                        </div>
-                    )}
+                    <p className="text-sm text-gray-400 mb-4">{t('share_plan_desc')}</p>
+                    <div className="flex gap-2">
+                        <input type="text" readOnly value={link} className="flex-1 w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200" />
+                        <button onClick={handleCopy} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
+                            {copied ? <><Check size={18}/> {t('copied')}</> : <><CopyIcon size={18}/> {t('copy_link')}</>}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export const ShareablePlanViewer: React.FC<{encodedPlanData: string}> = ({ encodedPlanData }) => {
-    const [plan, setPlan] = useState<PlanData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeView, setActiveView] = useState('Overview');
+export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ encodedPlanData }) => {
     const { t } = useLanguage();
-
+    const [plan, setPlan] = useState<PlanData | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    
     useEffect(() => {
         try {
-            // Make the base64 string valid again by replacing URL-safe characters and adding padding
+            // URL-safe base64 needs padding and character replacement to be decoded.
             let base64 = encodedPlanData.replace(/-/g, '+').replace(/_/g, '/');
             while (base64.length % 4) {
                 base64 += '=';
             }
-            
-            // Decode from base64 and then URI component to handle UTF-8 characters
-            const planJson = decodeURIComponent(escape(atob(base64)));
-            const planData = JSON.parse(planJson);
-            setPlan(planData);
+            // Decode and parse the JSON
+            const decodedJson = decodeURIComponent(escape(atob(base64)));
+            const parsedPlan = JSON.parse(decodedJson);
+            setPlan(parsedPlan);
         } catch (e) {
-            console.error("Failed to decode or parse plan data from URL:", e);
+            console.error("Error decoding plan data:", e);
             setError(t('plan_not_found'));
-        } finally {
-            setIsLoading(false);
         }
     }, [encodedPlanData, t]);
 
-    const handleNavigate = (view: string) => {
-        setActiveView(view);
-    };
-    
-    if (isLoading) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-lg text-gray-300">{t('loading_plan')}</span></div>;
+    if (error) {
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-red-400">{error}</div>;
     }
 
-    if (error || !plan) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-xl text-red-500">{error || t('plan_not_found')}</div>;
+    if (!plan) {
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-white">{t('loading_plan')}</span></div>;
     }
 
     return (
-        <div className="min-h-screen bg-gray-900">
-             <header className="bg-gray-800 shadow-sm sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8"/>
-                         <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <span>{t('shared_by')}:</span>
-                            <img src={plan.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(plan.campaignName[0])}`} alt="Presenter avatar" className="w-8 h-8 rounded-full object-cover"/>
-                            <span className="font-medium text-gray-200">{plan.campaignName}</span>
-                         </div>
+        <div className="bg-gray-900 min-h-screen text-white font-sans">
+            <header className="bg-gray-800 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <img src={ICON_LOGO} alt="MasterPlan Icon" className="h-10 w-10"/>
+                    <div>
+                        <h1 className="text-xl font-bold">{plan.campaignName}</h1>
+                        <p className="text-sm text-gray-400">{t('shared_by')} MasterPlan AI</p>
                     </div>
                 </div>
+                <a href={window.location.origin} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">
+                    {t('create_new_plan')}
+                </a>
             </header>
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                {activeView === 'Overview' && (
-                    <DashboardPage 
-                        planData={plan} 
-                        onNavigate={handleNavigate} 
-                        onAddMonthClick={() => {}} 
-                        onRegeneratePlan={async () => {}} 
-                        isRegenerating={false} 
-                        isReadOnly={true} 
-                    />
-                )}
-                {Object.keys(plan.months || {}).includes(activeView) && (
-                    <>
-                        <button onClick={() => setActiveView('Overview')} className="flex items-center gap-2 mb-6 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
-                            <ArrowLeft size={16} />
-                            {t('Voltar ao Dashboard')}
-                        </button>
-                        <MonthlyPlanPage 
-                            month={activeView}
-                            campaigns={plan.months[activeView]}
-                            onSave={() => {}}
-                            onDelete={() => {}}
-                            planObjective={plan.objective}
-                            customFormats={plan.customFormats || []}
-                            onAddFormat={() => {}}
-                            totalInvestment={plan.totalInvestment}
-                            isReadOnly={true}
-                        />
-                    </>
-                 )}
+            <main className="p-4 sm:p-6 lg:p-8">
+                 <DashboardPage planData={plan} onNavigate={() => {}} onAddMonthClick={() => {}} onRegeneratePlan={async () => {}} isRegenerating={false} isReadOnly={true} />
             </main>
         </div>
     );

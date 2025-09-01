@@ -478,18 +478,14 @@ function AppLogic() {
     const handleSaveCampaign = (month: string, campaign: Campaign) => {
         if (!activePlan) return;
         const updatedMonths = { ...(activePlan.months || {}) };
-        
-        const originalMonthCampaigns = updatedMonths[month] || [];
-        const campaignIndex = originalMonthCampaigns.findIndex(c => c.id === campaign.id);
-        
+    
+        const cleanCampaigns = (updatedMonths[month] || []).filter(Boolean);
+        const campaignIndex = cleanCampaigns.findIndex(c => c.id === campaign.id);
+    
         if (campaignIndex > -1) {
-            // UPDATE: Create a new array using .map() for immutability
-            updatedMonths[month] = originalMonthCampaigns.map((c) =>
-                c.id === campaign.id ? campaign : c
-            );
+            updatedMonths[month] = cleanCampaigns.map(c => (c.id === campaign.id ? campaign : c));
         } else {
-            // ADD: Create a new array using spread syntax for immutability
-            updatedMonths[month] = [...originalMonthCampaigns, campaign];
+            updatedMonths[month] = [...cleanCampaigns, campaign];
         }
         updateActivePlan({ ...activePlan, months: updatedMonths });
     };
@@ -497,7 +493,9 @@ function AppLogic() {
     const handleDeleteCampaign = (month: string, campaignId: string) => {
         if (!activePlan) return;
         const updatedMonths = { ...(activePlan.months || {}) };
-        updatedMonths[month] = updatedMonths[month].filter(c => c.id !== campaignId);
+        if (updatedMonths[month]) {
+            updatedMonths[month] = updatedMonths[month].filter(c => c && c.id !== campaignId);
+        }
         updateActivePlan({ ...activePlan, months: updatedMonths });
     }
 
