@@ -1201,7 +1201,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
     }
     
     const totals = useMemo(() => {
-        return campaigns.reduce((acc, c) => {
+        return (campaigns || []).filter(Boolean).reduce((acc, c) => {
             acc.budget += Number(c.budget) || 0;
             acc.impressoes += Number(c.impressoes) || 0;
             acc.cliques += Number(c.cliques) || 0;
@@ -1223,7 +1223,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                         </button>
                     )}
                 </div>
-                 {campaigns.length === 0 ? (
+                 {(campaigns || []).filter(Boolean).length === 0 ? (
                     <div className="text-center py-16">
                         <h3 className="text-xl font-semibold text-gray-300">{t('Nenhuma campanha para este mês.')}</h3>
                         <p className="mt-2 text-gray-400">{t('Adicione a primeira campanha para começar o planejamento.')}</p>
@@ -1251,7 +1251,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                 </tr>
                             </thead>
                             <tbody>
-                                {campaigns.filter(Boolean).map(campaign => (
+                                {(campaigns || []).filter(Boolean).map(campaign => (
                                     <tr key={campaign.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600/50">
                                         <td className="px-6 py-4 text-white">{campaign.tipoCampanha}</td>
                                         <td className="px-6 py-4">{campaign.etapaFunil}</td>
@@ -1288,7 +1288,7 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                 )}
             </Card>
 
-            <ChartsSection campaigns={campaigns} title={t('Distribuição de Investimento ({month})', { month: `${t(monthName)} ${year}` })} />
+            <ChartsSection campaigns={(campaigns || []).filter(Boolean)} title={t('Distribuição de Investimento ({month})', { month: `${t(monthName)} ${year}` })} />
 
             {isModalOpen && (
                 <CampaignModal 
@@ -1498,7 +1498,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     
     const channels = useMemo(() => {
         const allChannels = new Set<string>();
-        Object.values(planData.months || {}).flat().forEach(campaign => {
+        Object.values(planData.months || {}).flat().filter(Boolean).forEach(campaign => {
             if (campaign?.canal) {
                 allChannels.add(campaign.canal);
             }
@@ -1539,7 +1539,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
         );
     }
     
-    const creativeGroups = planData.creatives?.[activeChannel] || [];
+    const creativeGroups = (planData.creatives?.[activeChannel] || []).filter(Boolean);
 
     const handleAddGroup = () => {
         const newGroup: CreativeTextData = {
@@ -2027,49 +2027,81 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                 {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
              </Card>
             
-            <div className="flex flex-col lg:flex-row gap-6">
-                <AdGroupComponent 
-                    group={adGroups.find(g => g.id === 'unassigned') || { id: 'unassigned', name: t('unassigned_keywords'), keywords: [] }}
-                    allGroups={adGroups}
-                    onRename={handleRenameGroup}
-                    onDelete={handleDeleteGroup}
-                    onMove={handleMoveKeywords}
-                />
-
-                <div className="lg:col-span-2 flex-1 space-y-4">
-                    <div className="flex gap-2">
-                        <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200"/>
-                        <button onClick={handleCreateGroup} className="px-4 py-2 bg-blue-600 text-white rounded-md">{t('create_ad_group')}</button>
-                    </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {adGroups.filter(g => g.id !== 'unassigned').map(group => (
-                             <AdGroupComponent 
-                                key={group.id}
-                                group={group}
-                                allGroups={adGroups}
-                                onRename={handleRenameGroup}
-                                onDelete={handleDeleteGroup}
-                                onMove={handleMoveKeywords}
-                            />
-                        ))}
-                         {adGroups.filter(g => g.id !== 'unassigned').length === 0 && (
-                            <div className="md:col-span-2 text-center text-gray-500 py-8">
-                                {t('no_ad_groups')}
-                            </div>
-                         )}
-                    </div>
+             <div className="flex flex-col lg:flex-row gap-6">
+                <div className="lg:w-2/3">
+                    <Card>
+                        <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('unassigned_keywords')}</h3>
+                         <div className="overflow-x-auto max-h-96">
+                            <table className="w-full text-sm text-left text-gray-400">
+                                <thead className="text-xs uppercase bg-gray-700/50 sticky top-0">
+                                    <tr>
+                                        <th className="px-4 py-2">{t('keyword')}</th>
+                                        <th className="px-4 py-2">{t('search_volume')}</th>
+                                        <th className="px-4 py-2">{t('estimated_clicks')}</th>
+                                        <th className="px-4 py-2">{t('min_cpc')}</th>
+                                        <th className="px-4 py-2">{t('max_cpc')}</th>
+                                        <th className="px-4 py-2">{t('actions')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {suggestions.length > 0 ? suggestions.map(kw => (
+                                        <tr key={kw.keyword} className="border-b border-gray-700 hover:bg-gray-700/50">
+                                            <td className="px-4 py-2 text-white">{kw.keyword}</td>
+                                            <td className="px-4 py-2">{formatNumber(kw.volume)}</td>
+                                            <td className="px-4 py-2">{formatNumber(kw.clickPotential)}</td>
+                                            <td className="px-4 py-2">{formatCurrency(kw.minCpc)}</td>
+                                            <td className="px-4 py-2">{formatCurrency(kw.maxCpc)}</td>
+                                            <td className="px-4 py-2">
+                                                 <select
+                                                    onChange={(e) => handleMoveKeywords(kw, e.target.value)}
+                                                    className="bg-gray-600 text-white text-xs rounded p-1"
+                                                    value="unassigned"
+                                                    disabled={adGroups.filter(g => g.id !== 'unassigned').length === 0}
+                                                >
+                                                    <option value="unassigned" disabled>{t('assign_to_group')}</option>
+                                                     {adGroups.filter(g => g.id !== 'unassigned').map(g => (
+                                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr><td colSpan={6} className="text-center py-8 text-gray-500">{t('no_keywords_generated')}</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+                
+                 <div className="lg:w-1/3 space-y-4">
+                    <Card>
+                        <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('ad_groups')}</h3>
+                        <div className="flex gap-2 mb-4">
+                            <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200"/>
+                            <button onClick={handleCreateGroup} className="px-4 py-2 bg-blue-600 text-white rounded-md">{t('add')}</button>
+                        </div>
+                        <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+                             {adGroups.filter(g => g.id !== 'unassigned').map(group => (
+                                <AdGroupComponent 
+                                    key={group.id}
+                                    group={group}
+                                    allGroups={adGroups}
+                                    onRename={handleRenameGroup}
+                                    onDelete={handleDeleteGroup}
+                                    onMove={handleMoveKeywords}
+                                />
+                            ))}
+                            {adGroups.filter(g => g.id !== 'unassigned').length === 0 && (
+                                <div className="text-center text-gray-500 py-8">
+                                    {t('no_ad_groups')}
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+                     <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="w-full px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_keywords')}</button>
                 </div>
             </div>
-             <Card>
-                <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-100">{t('Results')}</h3>
-                    <div className="flex gap-2">
-                         <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_as_csv')}</button>
-                         <button onClick={() => exportGroupedKeywordsAsTXT(planData, t)} className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_as_txt')}</button>
-                    </div>
-                </div>
-             </Card>
-
         </div>
     );
 };
@@ -2080,7 +2112,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [editingImage, setEditingImage] = useState<{ base64: string; mimeType: string } | null>(null);
+    const [editingImage, setEditingImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleGenerate = async () => {
@@ -2088,8 +2120,20 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         setIsLoading(true);
         setError(null);
         setGeneratedImages([]);
+        
+        let imageForApi: { base64: string; mimeType: string } | undefined = undefined;
+        if (editingImage) {
+            const parts = editingImage.split(',');
+            if (parts.length === 2) {
+                const mimePart = parts[0].split(';')[0];
+                const mimeType = mimePart.split(':')[1];
+                const base64 = parts[1];
+                imageForApi = { base64, mimeType };
+            }
+        }
+        
         try {
-            const results = await generateAIImages(prompt, editingImage || undefined);
+            const results = await generateAIImages(prompt, imageForApi);
             setGeneratedImages(results);
         } catch (e) {
             setError(t('error_generating_images'));
@@ -2105,9 +2149,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
             const reader = new FileReader();
             reader.onloadend = () => {
                 if (typeof reader.result === 'string') {
-                    // The result includes the Base64 prefix, we need to remove it for the API
-                    const base64Data = reader.result.split(',')[1];
-                    setEditingImage({ base64: base64Data, mimeType: file.type });
+                    setEditingImage(reader.result);
                 }
             };
             reader.readAsDataURL(file);
@@ -2152,7 +2194,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                          <div className="relative w-full h-full">
                              {editingImage ? (
                                 <>
-                                    <img src={`data:${editingImage.mimeType};base64,${editingImage.base64}`} alt="Preview" className="w-full h-full object-contain rounded-md"/>
+                                    <img src={editingImage} alt="Preview" className="w-full h-full object-contain rounded-md"/>
                                      <button onClick={(e) => {e.stopPropagation(); setEditingImage(null);}} className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700">
                                         <X size={14} />
                                     </button>
@@ -2182,7 +2224,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
                                 <button onClick={() => downloadImage(image.base64, 'png')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('download_as_png')}</button>
                                 <button onClick={() => downloadImage(image.base64, 'jpeg')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('download_as_jpg')}</button>
-                                <button onClick={() => setEditingImage({ base64: image.base64, mimeType: 'image/png'})} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('edit')}</button>
+                                <button onClick={() => setEditingImage(`data:image/png;base64,${image.base64}`)} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('edit')}</button>
                             </div>
                         </div>
                     ))}
