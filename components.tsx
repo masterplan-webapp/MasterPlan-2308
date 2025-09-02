@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
-import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, calculatePlanSummary } from './services';
+import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, dbService, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import {
     PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
@@ -1837,6 +1837,56 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
 };
 
 // ... KeywordBuilderPage, CreativeBuilderPage, and other components follow ...
+
+// Reusable Export Dropdown component
+const ExportDropdown: React.FC<{
+    onExport: (format: 'csv' | 'pdf') => void;
+    label: string;
+}> = ({ onExport, label }) => {
+    const { t } = useLanguage();
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button onClick={() => setIsOpen(prev => !prev)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 text-sm font-medium transition-colors">
+                <FileDown size={16} />
+                <span>{label}</span>
+                <ChevronDown size={16} className={`transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                    <div className="py-1">
+                        <button
+                            onClick={() => { onExport('csv'); setIsOpen(false); }}
+                            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                        >
+                           <Sheet size={16} /> {t('export_as_csv')}
+                        </button>
+                        <button
+                            onClick={() => { onExport('pdf'); setIsOpen(false); }}
+                            className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+                        >
+                            <FileText size={16} /> {t('export_to_pdf')}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
 const AdGroupComponent: React.FC<{
     group: AdGroup;
     allGroups: AdGroup[];
@@ -1918,6 +1968,9 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
     }, [planData.adGroups]);
     
     const adGroups = useMemo(() => planData.adGroups || [], [planData.adGroups]);
+    
+    const allKeywords = useMemo(() => adGroups.flatMap(g => g.keywords), [adGroups]);
+
 
     const handleGenerate = async () => {
         const input = mode === 'seed' ? seedKeywords : aiPrompt;
@@ -1993,6 +2046,15 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
         
         updateAdGroups(newGroups);
     };
+    
+    const handleGroupedExport = (format: 'csv' | 'pdf') => {
+        if (format === 'csv') {
+            exportGroupedKeywordsAsCSV(planData, t);
+        } else if (format === 'pdf') {
+            exportGroupedKeywordsToPDF(planData, t);
+        }
+    };
+
 
     return (
         <div className="space-y-6">
@@ -2030,7 +2092,9 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
              <div className="flex flex-col lg:flex-row gap-6">
                 <div className="lg:w-2/3">
                     <Card>
-                        <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('unassigned_keywords')}</h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-gray-100">{t('unassigned_keywords')}</h3>
+                        </div>
                          <div className="overflow-x-auto max-h-96">
                             <table className="w-full text-sm text-left text-gray-400">
                                 <thead className="text-xs uppercase bg-gray-700/50 sticky top-0">
@@ -2076,7 +2140,15 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                 
                  <div className="lg:w-1/3 space-y-4">
                     <Card>
-                        <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('ad_groups')}</h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold text-gray-100">{t('ad_groups')}</h3>
+                            {allKeywords.length > 0 && (
+                                <ExportDropdown 
+                                    label={t('export_keywords')}
+                                    onExport={handleGroupedExport}
+                                />
+                            )}
+                        </div>
                         <div className="flex gap-2 mb-4">
                             <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder={t('ad_group_name_placeholder')} className="flex-grow border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200"/>
                             <button onClick={handleCreateGroup} className="px-4 py-2 bg-blue-600 text-white rounded-md">{t('add')}</button>
@@ -2099,7 +2171,6 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
                             )}
                         </div>
                     </Card>
-                     <button onClick={() => exportGroupedKeywordsAsCSV(planData, t)} className="w-full px-3 py-2 text-sm bg-gray-700 hover:bg-gray-600 rounded-md">{t('export_keywords')}</button>
                 </div>
             </div>
         </div>
@@ -2115,12 +2186,18 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+        // Sync prompt from plan data in case the plan was regenerated
+        setPrompt(planData.aiImagePrompt || '');
+    }, [planData.aiImagePrompt]);
+
     const handleGenerate = async () => {
         if (!prompt) return;
         setIsLoading(true);
         setError(null);
         setGeneratedImages([]);
         
+        const isEditingOperation = !!editingImage;
         let imageForApi: { base64: string; mimeType: string } | undefined = undefined;
         if (editingImage) {
             const parts = editingImage.split(',');
@@ -2135,6 +2212,12 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         try {
             const results = await generateAIImages(prompt, imageForApi);
             setGeneratedImages(results);
+
+            // If this was an editing operation and it succeeded, update the main preview
+            if (isEditingOperation && results.length > 0 && results[0].base64) {
+                setEditingImage(`data:image/png;base64,${results[0].base64}`);
+            }
+
         } catch (e) {
             setError(t('error_generating_images'));
             console.error(e);

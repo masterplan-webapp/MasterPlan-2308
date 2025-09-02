@@ -802,20 +802,29 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
     ];
     let csvContent = headers.join(',') + '\r\n';
 
-    const groupedKeywords = plan.adGroups?.filter(g => g.id !== 'unassigned' && g.keywords.length > 0) || [];
+    const allGroups = plan.adGroups || [];
+    const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
+    const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
+    
+    const sortedGroups = [...assignedGroups];
+    if (unassignedGroup) {
+        sortedGroups.push(unassignedGroup);
+    }
 
-    groupedKeywords.forEach(group => {
-        group.keywords.forEach(kw => {
-            const row = [
-                escapeCSV(group.name),
-                escapeCSV(kw.keyword),
-                escapeCSV(kw.volume),
-                escapeCSV(kw.clickPotential),
-                escapeCSV(kw.minCpc),
-                escapeCSV(kw.maxCpc),
-            ];
-            csvContent += row.join(',') + '\r\n';
-        });
+    sortedGroups.forEach(group => {
+        if (group.keywords.length > 0) {
+            group.keywords.forEach(kw => {
+                const row = [
+                    escapeCSV(group.name),
+                    escapeCSV(kw.keyword),
+                    escapeCSV(kw.volume),
+                    escapeCSV(kw.clickPotential),
+                    escapeCSV(kw.minCpc),
+                    escapeCSV(kw.maxCpc),
+                ];
+                csvContent += row.join(',') + '\r\n';
+            });
+        }
     });
 
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
@@ -829,20 +838,141 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
     document.body.removeChild(link);
 };
 
+const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string): string => {
+    const styles = `
+        <style>
+            body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #333; }
+            h1 { font-size: 18px; color: #003366; text-align: center; margin-bottom: 20px; }
+            h2 { font-size: 14px; color: #003366; margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+        </style>
+    `;
+
+    let content = `<h1>${t('export_all_keywords')} - ${plan.campaignName}</h1>`;
+
+    const allGroups = plan.adGroups || [];
+    const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
+    const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
+    
+    const sortedGroups = [...assignedGroups];
+    if (unassignedGroup) {
+        sortedGroups.push(unassignedGroup);
+    }
+
+    sortedGroups.forEach(group => {
+        if (group.keywords && group.keywords.length > 0) {
+            content += `<h2>${group.name}</h2>`;
+            content += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>${t('keyword')}</th>
+                            <th>${t('search_volume')}</th>
+                            <th>${t('estimated_clicks')}</th>
+                            <th>${t('min_cpc')}</th>
+                            <th>${t('max_cpc')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${group.keywords.map(kw => `
+                            <tr>
+                                <td>${kw.keyword}</td>
+                                <td>${formatNumber(kw.volume)}</td>
+                                <td>${formatNumber(kw.clickPotential)}</td>
+                                <td>${formatCurrency(kw.minCpc)}</td>
+                                <td>${formatCurrency(kw.maxCpc)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+    });
+
+    return `<div id="pdf-keywords-content" style="padding: 20px;">${styles}${content}</div>`;
+};
+
+
+export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string) => string) => {
+    const reportHTML = buildGroupedKeywordsPdfHtml(plan, t);
+    
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '210mm'; // A4 width for rendering
+    container.innerHTML = reportHTML;
+    document.body.appendChild(container);
+
+    try {
+        const content = container.querySelector('#pdf-keywords-content') as HTMLElement;
+        const canvas = await html2canvas(content, { scale: 2 });
+        
+        const pdf = new jsPDF('p', 'mm', 'a4'); // portrait, mm, A4
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const aspectRatio = imgWidth / imgHeight;
+        
+        let finalWidth = pdfWidth - 20; // with margin
+        let finalHeight = finalWidth / aspectRatio;
+        
+        const xOffset = 10;
+        let yOffset = 10;
+
+        // Basic handling for content that might be taller than one page
+        const pageHeightInCanvas = (pdfHeight - 2 * yOffset) * (imgWidth / finalWidth);
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+        heightLeft -= pageHeightInCanvas;
+
+        while (heightLeft > 0) {
+            position += pageHeightInCanvas;
+            pdf.addPage();
+            pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset - position, finalWidth, finalHeight);
+            heightLeft -= pageHeightInCanvas;
+        }
+        
+        pdf.save(`${plan.campaignName}-keywords.pdf`);
+
+    } catch (error) {
+        console.error("Error generating keywords PDF:", error);
+        alert('An error occurred while generating the PDF.');
+    } finally {
+        document.body.removeChild(container);
+    }
+};
+
 export const exportGroupedKeywordsAsTXT = (plan: PlanData, t: (key: string, substitutions?: Record<string, string>) => string) => {
     let txtContent = `${t('ad_groups')} - ${plan.campaignName}\n`;
     txtContent += `=========================================\n\n`;
     
-    const groupedKeywords = plan.adGroups?.filter(g => g.id !== 'unassigned' && g.keywords.length > 0) || [];
+    const allGroups = plan.adGroups || [];
+    const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
+    const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
+    
+    const sortedGroups = [...assignedGroups];
+    if (unassignedGroup) {
+        sortedGroups.push(unassignedGroup);
+    }
 
-    if (groupedKeywords.length > 0) {
-        groupedKeywords.forEach(group => {
-            txtContent += `${t('ad_group_column')}: ${group.name}\n`;
-            txtContent += `-----------------------------------------\n`;
-            group.keywords.forEach(kw => {
-                txtContent += `- ${kw.keyword}\n`;
-            });
-            txtContent += `\n`;
+    if (sortedGroups.length > 0) {
+        sortedGroups.forEach(group => {
+            if (group.keywords.length > 0) {
+                txtContent += `${t('ad_group_column')}: ${group.name}\n`;
+                txtContent += `-----------------------------------------\n`;
+                group.keywords.forEach(kw => {
+                    txtContent += `- ${kw.keyword}\n`;
+                });
+                txtContent += `\n`;
+            }
         });
     }
 
