@@ -2177,17 +2177,68 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
     );
 };
 
+const AD_FORMATS = [
+    { name: 'Square', width: 1200, height: 1200 },
+    { name: 'Stories / Reels', width: 1080, height: 1920 },
+    { name: 'Landscape', width: 1200, height: 628 },
+    { name: 'Portrait (4:5)', width: 1080, height: 1350 },
+    { name: 'Portrait (3:4)', width: 960, height: 1200 },
+];
+
+const downloadAdaptedImage = (sourceImageSrc: string, targetWidth: number, targetHeight: number, format: 'png' | 'jpeg', fileName: string) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = sourceImageSrc;
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // "object-fit: cover" logic
+        const imgRatio = img.width / img.height;
+        const canvasRatio = canvas.width / canvas.height;
+        let sx, sy, sWidth, sHeight;
+
+        if (imgRatio > canvasRatio) { // image is wider than canvas
+            sHeight = img.height;
+            sWidth = sHeight * canvasRatio;
+            sx = (img.width - sWidth) / 2;
+            sy = 0;
+        } else { // image is taller than or same ratio as canvas
+            sWidth = img.width;
+            sHeight = sWidth / canvasRatio;
+            sx = 0;
+            sy = (img.height - sHeight) / 2;
+        }
+
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+
+        const link = document.createElement('a');
+        link.download = `${fileName}.${format}`;
+        link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : 1.0);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+    img.onerror = (e) => {
+        console.error("Failed to load image for canvas operation", e);
+        alert('Failed to load image for download operation.');
+    };
+};
+
 export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData }) => {
     const { t } = useLanguage();
     const [prompt, setPrompt] = useState(planData.aiImagePrompt || '');
-    const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [sourceImages, setSourceImages] = useState<GeneratedImage[]>([]);
+    const [selectedSource, setSelectedSource] = useState<GeneratedImage | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Sync prompt from plan data in case the plan was regenerated
         setPrompt(planData.aiImagePrompt || '');
     }, [planData.aiImagePrompt]);
 
@@ -2195,9 +2246,9 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         if (!prompt) return;
         setIsLoading(true);
         setError(null);
-        setGeneratedImages([]);
+        setSourceImages([]);
+        setSelectedSource(null);
         
-        const isEditingOperation = !!editingImage;
         let imageForApi: { base64: string; mimeType: string } | undefined = undefined;
         if (editingImage) {
             const parts = editingImage.split(',');
@@ -2211,13 +2262,13 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         
         try {
             const results = await generateAIImages(prompt, imageForApi);
-            setGeneratedImages(results);
-
-            // If this was an editing operation and it succeeded, update the main preview
-            if (isEditingOperation && results.length > 0 && results[0].base64) {
-                setEditingImage(`data:image/png;base64,${results[0].base64}`);
+            setSourceImages(results);
+            if (results.length > 0) {
+                setSelectedSource(results[0]);
+                 if (imageForApi) { // if it was an editing operation
+                    setEditingImage(`data:image/png;base64,${results[0].base64}`);
+                }
             }
-
         } catch (e) {
             setError(t('error_generating_images'));
             console.error(e);
@@ -2237,15 +2288,6 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
             };
             reader.readAsDataURL(file);
         }
-    };
-
-    const downloadImage = (base64: string, format: 'png' | 'jpeg') => {
-        const link = document.createElement('a');
-        link.href = `data:image/${format};base64,${base64}`;
-        link.download = `masterplan-creative.${format}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
 
     return (
@@ -2294,25 +2336,65 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                 {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
             </Card>
 
-            {isLoading ? (
+            {isLoading && (
                 <div className="text-center py-10">
                     <LoaderIcon size={40} className="mx-auto animate-spin text-blue-500" />
                     <p className="mt-4 text-gray-400">{t('generating_images')}</p>
                 </div>
-            ) : generatedImages.length > 0 ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {generatedImages.map((image, index) => (
-                        <div key={index} className="group relative">
-                             <img src={`data:image/png;base64,${image.base64}`} alt={`Generated image ${index + 1}`} className="w-full h-auto rounded-lg shadow-md aspect-[${image.aspectRatio.replace(':', '/')}] object-cover"/>
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                                <button onClick={() => downloadImage(image.base64, 'png')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('download_as_png')}</button>
-                                <button onClick={() => downloadImage(image.base64, 'jpeg')} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('download_as_jpg')}</button>
-                                <button onClick={() => setEditingImage(`data:image/png;base64,${image.base64}`)} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('edit')}</button>
+            )}
+            
+            {sourceImages.length > 0 && !isLoading && (
+                 <Card>
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">Selecione a Imagem Base</h3>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                        {sourceImages.map((image, index) => (
+                            <div 
+                                key={index} 
+                                className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${selectedSource?.base64 === image.base64 ? 'border-blue-500 scale-105' : 'border-transparent hover:border-blue-400'}`}
+                                onClick={() => setSelectedSource(image)}
+                            >
+                                <img src={`data:image/png;base64,${image.base64}`} alt={`Source image ${index + 1}`} className="w-32 h-32 object-cover" />
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            {selectedSource && !isLoading ? (
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-100 mb-4 mt-8">Formatos de Anúncio</h2>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        {AD_FORMATS.map(format => (
+                             <div key={format.name} className="bg-gray-800 rounded-lg overflow-hidden shadow-sm flex flex-col">
+                                <div 
+                                    className="w-full bg-gray-700" 
+                                    style={{ aspectRatio: `${format.width}/${format.height}`}}
+                                >
+                                    <img src={`data:image/png;base64,${selectedSource.base64}`} alt={`${format.name} preview`} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="p-4 flex flex-col flex-grow">
+                                    <h4 className="font-semibold text-white">{format.name}</h4>
+                                    <p className="text-sm text-gray-400 mb-4">{format.width}x{format.height}px</p>
+                                    <div className="mt-auto flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => downloadAdaptedImage(`data:image/png;base64,${selectedSource.base64}`, format.width, format.height, 'png', `creative-${format.width}x${format.height}`)}
+                                            className="w-full text-center px-3 py-1.5 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors"
+                                        >
+                                            {t('download_as_png')}
+                                        </button>
+                                        <button
+                                            onClick={() => downloadAdaptedImage(`data:image/png;base64,${selectedSource.base64}`, format.width, format.height, 'jpeg', `creative-${format.width}x${format.height}`)}
+                                            className="w-full text-center px-3 py-1.5 text-xs bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors"
+                                        >
+                                            {t('download_as_jpg')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            ) : (
+            ) : !isLoading && sourceImages.length === 0 && (
                  <Card className="text-center py-16">
                     <ImageIcon size={48} className="mx-auto text-gray-500 mb-4" />
                     <h3 className="text-xl font-semibold text-gray-300">{t('creative_builder_initial_prompt')}</h3>

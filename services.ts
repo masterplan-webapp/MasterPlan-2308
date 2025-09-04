@@ -1168,39 +1168,29 @@ export const generateAIImages = async (prompt: string, image?: { base64: string;
         }
     } else {
         // --- Image Generation Task ---
-        const aspectRatios: AspectRatio[] = ["1:1", "16:9", "9:16", "3:4"];
+        try {
+            const response = await ai.models.generateImages({
+                model: 'imagen-4.0-generate-001',
+                prompt: prompt,
+                config: {
+                    numberOfImages: 2, // Generate two options for the user
+                    outputMimeType: 'image/png',
+                    aspectRatio: '1:1', // Always generate a square base image
+                },
+            });
 
-        const imagePromises = aspectRatios.map(async (aspectRatio) => {
-            try {
-                const response = await ai.models.generateImages({
-                    model: 'imagen-4.0-generate-001',
-                    prompt: prompt,
-                    config: {
-                        numberOfImages: 1,
-                        outputMimeType: 'image/png',
-                        aspectRatio: aspectRatio,
-                    },
-                });
-
-                if (response.generatedImages && response.generatedImages.length > 0) {
-                    return {
-                        base64: response.generatedImages[0].image.imageBytes,
-                        aspectRatio: aspectRatio,
-                    };
-                }
-            } catch (error) {
-                console.error(`Error generating image for aspect ratio ${aspectRatio}:`, error);
+            if (response.generatedImages && response.generatedImages.length > 0) {
+                const validImages = response.generatedImages.map(img => ({
+                    base64: img.image.imageBytes,
+                    aspectRatio: '1:1' as AspectRatio,
+                }));
+                return validImages;
+            } else {
+                throw new Error("Image generation returned no images.");
             }
-            return null;
-        });
-
-        const results = await Promise.all(imagePromises);
-        const validImages = results.filter((img): img is GeneratedImage => img !== null);
-
-        if (validImages.length === 0) {
-            throw new Error("Image generation failed or returned no images.");
+        } catch (error) {
+            console.error(`Error generating images:`, error);
+            throw new Error("Image generation failed.");
         }
-
-        return validImages;
     }
 };
