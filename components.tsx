@@ -2235,7 +2235,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [selectedSource, setSelectedSource] = useState<GeneratedImage | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [editingImage, setEditingImage] = useState<string | null>(null);
+    const [editingImages, setEditingImages] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -2249,24 +2249,31 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
         setSourceImages([]);
         setSelectedSource(null);
         
-        let imageForApi: { base64: string; mimeType: string } | undefined = undefined;
-        if (editingImage) {
-            const parts = editingImage.split(',');
-            if (parts.length === 2) {
-                const mimePart = parts[0].split(';')[0];
-                const mimeType = mimePart.split(':')[1];
-                const base64 = parts[1];
-                imageForApi = { base64, mimeType };
+        let imagesForApi: { base64: string; mimeType: string }[] | undefined = undefined;
+        if (editingImages.length > 0) {
+            try {
+                imagesForApi = editingImages.map(dataUrl => {
+                    const parts = dataUrl.split(',');
+                    if (parts.length !== 2) throw new Error("Invalid data URL");
+                    const mimePart = parts[0].split(';')[0];
+                    const mimeType = mimePart.split(':')[1];
+                    const base64 = parts[1];
+                    return { base64, mimeType };
+                });
+            } catch (e) {
+                setError("Uma das imagens enviadas é inválida.");
+                setIsLoading(false);
+                return;
             }
         }
         
         try {
-            const results = await generateAIImages(prompt, imageForApi);
+            const results = await generateAIImages(prompt, imagesForApi);
             setSourceImages(results);
             if (results.length > 0) {
                 setSelectedSource(results[0]);
-                 if (imageForApi) { // if it was an editing operation
-                    setEditingImage(`data:image/png;base64,${results[0].base64}`);
+                if (imagesForApi) { // if it was an editing operation, replace the inputs with the single output
+                    setEditingImages([`data:image/png;base64,${results[0].base64}`]);
                 }
             }
         } catch (e) {
@@ -2278,16 +2285,34 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     };
     
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                    setEditingImage(reader.result);
-                }
-            };
-            reader.readAsDataURL(file);
+        const files = event.target.files;
+        if (files) {
+            const filePromises = Array.from(files).map(file => {
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        if (typeof reader.result === 'string') {
+                            resolve(reader.result);
+                        } else {
+                            reject('Failed to read file');
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            Promise.all(filePromises).then(newImages => {
+                setEditingImages(prev => [...prev, ...newImages]);
+            }).catch(err => console.error("Error reading files:", err));
         }
+        if (event.target) {
+            event.target.value = ''; // Allow re-uploading the same file
+        }
+    };
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        setEditingImages(prev => prev.filter((_, index) => index !== indexToRemove));
     };
 
     return (
@@ -2311,26 +2336,30 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                             {isLoading ? <><LoaderIcon size={20} className="animate-spin" />{t('generating_images')}</> : <><ImageIcon size={18}/> {t('generate_images')}</>}
                         </button>
                     </div>
-                    <div 
-                        className="w-full md:w-64 flex-shrink-0 border-2 border-dashed border-gray-600 rounded-lg p-4 flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/20 transition-colors"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/>
-                         <div className="relative w-full h-full">
-                             {editingImage ? (
-                                <>
-                                    <img src={editingImage} alt="Preview" className="w-full h-full object-contain rounded-md"/>
-                                     <button onClick={(e) => {e.stopPropagation(); setEditingImage(null);}} className="absolute -top-2 -right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700">
-                                        <X size={14} />
+                    <div className="w-full md:w-64 flex-shrink-0 space-y-2">
+                        <div className="grid grid-cols-3 gap-2">
+                            {editingImages.map((image, index) => (
+                                <div key={index} className="relative aspect-square">
+                                    <img src={image} alt={`Upload preview ${index + 1}`} className="w-full h-full object-cover rounded-md" />
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }} 
+                                        className="absolute -top-1.5 -right-1.5 p-0.5 bg-red-600 text-white rounded-full shadow-md hover:bg-red-700 transition-colors"
+                                    >
+                                        <X size={12} />
                                     </button>
-                                </>
-                             ) : (
-                                <div className="text-center text-gray-400">
-                                    <Upload size={32} className="mx-auto mb-2"/>
-                                    <p className="text-sm">{t('ou')} {t('Upload')}</p>
                                 </div>
-                             )}
-                         </div>
+                            ))}
+                            <div 
+                                className="aspect-square border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/20 transition-colors"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <div className="text-center text-gray-400">
+                                    <Upload size={24}/>
+                                    <p className="text-xs mt-1">{t('add')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleFileUpload}/>
                     </div>
                 </div>
                 {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}

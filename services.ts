@@ -1126,36 +1126,37 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
     throw new Error("Invalid response from AI for keywords");
 };
 
-export const generateAIImages = async (prompt: string, image?: { base64: string; mimeType: string }): Promise<GeneratedImage[]> => {
+export const generateAIImages = async (prompt: string, images?: { base64: string; mimeType: string }[]): Promise<GeneratedImage[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    if (image) {
+    if (images && images.length > 0) {
         // --- Image Editing Task ---
         try {
-            const imagePart = {
+            const imageParts = images.map(image => ({
                 inlineData: {
                     mimeType: image.mimeType,
                     data: image.base64,
                 },
-            };
+            }));
             const textPart = { text: prompt };
+            const allParts = [...imageParts, textPart];
 
             const response: GenerateContentResponse = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image-preview',
-                contents: { parts: [imagePart, textPart] },
+                contents: { parts: allParts },
                 config: {
                     responseModalities: [Modality.IMAGE, Modality.TEXT],
                 },
             });
 
-            const imageParts = response.candidates[0].content.parts.filter(part => part.inlineData);
+            const imagePartsFromResponse = response.candidates[0].content.parts.filter(part => part.inlineData);
 
-            if (imageParts.length > 0 && imageParts[0].inlineData) {
+            if (imagePartsFromResponse.length > 0 && imagePartsFromResponse[0].inlineData) {
                 // The model returns one image; we return it in an array to match the function signature.
                 // The aspect ratio of the edited image will be the same as the input. 
                 // We use '1:1' as a placeholder since the exact ratio isn't known and the type requires a value.
                 const generatedImage: GeneratedImage = {
-                    base64: imageParts[0].inlineData.data,
+                    base64: imagePartsFromResponse[0].inlineData.data,
                     aspectRatio: '1:1',
                 };
                 return [generatedImage];
