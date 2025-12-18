@@ -1,8 +1,29 @@
-
-
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { 
+    getAuth, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    onAuthStateChanged, 
+    signOut as firebaseSignOut, 
+    updateProfile 
+} from "firebase/auth";
 import { TRANSLATIONS } from './constants';
-import { LanguageCode, Translations, LanguageContextType, Theme, ThemeContextType, AuthContextType, User } from './types';
+import { LanguageCode, LanguageContextType, Theme, ThemeContextType, AuthContextType, User } from './types';
+
+// --- Firebase Initialization ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ-A3pRyeonwxTH_pQMojJ-WFcrRptuWY",
+  authDomain: "masterplan-52e06.firebaseapp.com",
+  projectId: "masterplan-52e06",
+  storageBucket: "masterplan-52e06.firebasestorage.app",
+  messagingSenderId: "329808307895",
+  appId: "1:329808307895:web:330d7828bfbe85c74c8f32"
+};
+
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
 
 // --- Language Context ---
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -81,48 +102,56 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const signInWithGoogle = useCallback(() => {
+    const signInWithGoogle = useCallback(async () => {
         setLoading(true);
-        setTimeout(() => { // Simulate API call
-            const mockUser: User = { 
-                uid: '12345', 
-                email: 'user@example.com', 
-                displayName: 'Test User', 
-                photoURL: 'https://placehold.co/100x100/7C3AED/FFFFFF?text=MP' 
-            };
-            setUser(mockUser);
-            localStorage.setItem('mockUser', JSON.stringify(mockUser));
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Error signing in with Google:", error);
             setLoading(false);
-        }, 1000);
+        }
     }, []);
 
-    const signOut = useCallback(() => {
-        setUser(null);
-        localStorage.removeItem('mockUser');
+    const signOut = useCallback(async () => {
+        try {
+            await firebaseSignOut(auth);
+        } catch (error) {
+            console.error("Error signing out:", error);
+        }
     }, []);
     
     const updateUser = useCallback((newDetails: Partial<User>) => {
-        setUser(prevUser => {
-            if (!prevUser) return null;
-            const updatedUser = {...prevUser, ...newDetails};
-            localStorage.setItem('mockUser', JSON.stringify(updatedUser));
-            return updatedUser;
-        });
+        if (auth.currentUser) {
+            updateProfile(auth.currentUser, {
+                displayName: newDetails.displayName ?? undefined,
+                photoURL: newDetails.photoURL ?? undefined
+            }).then(() => {
+                // Manually refresh user state because metadata updates don't always trigger onAuthStateChanged
+                setUser(prevUser => prevUser ? { ...prevUser, ...newDetails } : null);
+            }).catch(error => {
+                console.error("Error updating profile", error);
+            });
+        }
     }, []);
     
     useEffect(() => {
-       const storedUser = localStorage.getItem('mockUser');
-       if (storedUser) {
-           try {
-               setUser(JSON.parse(storedUser));
-           } catch (error) {
-               console.error("Failed to parse user from localStorage, clearing data.", error);
-               localStorage.removeItem('mockUser');
+       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+           if (firebaseUser) {
+               setUser({
+                   uid: firebaseUser.uid,
+                   email: firebaseUser.email,
+                   displayName: firebaseUser.displayName,
+                   photoURL: firebaseUser.photoURL
+               });
+           } else {
                setUser(null);
            }
-       }
-       setLoading(false);
-    },[]);
+           setLoading(false);
+       });
+       
+       return () => unsubscribe();
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading, updateUser }}>
