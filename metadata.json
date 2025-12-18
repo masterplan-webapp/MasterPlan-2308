@@ -1,6 +1,6 @@
 {
-  "name": "2308 - novo desenvolvimento *MATRIZ* - MasterPlan AI Media Planner Versao com dash de planos",
-  "description": "Nova tentativa de desenvolvimento após falha na versao anterior com supabase - An intelligent web app for paid media professionals to create, manage, and optimize media plans with the help of AI. Features include a detailed dashboard, UTM builder, and AI-powered copy generation.",
+  "name": "0509 - Versao Full - MasterPlan AI Media Planner Versao com dash de planos",
+  "description": "Versao Full finalizada. Com todos os features exceto Video Builder Sem Supabase.\nNova tentativa de desenvolvimento após falha na versao anterior com supabase - An intelligent web app for paid media professionals to create, manage, and optimize media plans with the help of AI. Features include a detailed dashboard, UTM builder, and AI-powered copy generation.",
   "requestFramePermissions": [],
   "prompt": ""
 }
