@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { 
     getAuth, 
     signInWithPopup, 
     GoogleAuthProvider, 
     onAuthStateChanged, 
     signOut as firebaseSignOut, 
-    updateProfile 
+    updateProfile,
+    Auth
 } from "firebase/auth";
 import { TRANSLATIONS } from './constants';
 import { LanguageCode, LanguageContextType, Theme, ThemeContextType, AuthContextType, User } from './types';
@@ -21,9 +22,29 @@ const firebaseConfig = {
   appId: "1:329808307895:web:330d7828bfbe85c74c8f32"
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
+// Singleton pattern for Firebase App and Auth
+let firebaseApp: FirebaseApp | null = null;
+let firebaseAuth: Auth | null = null;
+
+const getFirebaseAuth = (): Auth | null => {
+    if (firebaseAuth) return firebaseAuth;
+    try {
+        const apps = getApps();
+        if (apps.length === 0) {
+            firebaseApp = initializeApp(firebaseConfig);
+        } else {
+            firebaseApp = apps[0];
+        }
+        
+        // In the modular SDK, getAuth(app) registers the auth component if it isn't already.
+        // Having consistent versions in index.html is the key fix here.
+        firebaseAuth = getAuth(firebaseApp);
+        return firebaseAuth;
+    } catch (e) {
+        console.error("Firebase Auth initialization failed:", e);
+        return null;
+    }
+};
 
 // --- Language Context ---
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -103,6 +124,11 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     const [loading, setLoading] = useState(true);
 
     const signInWithGoogle = useCallback(async () => {
+        const auth = getFirebaseAuth();
+        if (!auth) {
+            alert("Auth service not available. Check configuration.");
+            return;
+        }
         setLoading(true);
         try {
             const provider = new GoogleAuthProvider();
@@ -114,6 +140,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }, []);
 
     const signOut = useCallback(async () => {
+        const auth = getFirebaseAuth();
+        if (!auth) return;
         try {
             await firebaseSignOut(auth);
         } catch (error) {
@@ -122,20 +150,27 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }, []);
     
     const updateUser = useCallback((newDetails: Partial<User>) => {
-        if (auth.currentUser) {
-            updateProfile(auth.currentUser, {
-                displayName: newDetails.displayName ?? undefined,
-                photoURL: newDetails.photoURL ?? undefined
-            }).then(() => {
-                // Manually refresh user state because metadata updates don't always trigger onAuthStateChanged
-                setUser(prevUser => prevUser ? { ...prevUser, ...newDetails } : null);
-            }).catch(error => {
-                console.error("Error updating profile", error);
-            });
-        }
+        const auth = getFirebaseAuth();
+        if (!auth || !auth.currentUser) return;
+        
+        updateProfile(auth.currentUser, {
+            displayName: newDetails.displayName ?? undefined,
+            photoURL: newDetails.photoURL ?? undefined
+        }).then(() => {
+            setUser(prevUser => prevUser ? { ...prevUser, ...newDetails } : null);
+        }).catch(error => {
+            console.error("Error updating profile", error);
+        });
     }, []);
     
     useEffect(() => {
+       const auth = getFirebaseAuth();
+       if (!auth) {
+           console.warn("Auth initialization failed; user state will remain null.");
+           setLoading(false);
+           return;
+       }
+       
        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
            if (firebaseUser) {
                setUser({
