@@ -120,4 +120,22 @@ export const withPlanProtection = (
   };
 };
 
+/**
+ * Hook to check if user can create a new plan based on their subscription
+ * Free plan: max 1 plan
+ * Pro plan: unlimited
+ * AI plan: unlimited
+ */
+export const useCanCreatePlan = (userPlansCount: number) => {
+  const { currentPlan } = useUserPlan();
+
+  const canCreate = !(currentPlan === 'free' && userPlansCount >= 1);
+  const message = currentPlan === 'free' && userPlansCount >= 1 
+    ? 'Plano Free: Máximo de 1 plano criado. Faça upgrade para criar mais planos.'
+    : '';
+
+  return { canCreate, message };
+};
+
+
 export default useUserPlan;
