@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
 
@@ -9,7 +7,7 @@ import {
     PlanData, Campaign, User, UserProfileModalProps
 } from './types';
 import { 
-    LanguageProvider, useLanguage, ThemeProvider, useTheme, AuthProvider, useAuth
+    useLanguage, useTheme, useAuth
 } from './contexts';
 import { 
     LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage,
@@ -321,7 +319,7 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
 
 
 // --- Main Application Logic ---
-function AppLogic() {
+export default function App() {
     const { user, loading, signOut } = useAuth();
     const { t, language } = useLanguage();
 
@@ -733,16 +731,4 @@ function AppLogic() {
              <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
         </div>
     );
-}
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AppLogic />
-        </LanguageProvider>
-      </ThemeProvider>
-    </AuthProvider>
-  );
 }

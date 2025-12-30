@@ -7,6 +7,8 @@ import {
     onAuthStateChanged, 
     signOut as firebaseSignOut, 
     updateProfile,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
     Auth
 } from "firebase/auth";
 import { TRANSLATIONS } from './constants';
@@ -22,29 +24,28 @@ const firebaseConfig = {
   appId: "1:329808307895:web:330d7828bfbe85c74c8f32"
 };
 
-// Singleton pattern for Firebase App and Auth
-let firebaseApp: FirebaseApp | null = null;
-let firebaseAuth: Auth | null = null;
+// Safe initialization of Firebase
+// We declare these at the top level to ensure they are available
+let app: FirebaseApp;
+let auth: Auth | undefined;
 
-const getFirebaseAuth = (): Auth | null => {
-    if (firebaseAuth) return firebaseAuth;
-    try {
-        const apps = getApps();
-        if (apps.length === 0) {
-            firebaseApp = initializeApp(firebaseConfig);
-        } else {
-            firebaseApp = apps[0];
-        }
-        
-        // In the modular SDK, getAuth(app) registers the auth component if it isn't already.
-        // Having consistent versions in index.html is the key fix here.
-        firebaseAuth = getAuth(firebaseApp);
-        return firebaseAuth;
-    } catch (e) {
-        console.error("Firebase Auth initialization failed:", e);
-        return null;
+try {
+    // Check if any firebase apps have been initialized
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
     }
-};
+    
+    // Initialize Auth only after App is guaranteed to exist
+    if (app) {
+        auth = getAuth(app);
+    }
+} catch (error) {
+    console.error("Critical Firebase Initialization Error:", error);
+    // Even if initialization fails, we don't crash the entire module load immediately,
+    // but the AuthProvider will handle the missing 'auth' object.
+}
 
 // --- Language Context ---
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -124,9 +125,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     const [loading, setLoading] = useState(true);
 
     const signInWithGoogle = useCallback(async () => {
-        const auth = getFirebaseAuth();
         if (!auth) {
-            alert("Auth service not available. Check configuration.");
+            console.error("Authentication service is not available.");
+            alert("Authentication service is not available.");
             return;
         }
         setLoading(true);
@@ -139,8 +140,35 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
         }
     }, []);
 
+    const signInWithEmail = useCallback(async (email: string, password: string) => {
+        if (!auth) {
+             throw new Error("Authentication service is not available.");
+        }
+        setLoading(true);
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            console.error("Error signing in with email:", error);
+            setLoading(false);
+            throw error;
+        }
+    }, []);
+
+    const signUpWithEmail = useCallback(async (email: string, password: string) => {
+        if (!auth) {
+            throw new Error("Authentication service is not available.");
+        }
+        setLoading(true);
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            console.error("Error signing up with email:", error);
+            setLoading(false);
+            throw error;
+        }
+    }, []);
+
     const signOut = useCallback(async () => {
-        const auth = getFirebaseAuth();
         if (!auth) return;
         try {
             await firebaseSignOut(auth);
@@ -150,7 +178,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }, []);
     
     const updateUser = useCallback((newDetails: Partial<User>) => {
-        const auth = getFirebaseAuth();
         if (!auth || !auth.currentUser) return;
         
         updateProfile(auth.currentUser, {
@@ -164,7 +191,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }, []);
     
     useEffect(() => {
-       const auth = getFirebaseAuth();
        if (!auth) {
            console.warn("Auth initialization failed; user state will remain null.");
            setLoading(false);
@@ -189,7 +215,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, signInWithGoogle, signOut, loading, updateUser }}>
+        <AuthContext.Provider value={{ user, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, loading, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

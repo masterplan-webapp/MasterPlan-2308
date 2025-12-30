@@ -284,7 +284,17 @@ export const TRANSLATIONS: Translations = {
         "utm_medium_helper": "O meio da campanha. Ex: cpc, social, email",
         "utm_campaign_helper": "O nome da sua campanha específica. Ex: promocao_verao_2024, lancamento_produto_x",
         "utm_term_helper": "Use para identificar palavras-chave pagas. Ex: tenis_corrida_masculino",
-        "utm_content_helper": "Diferencie anúncios ou links que apontam para a mesma URL. Ex: banner_azul, link_texto_CTA"
+        "utm_content_helper": "Diferencie anúncios ou links que apontam para a mesma URL. Ex: banner_azul, link_texto_CTA",
+        "Email": "Email",
+        "Password": "Senha",
+        "Login": "Entrar",
+        "Register": "Cadastrar",
+        "or": "ou",
+        "dont_have_account": "Não tem uma conta?",
+        "already_have_account": "Já tem uma conta?",
+        "sign_up": "Cadastre-se",
+        "sign_in": "Entrar",
+        "invalid_credentials": "Email ou senha incorretos."
     },
     'en-US': {
         save: 'Save',
@@ -536,6 +546,16 @@ export const TRANSLATIONS: Translations = {
         "utm_medium_helper": "The campaign medium. E.g., cpc, social, email",
         "utm_campaign_helper": "The name of your specific campaign. E.g., summer_sale_2024, product_x_launch",
         "utm_term_helper": "Use to identify paid keywords. E.g., mens_running_shoes",
-        "utm_content_helper": "Differentiate ads or links that point to the same URL. E.g., blue_banner, text_link_CTA"
+        "utm_content_helper": "Differentiate ads or links that point to the same URL. E.g., blue_banner, text_link_CTA",
+        "Email": "Email",
+        "Password": "Password",
+        "Login": "Login",
+        "Register": "Register",
+        "or": "or",
+        "dont_have_account": "Don't have an account?",
+        "already_have_account": "Already have an account?",
+        "sign_up": "Sign Up",
+        "sign_in": "Sign In",
+        "invalid_credentials": "Incorrect email or password."
     }
 };

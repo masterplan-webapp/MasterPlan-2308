@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
@@ -13,7 +11,8 @@ import {
     AddMonthModalProps, OnboardingPageProps, PlanSelectorPageProps, AISuggestionsModalProps,
     ChartCardProps, ChartsSectionProps, DashboardHeaderProps, RenamePlanModalProps, PlanCreationChoiceModalProps, AIPlanCreationModalProps,
     GeneratedImage,
-    AspectRatio
+    AspectRatio,
+    UserProfileModalProps
 } from './types';
 
 // MasterPlan Logo URLs
@@ -32,7 +31,6 @@ const VisitsIcon = (props: LucideProps) => <svg xmlns="http://www.w3.org/2000/sv
 
 
 const ChannelDisplay: React.FC<{ channel: string, className?: string }> = ({ channel, className }) => {
-    // The component now just returns the channel name as text, removing the problematic icons.
     return (
         <span className={className}>{channel}</span>
     );
@@ -366,97 +364,78 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
 
 export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onClose, onSave, planData, onRename, onDuplicate }) => {
     const { t } = useLanguage();
-    const { user } = useAuth();
-    const [details, setDetails] = useState<Partial<Omit<PlanData, 'id' | 'months'>>>(planData);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [details, setDetails] = useState<Partial<PlanData>>({});
 
     useEffect(() => {
-        if(isOpen) {
-            setDetails(planData)
+        if (isOpen && planData) {
+            setDetails({
+                campaignName: planData.campaignName,
+                objective: planData.objective,
+                targetAudience: planData.targetAudience,
+                location: planData.location,
+                totalInvestment: planData.totalInvestment,
+                logoUrl: planData.logoUrl
+            });
         }
-    }, [isOpen, planData])
+    }, [isOpen, planData]);
 
-    if (!isOpen) return null;
+    const handleChange = (field: string, value: any) => {
+        setDetails(prev => ({ ...prev, [field]: value }));
+    };
 
     const handleSave = () => {
         onSave(details);
         onClose();
     };
 
-    const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setDetails(prev => ({...prev, logoUrl: reader.result as string}))
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-    
+    if (!isOpen) return null;
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-xl animate-modalFadeIn">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-gray-200">{t('Configurações do Plano')}</h2>
-                     <div className="flex items-center gap-2">
-                         <button onClick={() => onRename(planData)} className="p-2 text-gray-400 hover:text-white" title={t('Rename')}><Edit size={18} /></button>
-                         <button onClick={() => onDuplicate(planData)} className="p-2 text-gray-400 hover:text-white" title={t('Duplicate Plan')}><CopyIcon size={18} /></button>
-                         <button onClick={onClose} className="p-2 text-gray-400 hover:text-white"><X size={24} /></button>
-                     </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
-                <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                         <div className="sm:col-span-1">
-                            <label className="block text-sm font-medium text-gray-300">{t('Logotipo')}</label>
-                            <img src={details.logoUrl || 'https://placehold.co/400x300/e2e8f0/e2e8f0'} alt="Logo" className="mt-1 w-full aspect-square object-cover rounded-md bg-gray-700"/>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                            <button onClick={() => fileInputRef.current?.click()} className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-200 bg-gray-800 hover:bg-gray-700">
-                                <Upload size={16} /> {t('Upload')}
-                            </button>
-                            <input
-                                type="text"
-                                value={details.logoUrl || ''}
-                                onChange={(e) => setDetails(prev => ({ ...prev, logoUrl: e.target.value }))}
-                                placeholder={t('Cole a URL do logotipo aqui')}
-                                className="mt-2 w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
-                            />
-                         </div>
-                         <div className="sm:col-span-2 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300">{t('Nome da Campanha')}</label>
-                                <input type="text" value={details.campaignName || ''} readOnly className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700/50 text-gray-200 cursor-not-allowed"/>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300">{t('Objetivo Geral')}</label>
-                                <textarea value={details.objective || ''} onChange={(e) => setDetails(prev => ({...prev, objective: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300">{t('Público-Alvo Principal')}</label>
-                                <textarea value={details.targetAudience || ''} onChange={(e) => setDetails(prev => ({...prev, targetAudience: e.target.value}))} rows={3} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                            </div>
-                         </div>
-                     </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Nome da Campanha')}</label>
+                        <div className="flex gap-2">
+                            <input type="text" value={details.campaignName || ''} readOnly className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-400 cursor-not-allowed"/>
+                            <button onClick={() => onRename(planData)} className="mt-1 px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500">{t('Rename')}</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Logotipo')}</label>
+                        <input type="text" value={details.logoUrl || ''} onChange={e => handleChange('logoUrl', e.target.value)} placeholder={t('Cole a URL do logotipo aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Objetivo Geral')}</label>
+                        <textarea rows={3} value={details.objective || ''} onChange={e => handleChange('objective', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Público-Alvo Principal')}</label>
+                        <textarea rows={2} value={details.targetAudience || ''} onChange={e => handleChange('targetAudience', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-300">{t('Praça')}</label>
-                            <input type="text" value={details.location || ''} onChange={(e) => setDetails(prev => ({...prev, location: e.target.value}))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                            <input type="text" value={details.location || ''} onChange={e => handleChange('location', e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300">{t('Período')}</label>
-                             <p className="mt-1 block w-full rounded-md py-2 px-3 bg-gray-700/50 text-gray-200 h-[42px] flex items-center">
-                                {Object.keys(planData.months || {}).length} {t('Meses')}
-                            </p>
+                            <label className="block text-sm font-medium text-gray-300">{t('Investimento Total Planejado (R$)')}</label>
+                            <input type="number" value={details.totalInvestment || ''} onChange={e => handleChange('totalInvestment', parseFloat(e.target.value))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                         </div>
-                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">{t('Investimento Total Planejado (R$)')}</label>
-                        <input type="number" value={details.totalInvestment || 0} onChange={(e) => setDetails(prev => ({...prev, totalInvestment: parseFloat(e.target.value) || 0}))} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                     </div>
                 </div>
-                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"><Save size={18}/> {t('save')}</button>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-between items-center">
+                    <div>
+                        <button onClick={() => onDuplicate(planData)} className="px-4 py-2 text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"><CopyIcon size={16}/> {t('Duplicate Plan')}</button>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
+                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('save')}</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -467,142 +446,94 @@ export const RenamePlanModal: React.FC<RenamePlanModalProps> = ({ isOpen, onClos
     const { t } = useLanguage();
     const [newName, setNewName] = useState(plan.campaignName);
 
-    useEffect(() => {
-        setNewName(plan.campaignName);
-    }, [plan.campaignName]);
-    
-    if(!isOpen) return null;
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(plan.id, newName);
+    };
 
-    const handleSave = () => {
-        if(newName.trim()){
-            onSave(plan.id, newName.trim());
-            onClose();
-        }
-    }
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
             <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
                     <h2 className="text-xl font-semibold text-gray-200">{t('Rename Plan')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
-                <div className="p-6">
-                    <label htmlFor="plan-name" className="block text-sm font-medium text-gray-300">{t('Plan Name')}</label>
+                <form onSubmit={handleSave} className="p-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">{t('Plan Name')}</label>
                     <input 
-                        id="plan-name"
                         type="text" 
                         value={newName} 
-                        onChange={e => setNewName(e.target.value)}
-                        className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onChange={(e) => setNewName(e.target.value)} 
+                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
                     />
-                </div>
-                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"><Save size={18}/> {t('save')}</button>
-                </div>
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('save')}</button>
+                    </div>
+                </form>
             </div>
         </div>
     );
 };
 
-export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, onClose, isLoading, suggestions, onApplySuggestion, onApplyAllSuggestions, title }) => {
+export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, onAddMonth, existingMonths }) => {
     const { t } = useLanguage();
-    const [applied, setApplied] = useState<Record<string, number[]>>({});
+    const [selectedMonth, setSelectedMonth] = useState('');
 
-    useEffect(() => {
-        if (isOpen) {
-            setApplied({});
+    const availableMonths = useMemo(() => {
+        const months = [];
+        const today = new Date();
+        for (let i = 0; i < 12; i++) {
+            const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            const monthName = MONTHS_LIST[d.getMonth()];
+            const key = `${d.getFullYear()}-${monthName}`;
+            if (!existingMonths.includes(key)) {
+                months.push(key);
+            }
         }
-    }, [isOpen]);
-    
+        return months;
+    }, [existingMonths]);
+
+    const handleAdd = () => {
+        if (selectedMonth) {
+            onAddMonth(selectedMonth);
+        }
+    };
+
     if (!isOpen) return null;
 
-    const handleApply = (type: string, text: string, index: number) => {
-        onApplySuggestion(type, text);
-        setApplied(prev => ({
-            ...prev,
-            [type]: [...(prev[type] || []), index]
-        }));
-    };
-    
-    const handleApplyAll = (type: string, texts: string[]) => {
-        if(onApplyAllSuggestions) onApplyAllSuggestions(type, texts);
-        // Mark all as applied
-        setApplied(prev => ({
-            ...prev,
-            [type]: texts.map((_, i) => i)
-        }));
-    }
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
                 <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
-                        <Sparkles className="text-blue-500"/>
-                        {title || t('Sugestões de Criativos (IA)')}
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Adicionar Mês ao Plano')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
-                <div className="p-6 max-h-[70vh] overflow-y-auto">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                            <LoaderIcon className="animate-spin text-blue-500" size={40}/>
-                            <p className="mt-4">{t('Gerando sugestões...')}</p>
-                        </div>
-                    ) : (
-                        suggestions && Object.keys(suggestions).length > 0 ? (
-                             <div className="space-y-6">
-                                {Object.entries(suggestions).map(([type, texts]) => (
-                                    <div key={type}>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h3 className="text-lg font-semibold capitalize text-gray-100">{t(type)}</h3>
-                                            {onApplyAllSuggestions && (
-                                                <button 
-                                                    onClick={() => handleApplyAll(type, texts)} 
-                                                    className="text-sm font-medium text-blue-400 hover:underline"
-                                                >
-                                                    {t('Aplicar Todos')}
-                                                </button>
-                                            )}
-                                        </div>
-                                        <ul className="space-y-2">
-                                            {texts.map((text, index) => {
-                                                const isApplied = applied[type]?.includes(index);
-                                                return (
-                                                    <li key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-md">
-                                                        <p className="text-gray-200">{text}</p>
-                                                        <button 
-                                                            onClick={() => handleApply(type, text, index)}
-                                                            disabled={isApplied}
-                                                            className="px-3 py-1 text-xs font-semibold rounded-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-1.5"
-                                                            style={{
-                                                                backgroundColor: isApplied ? '#10B981' : '#3B82F6', // green-500 or blue-500
-                                                                color: 'white'
-                                                            }}
-                                                        >
-                                                            {isApplied ? (
-                                                                <>
-                                                                    <Check size={14}/> {t('Aplicado')}
-                                                                </>
-                                                            ) : (
-                                                                t('Aplicar')
-                                                            )}
-                                                        </button>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </div>
-                                ))}
+                <div className="p-6">
+                    {availableMonths.length > 0 ? (
+                        <>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">{t('Selecione um mês')}</label>
+                            <select 
+                                value={selectedMonth} 
+                                onChange={(e) => setSelectedMonth(e.target.value)} 
+                                className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">{t('Selecione')}</option>
+                                {availableMonths.map(m => {
+                                    const [year, month] = m.split('-');
+                                    return <option key={m} value={m}>{t(month)} {year}</option>;
+                                })}
+                            </select>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
+                                <button onClick={handleAdd} disabled={!selectedMonth} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">{t('add')}</button>
                             </div>
-                        ) : (
-                             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                                <AlertTriangle size={40} className="mb-4 text-yellow-500"/>
-                                <p>{t('Nenhuma sugestão gerada ou erro ao buscar sugestões.')}</p>
-                             </div>
-                        )
+                        </>
+                    ) : (
+                        <p className="text-gray-400">{t('Todos os meses já foram adicionados.')}</p>
                     )}
                 </div>
             </div>
@@ -610,10 +541,258 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
     );
 };
 
-// --- Page-Specific Components ---
-export const LoginPage: React.FC = () => {
-    const { signInWithGoogle } = useAuth();
+export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen, onClose, onGenerate, isLoading, initialPrompt = '', title, buttonText, loadingText }) => {
     const { t } = useLanguage();
+    const [prompt, setPrompt] = useState(initialPrompt);
+
+    useEffect(() => {
+        setPrompt(initialPrompt);
+    }, [initialPrompt, isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
+                        <Sparkles className="text-blue-500"/> {title || t('Crie seu Plano com IA')}
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                </div>
+                <div className="p-6">
+                    <p className="text-gray-300 mb-4">{t('Descreva seu negócio, objetivos e público')}</p>
+                    <textarea 
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        className="w-full h-40 border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={t('Ex: Uma cafeteria em São Paulo focada em jovens profissionais. Objetivo: aumentar o fluxo na loja.')}
+                    />
+                </div>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
+                    <button 
+                        onClick={() => onGenerate(prompt)} 
+                        disabled={isLoading || !prompt.trim()} 
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {isLoading ? <LoaderIcon className="animate-spin" size={18}/> : <Sparkles size={18}/>}
+                        {isLoading ? (loadingText || t('Gerando seu plano...')) : (buttonText || t('Gerar Plano'))}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, onClose, isLoading, suggestions, onApplySuggestion, onApplyAllSuggestions }) => {
+    const { t } = useLanguage();
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center flex-shrink-0">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2"><Sparkles className="text-blue-500"/> {t('Sugestões de Criativos (IA)')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                </div>
+                <div className="p-6 overflow-y-auto flex-grow">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-40 gap-4">
+                            <LoaderIcon className="animate-spin text-blue-500" size={40}/>
+                            <p className="text-gray-400">{t('Gerando ideias...')}</p>
+                        </div>
+                    ) : suggestions ? (
+                        <div className="space-y-6">
+                            {Object.entries(suggestions).map(([key, items]) => (
+                                <div key={key}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h3 className="text-lg font-medium text-gray-100 capitalize">{key}</h3>
+                                        {onApplyAllSuggestions && items && items.length > 0 && (
+                                            <button onClick={() => onApplyAllSuggestions(key, items)} className="text-xs text-blue-400 hover:underline">{t('Aplicar Todos')}</button>
+                                        )}
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {items.map((item, index) => (
+                                            <li key={index} className="flex items-start justify-between gap-3 p-3 bg-gray-700 rounded-md">
+                                                <span className="text-sm text-gray-200">{item}</span>
+                                                <button onClick={() => onApplySuggestion(key, item)} className="text-blue-400 hover:text-blue-300 flex-shrink-0" title={t('Aplicar')}>
+                                                    <PlusCircle size={18}/>
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-center text-gray-400">{t('Nenhuma sugestão gerada ou erro ao buscar sugestões.')}</p>
+                    )}
+                </div>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end flex-shrink-0">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('close')}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const ShareLinkModal: React.FC<{ isOpen: boolean, onClose: () => void, link: string }> = ({ isOpen, onClose, link }) => {
+    const { t } = useLanguage();
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-gray-200">{t('share_link')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                </div>
+                <div className="p-6">
+                    <p className="text-sm text-gray-400 mb-4">{t('share_plan_desc')}</p>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={link} 
+                            readOnly 
+                            className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 text-sm focus:outline-none"
+                        />
+                        <button onClick={handleCopy} className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex-shrink-0" title={t('copy_link')}>
+                            {copied ? <Check size={20}/> : <CopyIcon size={20}/>}
+                        </button>
+                    </div>
+                    {copied && <p className="text-xs text-green-400 mt-2 text-right">{t('copied')}</p>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ encodedPlanData }) => {
+    const { t } = useLanguage();
+    const [planData, setPlanData] = useState<PlanData | null>(null);
+    const [error, setError] = useState('');
+    const [activeView, setActiveView] = useState('Overview');
+
+    useEffect(() => {
+        try {
+            // Restore special chars then decode
+            const decodedJson = decodeURIComponent(escape(atob(encodedPlanData.replace(/-/g, '+').replace(/_/g, '/'))));
+            const parsedPlan = JSON.parse(decodedJson);
+            setPlanData(parsedPlan);
+        } catch (e) {
+            console.error("Failed to parse shared plan data:", e);
+            setError(t('plan_not_found'));
+        }
+    }, [encodedPlanData, t]);
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+                <Card className="text-center max-w-md">
+                    <AlertTriangle size={48} className="mx-auto text-yellow-500 mb-4"/>
+                    <h2 className="text-xl font-bold text-gray-100">{t('Erro')}</h2>
+                    <p className="text-gray-400 mt-2">{error}</p>
+                    <a href="/" className="mt-6 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('welcome_to_masterplan')}</a>
+                </Card>
+            </div>
+        );
+    }
+
+    if (!planData) {
+        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
+    }
+
+    return (
+        <div className="flex h-screen bg-gray-900 font-sans flex-col">
+             <header className="bg-gray-800 shadow-sm sticky top-0 z-20 px-4 py-3 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <img src={LOGO_DARK} alt="MasterPlan" className="h-8"/>
+                    <div className="h-6 w-px bg-gray-600 mx-2"></div>
+                    <span className="text-gray-400 text-sm">{t('shared_by')} MasterPlan AI</span>
+                </div>
+                {planData.logoUrl && <img src={planData.logoUrl} alt="Logo" className="h-8 object-contain"/>}
+             </header>
+             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <div className="max-w-7xl mx-auto">
+                    {/* Simplified navigation for read-only view */}
+                    <div className="flex overflow-x-auto gap-2 mb-6 pb-2">
+                        <button onClick={() => setActiveView('Overview')} className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${activeView === 'Overview' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+                            {t('overview')}
+                        </button>
+                        {Object.keys(planData.months || {}).sort(sortMonthKeys).map(month => {
+                             const [year, monthName] = month.split('-');
+                             return (
+                                <button key={month} onClick={() => setActiveView(month)} className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${activeView === month ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+                                    {`${t(monthName)} ${year}`}
+                                </button>
+                             );
+                        })}
+                    </div>
+
+                    {activeView === 'Overview' && <DashboardPage planData={planData} onNavigate={setActiveView} onAddMonthClick={() => {}} onRegeneratePlan={async () => {}} isRegenerating={false} isReadOnly={true} />}
+                    {Object.keys(planData.months || {}).includes(activeView) && (
+                        <MonthlyPlanPage 
+                            month={activeView} 
+                            campaigns={planData.months[activeView]}
+                            onSave={() => {}}
+                            onDelete={() => {}}
+                            planObjective={planData.objective}
+                            customFormats={planData.customFormats || []}
+                            onAddFormat={() => {}}
+                            totalInvestment={planData.totalInvestment}
+                            isReadOnly={true}
+                        />
+                    )}
+                </div>
+             </main>
+        </div>
+    );
+};
+
+export const LoginPage: React.FC = () => {
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+    const { t } = useLanguage();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
+
+        try {
+            if (isSignUp) {
+                await signUpWithEmail(email, password);
+            } else {
+                await signInWithEmail(email, password);
+            }
+        } catch (err: any) {
+             console.error(err);
+             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                 setError(t('invalid_credentials'));
+             } else if (err.code === 'auth/email-already-in-use') {
+                 setError("Este email já está em uso.");
+             } else if (err.code === 'auth/weak-password') {
+                 setError("A senha deve ter pelo menos 6 caracteres.");
+             } else {
+                 setError("Ocorreu um erro. Tente novamente.");
+             }
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
@@ -625,6 +804,59 @@ export const LoginPage: React.FC = () => {
                 />
                 <h1 className="text-3xl font-bold text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
                 <p className="mt-2 mb-8 text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
+
+                <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Email')}</label>
+                        <input 
+                            type="email" 
+                            required 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300">{t('Password')}</label>
+                        <input 
+                            type="password" 
+                            required 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                    <button 
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50"
+                    >
+                        {isLoading ? <LoaderIcon className="animate-spin" size={20} /> : (isSignUp ? t('sign_up') : t('sign_in'))}
+                    </button>
+                </form>
+
+                <div className="mt-4 text-sm text-gray-400">
+                    {isSignUp ? t('already_have_account') : t('dont_have_account')}
+                    <button 
+                        onClick={() => setIsSignUp(!isSignUp)}
+                        className="ml-1 text-blue-400 hover:underline focus:outline-none"
+                    >
+                        {isSignUp ? t('Login') : t('Register')}
+                    </button>
+                </div>
+
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                        <span className="px-2 bg-gray-800 text-gray-400">{t('or')}</span>
+                    </div>
+                </div>
+
                 <button 
                     onClick={signInWithGoogle}
                     className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
@@ -830,7 +1062,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
 };
 
 const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, className, customLegend }) => {
-    const CustomTooltip = ({ active, payload }: any) => {
+    const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-gray-800 p-2 border border-gray-700 rounded shadow-lg">
@@ -886,7 +1118,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, cl
                             dataKey={dataKey}
                             nameKey={nameKey}
                         >
-                            {data.map((entry, index) => (
+                            {(data as any[]).map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
@@ -1498,7 +1730,8 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     
     const channels = useMemo(() => {
         const allChannels = new Set<string>();
-        Object.values(planData.months || {}).flat().filter(Boolean).forEach(campaign => {
+        // Add type predicate to filter to ensure 'campaign' is not unknown or undefined
+        Object.values(planData.months || {}).flat().filter((c): c is Campaign => !!c).forEach(campaign => {
             if (campaign?.canal) {
                 allChannels.add(campaign.canal);
             }
@@ -1835,8 +2068,6 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
         </div>
     );
 };
-
-// ... KeywordBuilderPage, CreativeBuilderPage, and other components follow ...
 
 // Reusable Export Dropdown component
 const ExportDropdown: React.FC<{
@@ -2429,218 +2660,6 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                     <h3 className="text-xl font-semibold text-gray-300">{t('creative_builder_initial_prompt')}</h3>
                  </Card>
             )}
-        </div>
-    );
-};
-
-export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, onAddMonth, existingMonths }) => {
-    const { t } = useLanguage();
-    const [selectedMonth, setSelectedMonth] = useState('');
-
-    const availableMonths = useMemo(() => {
-        const currentYear = new Date().getFullYear();
-        const futureMonths = [];
-        for (let y = currentYear; y < currentYear + 3; y++) {
-            for (const monthName of MONTHS_LIST) {
-                const monthKey = `${y}-${monthName}`;
-                if (!existingMonths.includes(monthKey)) {
-                    futureMonths.push({ key: monthKey, name: `${t(monthName)} ${y}`});
-                }
-            }
-        }
-        return futureMonths;
-    }, [existingMonths, t]);
-    
-    useEffect(() => {
-        if (isOpen && availableMonths.length > 0) {
-            setSelectedMonth(availableMonths[0].key);
-        } else if (isOpen) {
-            setSelectedMonth('');
-        }
-    }, [isOpen, availableMonths]);
-    
-    if (!isOpen) return null;
-
-    const handleAdd = () => {
-        if(selectedMonth) {
-            onAddMonth(selectedMonth);
-            onClose();
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
-                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200">{t('Adicionar Mês ao Plano')}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
-                </div>
-                <div className="p-6">
-                    {availableMonths.length > 0 ? (
-                        <>
-                            <label htmlFor="month-select" className="block text-sm font-medium text-gray-300">{t('Mês')}</label>
-                            <select 
-                                id="month-select"
-                                value={selectedMonth} 
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="" disabled>{t('Selecione um mês')}</option>
-                                {availableMonths.map(month => (
-                                    <option key={month.key} value={month.key}>{month.name}</option>
-                                ))}
-                            </select>
-                        </>
-                    ) : (
-                        <p className="text-gray-400 text-center">{t('Todos os meses já foram adicionados.')}</p>
-                    )}
-                </div>
-                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500">{t('cancel')}</button>
-                    {availableMonths.length > 0 && (
-                       <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{t('add')}</button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen, onClose, onGenerate, isLoading, initialPrompt, title, buttonText, loadingText }) => {
-    const { t } = useLanguage();
-    const [prompt, setPrompt] = useState(initialPrompt || '');
-
-    useEffect(() => {
-        if(isOpen) {
-            setPrompt(initialPrompt || '');
-        }
-    }, [isOpen, initialPrompt]);
-
-    if (!isOpen) return null;
-
-    const handleGenerate = () => {
-        if (prompt.trim()) {
-            onGenerate(prompt);
-        }
-    };
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl animate-modalFadeIn">
-                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2"><Sparkles className="text-blue-500"/>{title || t('Crie seu Plano com IA')}</h2>
-                    {!isLoading && <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>}
-                </div>
-                <div className="p-6">
-                    <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-300 mb-2">{t('Descreva seu negócio, objetivos e público')}</label>
-                    <textarea 
-                        id="ai-prompt"
-                        value={prompt}
-                        onChange={e => setPrompt(e.target.value)}
-                        rows={6}
-                        className="w-full border-gray-600 rounded-md shadow-sm p-2 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={t('Ex: Uma cafeteria em São Paulo focada em jovens profissionais. Objetivo: aumentar o fluxo na loja.')}
-                        disabled={isLoading}
-                    />
-                </div>
-                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end">
-                    <button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                        {isLoading ? (
-                            <>
-                                <LoaderIcon className="animate-spin" size={20} />
-                                {loadingText || t('Gerando seu plano...')}
-                            </>
-                        ) : (
-                            <>{buttonText || t('Gerar Plano')}</>
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const ShareLinkModal: React.FC<{ isOpen: boolean; onClose: () => void; link: string }> = ({ isOpen, onClose, link }) => {
-    const { t } = useLanguage();
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = () => {
-        navigator.clipboard.writeText(link).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
-                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200">{t('share_plan_title')}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
-                </div>
-                <div className="p-6">
-                    <p className="text-sm text-gray-400 mb-4">{t('share_plan_desc')}</p>
-                    <div className="flex gap-2">
-                        <input type="text" readOnly value={link} className="flex-1 w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200" />
-                        <button onClick={handleCopy} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2">
-                            {copied ? <><Check size={18}/> {t('copied')}</> : <><CopyIcon size={18}/> {t('copy_link')}</>}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ encodedPlanData }) => {
-    const { t } = useLanguage();
-    const [plan, setPlan] = useState<PlanData | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    
-    useEffect(() => {
-        try {
-            // URL-safe base64 needs padding and character replacement to be decoded.
-            let base64 = encodedPlanData.replace(/-/g, '+').replace(/_/g, '/');
-            while (base64.length % 4) {
-                base64 += '=';
-            }
-            // Decode and parse the JSON
-            const decodedJson = decodeURIComponent(escape(atob(base64)));
-            const parsedPlan = JSON.parse(decodedJson);
-            setPlan(parsedPlan);
-        } catch (e) {
-            console.error("Error decoding plan data:", e);
-            setError(t('plan_not_found'));
-        }
-    }, [encodedPlanData, t]);
-
-    if (error) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-red-400">{error}</div>;
-    }
-
-    if (!plan) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /> <span className="ml-4 text-white">{t('loading_plan')}</span></div>;
-    }
-
-    return (
-        <div className="bg-gray-900 min-h-screen text-white font-sans">
-            <header className="bg-gray-800 p-4 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <img src={ICON_LOGO} alt="MasterPlan Icon" className="h-10 w-10"/>
-                    <div>
-                        <h1 className="text-xl font-bold">{plan.campaignName}</h1>
-                        <p className="text-sm text-gray-400">{t('shared_by')} MasterPlan AI</p>
-                    </div>
-                </div>
-                <a href={window.location.origin} className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">
-                    {t('create_new_plan')}
-                </a>
-            </header>
-            <main className="p-4 sm:p-6 lg:p-8">
-                 <DashboardPage planData={plan} onNavigate={() => {}} onAddMonthClick={() => {}} onRegeneratePlan={async () => {}} isRegenerating={false} isReadOnly={true} />
-            </main>
         </div>
     );
 };
