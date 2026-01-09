@@ -4,8 +4,8 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-// Initialize Stripe with the Secret Key
-const stripe = require("stripe")("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");
+// Initialize Stripe with the Secret Key from environment variable
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Creates a Stripe Checkout Session for subscription upgrade.
