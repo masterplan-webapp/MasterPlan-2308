@@ -60,7 +60,7 @@ export interface AdGroup {
 }
 
 export interface PlanData {
-    id:string;
+    id: string;
     campaignName: string;
     objective: string;
     targetAudience: string;
@@ -93,6 +93,8 @@ export interface User {
     email: string | null;
     displayName: string | null;
     photoURL: string | null;
+    subscription: 'free' | 'pro' | 'ai';
+    subscriptionStatus: 'active' | 'canceled' | 'past_due';
 }
 
 export interface SummaryData {
@@ -140,6 +142,7 @@ export interface AuthContextType {
     signOut: () => void;
     loading: boolean;
     updateUser: (newDetails: Partial<User>) => void;
+    functions: any;
 }
 
 // COMPONENT PROPS
@@ -331,5 +334,11 @@ export interface ChartCardProps {
 
 export interface ChartsSectionProps {
     campaigns: Campaign[];
-    title: string;
+}
+
+export interface PricingModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onUpgrade: (plan: 'pro' | 'ai') => void;
+    currentPlan: 'free' | 'pro' | 'ai';
 }

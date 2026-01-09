@@ -28,7 +28,7 @@ export const formatNumber = (value?: number | string): string => {
 export const sortMonthKeys = (a: string, b: string): number => {
     const [yearA, monthNameA] = a.split('-');
     const [yearB, monthNameB] = b.split('-');
-    
+
     const monthIndexA = MONTHS_LIST.indexOf(monthNameA);
     const monthIndexB = MONTHS_LIST.indexOf(monthNameB);
 
@@ -38,39 +38,56 @@ export const sortMonthKeys = (a: string, b: string): number => {
     return monthIndexA - monthIndexB;
 };
 
-// --- MOCK DATABASE (LocalStorage) ---
+// --- DATABASE (Firestore) ---
+import { db } from './contexts';
+import { collection, doc, setDoc, getDocs, deleteDoc, getDoc, query } from 'firebase/firestore';
+
 export const dbService = {
-    getPlans: (userId: string): PlanData[] => {
+    getPlans: async (userId: string): Promise<PlanData[]> => {
+        if (!db) return [];
         try {
-            const data = localStorage.getItem(`masterplan_plans_${userId}`);
-            return data ? JSON.parse(data) : [];
+            const plansRef = collection(db, 'users', userId, 'plans');
+            const q = query(plansRef);
+            const querySnapshot = await getDocs(q);
+            const plans: PlanData[] = [];
+            querySnapshot.forEach((doc) => {
+                plans.push(doc.data() as PlanData);
+            });
+            return plans;
         } catch (error) {
-            console.error("Failed to get plans from localStorage", error);
+            console.error("Failed to get plans from Firestore", error);
             return [];
         }
     },
-    savePlan: (userId: string, plan: PlanData) => {
-        const plans = dbService.getPlans(userId);
-        const index = plans.findIndex(p => p.id === plan.id);
-        if (index > -1) {
-            plans[index] = plan;
-        } else {
-            plans.push(plan);
-        }
-        localStorage.setItem(`masterplan_plans_${userId}`, JSON.stringify(plans));
-    },
-    deletePlan: (userId: string, planId: string) => {
-        let plans = dbService.getPlans(userId);
-        plans = plans.filter(p => p.id !== planId);
-        localStorage.setItem(`masterplan_plans_${userId}`, JSON.stringify(plans));
-    },
-    getPlanById: (userId: string, planId: string): PlanData | null => {
+    savePlan: async (userId: string, plan: PlanData) => {
+        if (!db) return;
         try {
-            const plans = dbService.getPlans(userId);
-            const plan = plans.find((p: PlanData) => p.id === planId);
-            return plan || null;
+            const planRef = doc(db, 'users', userId, 'plans', plan.id);
+            await setDoc(planRef, plan);
         } catch (error) {
-            console.error("Failed to get plan by ID from localStorage", error);
+            console.error("Failed to save plan to Firestore", error);
+        }
+    },
+    deletePlan: async (userId: string, planId: string) => {
+        if (!db) return;
+        try {
+            await deleteDoc(doc(db, 'users', userId, 'plans', planId));
+        } catch (error) {
+            console.error("Failed to delete plan from Firestore", error);
+        }
+    },
+    getPlanById: async (userId: string, planId: string): Promise<PlanData | null> => {
+        if (!db) return null;
+        try {
+            const docRef = doc(db, 'users', userId, 'plans', planId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data() as PlanData;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Failed to get plan by ID from Firestore", error);
             return null;
         }
     },
@@ -80,7 +97,7 @@ export const dbService = {
 // --- Core Business Logic ---
 export const recalculateCampaignMetrics = (campaign: Partial<Campaign>): Campaign => {
     let newCampaign: Partial<Campaign> = { ...campaign };
-    
+
     let budget = Number(newCampaign.budget) || 0;
     let ctr = (Number(newCampaign.ctr) || 0) / 100;
     let taxaConversao = (Number(newCampaign.taxaConversao) || 0) / 100;
@@ -103,20 +120,20 @@ export const recalculateCampaignMetrics = (campaign: Partial<Campaign>): Campaig
         if (newCampaign.unidadeCompra === 'CPM' && cpm > 0) {
             impressoes = (budget / cpm) * 1000;
             cliques = impressoes * ctr;
-            if(cliques > 0) cpc = budget / cliques; else if(ctr === 0 && cpc === 0) cpc = 0;
+            if (cliques > 0) cpc = budget / cliques; else if (ctr === 0 && cpc === 0) cpc = 0;
         } else if (newCampaign.unidadeCompra === 'CPC' && cpc > 0) {
             cliques = budget / cpc;
-            if(ctr > 0) {
+            if (ctr > 0) {
                 impressoes = cliques / ctr;
                 cpm = (budget / impressoes) * 1000;
             }
         } else { // Fallback if buying unit metric is zero
-            if(cpm > 0) {
+            if (cpm > 0) {
                 impressoes = (budget / cpm) * 1000;
                 cliques = impressoes * ctr;
             } else if (cpc > 0) {
                 cliques = budget / cpc;
-                if(ctr > 0) impressoes = cliques / ctr;
+                if (ctr > 0) impressoes = cliques / ctr;
             }
         }
     } else if (impressoes > 0) {
@@ -124,7 +141,7 @@ export const recalculateCampaignMetrics = (campaign: Partial<Campaign>): Campaig
         if (cpm > 0) budget = (impressoes / 1000) * cpm;
         else if (cpc > 0) budget = cliques * cpc;
     } else if (cliques > 0) {
-        if(ctr > 0) impressoes = cliques / ctr;
+        if (ctr > 0) impressoes = cliques / ctr;
         if (cpc > 0) budget = cliques * cpc;
         else if (cpm > 0 && impressoes > 0) budget = (impressoes / 1000) * cpm;
     }
@@ -174,7 +191,7 @@ export const calculatePlanSummary = (planData: PlanData): { summary: SummaryData
         acc.alcance += Number(campaign.alcance) || 0;
         acc.cliques += Number(campaign.cliques) || 0;
         acc.conversoes += Number(campaign.conversoes) || 0;
-        if(campaign.canal) {
+        if (campaign.canal) {
             acc.channelBudgets[campaign.canal] = (acc.channelBudgets[campaign.canal] || 0) + budget;
         }
         return acc;
@@ -185,14 +202,14 @@ export const calculatePlanSummary = (planData: PlanData): { summary: SummaryData
     summary.cpm = summary.impressoes > 0 ? (summary.budget / summary.impressoes) * 1000 : 0;
     summary.cpa = summary.conversoes > 0 ? summary.budget / summary.conversoes : 0;
     summary.taxaConversao = summary.cliques > 0 ? (summary.conversoes / summary.cliques) * 100 : 0;
-    
+
     const numMonths = Object.keys(planData.months || {}).length;
     if (numMonths > 0) {
         summary.orcamentoDiario = summary.budget / (numMonths * 30.4);
     } else {
         summary.orcamentoDiario = 0;
     }
-    
+
     const monthlySummary: MonthlySummary = {};
     Object.entries(planData.months || {}).forEach(([month, campaigns]) => {
         monthlySummary[month] = campaigns.reduce((acc, c) => {
@@ -203,7 +220,7 @@ export const calculatePlanSummary = (planData: PlanData): { summary: SummaryData
             acc.cliques += Number(c.cliques) || 0;
             acc.conversoes += Number(c.conversoes) || 0;
             return acc;
-        }, { budget: 0, impressoes: 0, alcance: 0, cliques: 0, conversoes: 0, channelBudgets: {}} as SummaryData);
+        }, { budget: 0, impressoes: 0, alcance: 0, cliques: 0, conversoes: 0, channelBudgets: {} } as SummaryData);
         monthlySummary[month].taxaConversao = monthlySummary[month].cliques > 0 ? (monthlySummary[month].conversoes / monthlySummary[month].cliques) * 100 : 0;
     });
 
@@ -212,7 +229,7 @@ export const calculatePlanSummary = (planData: PlanData): { summary: SummaryData
 
 // --- PLAN CREATION ---
 
-export const createNewEmptyPlan = (userId: string): PlanData => {
+export const createNewEmptyPlan = async (userId: string): Promise<PlanData> => {
     const newPlan: PlanData = {
         id: `plan_${new Date().getTime()}`,
         campaignName: 'Novo Plano em Branco',
@@ -227,11 +244,11 @@ export const createNewEmptyPlan = (userId: string): PlanData => {
         creatives: {},
         adGroups: []
     };
-    dbService.savePlan(userId, newPlan);
+    await dbService.savePlan(userId, newPlan);
     return newPlan;
 };
 
-export const createNewPlanFromTemplate = (userId: string): PlanData => {
+export const createNewPlanFromTemplate = async (userId: string): Promise<PlanData> => {
     const currentYear = new Date().getFullYear();
     const awarenessDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Awareness'];
     const leadsDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Geração de Leads'];
@@ -265,7 +282,7 @@ export const createNewPlanFromTemplate = (userId: string): PlanData => {
                 })
             ],
             [`${currentYear}-Agosto`]: [
-                 calculateKPIs({
+                calculateKPIs({
                     ...leadsDefaults,
                     id: 'c_template_2',
                     tipoCampanha: 'Geração de Leads',
@@ -292,7 +309,7 @@ export const createNewPlanFromTemplate = (userId: string): PlanData => {
             ]
         },
     };
-    dbService.savePlan(userId, newPlan);
+    await dbService.savePlan(userId, newPlan);
     return newPlan;
 };
 
@@ -305,7 +322,25 @@ const escapeCSV = (str: any): string => {
     return s;
 };
 
-const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: MonthlySummary, t: (key: string, substitutions?: Record<string, string>) => string): string => {
+const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: MonthlySummary, t: (key: string, substitutions?: Record<string, string>) => string, isPro: boolean = false): string => {
+    const watermarkCss = !isPro ? `
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80px;
+            color: rgba(0, 0, 0, 0.08);
+            font-weight: 800;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+            user-select: none;
+        }
+    ` : '';
+
+    const watermarkHtml = !isPro ? `<div class="watermark">CREATED WITH MasterPlan</div>` : '';
+
     const styles = `
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
@@ -323,6 +358,8 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 page-break-after: always;
                 background-color: white;
                 box-sizing: border-box;
+                position: relative;
+                overflow: hidden;
             }
             .page:last-child {
                 page-break-after: avoid;
@@ -332,6 +369,8 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 border-bottom: 2px solid #007bff;
                 padding-bottom: 10px;
                 margin-bottom: 20px;
+                position: relative;
+                z-index: 10;
             }
             .header img {
                 max-width: 150px;
@@ -351,12 +390,16 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 padding-bottom: 5px;
                 margin-top: 20px;
                 margin-bottom: 10px;
+                position: relative;
+                z-index: 10;
             }
             table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 10px;
                 font-size: 8px;
+                position: relative;
+                z-index: 10;
             }
             th, td {
                 border: 1px solid #ddd;
@@ -376,6 +419,8 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
+                position: relative;
+                z-index: 10;
             }
             .summary-item, .info-item {
                 background-color: #f8f9fa;
@@ -397,7 +442,10 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 margin-top: 20px;
                 font-size: 8px;
                 color: #777;
+                position: relative;
+                z-index: 10;
             }
+            ${watermarkCss}
         </style>
     `;
 
@@ -463,7 +511,7 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
         const monthName = monthKey.split('-').reverse().map(p => t(p)).join(' ');
         const campaigns = plan.months[monthKey];
         const monthSummary = monthlySummary[monthKey];
-        
+
         const getUnitValue = (c: Campaign) => {
             switch (c.unidadeCompra) {
                 case 'CPC': return formatCurrency(c.cpc);
@@ -471,7 +519,7 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                 default: return 'N/A';
             }
         };
-        
+
         const aggregateCTR = monthSummary.impressoes > 0 ? (monthSummary.cliques / monthSummary.impressoes) * 100 : 0;
         const aggregateConvRate = monthSummary.cliques > 0 ? (monthSummary.conversoes / monthSummary.cliques) * 100 : 0;
         const aggregateCPA = monthSummary.conversoes > 0 ? (monthSummary.budget / monthSummary.conversoes) : 0;
@@ -504,8 +552,8 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
                     </thead>
                     <tbody>
                         ${campaigns.map(c => {
-                            const share = plan.totalInvestment > 0 ? (Number(c.budget || 0) / plan.totalInvestment) * 100 : 0;
-                            return `
+            const share = plan.totalInvestment > 0 ? (Number(c.budget || 0) / plan.totalInvestment) * 100 : 0;
+            return `
                             <tr>
                                 <td>${c.tipoCampanha || ''}</td>
                                 <td>${c.etapaFunil || ''}</td>
@@ -548,10 +596,10 @@ const buildPdfHtml = (plan: PlanData, summary: SummaryData, monthlySummary: Mont
 };
 
 
-export const exportPlanAsPDF = async (plan: PlanData, t: (key: string, substitutions?: Record<string, string>) => string) => {
+export const exportPlanAsPDF = async (plan: PlanData, t: (key: string, substitutions?: Record<string, string>) => string, isPro: boolean = false) => {
     const { summary, monthlySummary } = calculatePlanSummary(plan);
-    const reportHTML = buildPdfHtml(plan, summary, monthlySummary, t);
-    
+    const reportHTML = buildPdfHtml(plan, summary, monthlySummary, t, isPro);
+
     // Create a temporary container for rendering the HTML
     const container = document.createElement('div');
     container.style.position = 'absolute';
@@ -564,14 +612,14 @@ export const exportPlanAsPDF = async (plan: PlanData, t: (key: string, substitut
         const pdf = new jsPDF('l', 'mm', 'a4'); // landscape, millimeters, A4
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        
+
         // Select all elements that should be a separate page
         const pages = container.querySelectorAll('.page');
-        
+
         // Loop through each page element and add it to the PDF
         for (let i = 0; i < pages.length; i++) {
             const pageElement = pages[i] as HTMLElement;
-            
+
             // Use html2canvas to render the element to a canvas
             const canvas = await html2canvas(pageElement, {
                 scale: 2, // Higher scale for better quality
@@ -582,15 +630,15 @@ export const exportPlanAsPDF = async (plan: PlanData, t: (key: string, substitut
                 windowWidth: pageElement.scrollWidth,
                 windowHeight: pageElement.scrollHeight,
             });
-            
+
             // Calculate the aspect ratio to fit the canvas image onto the PDF page
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
             const aspectRatio = imgWidth / imgHeight;
-            
+
             let finalWidth = pdfWidth;
             let finalHeight = pdfWidth / aspectRatio;
-            
+
             // If the calculated height is greater than the PDF page height, scale by height instead
             if (finalHeight > pdfHeight) {
                 finalHeight = pdfHeight;
@@ -638,7 +686,7 @@ export const exportCreativesAsCSV = (plan: PlanData, t: (key: string, substituti
                 csvContent += row.join(',') + '\r\n';
             });
             (group.longHeadlines || []).forEach(longHeadline => {
-                 const row = [
+                const row = [
                     escapeCSV(channel),
                     escapeCSV(group.name),
                     escapeCSV(group.context),
@@ -684,15 +732,15 @@ export const exportCreativesAsTXT = (plan: PlanData, t: (key: string, substituti
             plan.creatives[channel].forEach(group => {
                 txtContent += `\nGrupo de Criativos: ${group.name}\n`;
                 txtContent += `Contexto: ${group.context || 'N/A'}\n\n`;
-                
+
                 txtContent += `>> ${t('Títulos (Headlines)')}:\n`;
                 group.headlines.forEach(headline => {
                     txtContent += `- ${headline || ''}\n`;
                 });
                 txtContent += `\n`;
 
-                if(group.longHeadlines && group.longHeadlines.length > 0) {
-                     txtContent += `>> ${t('Títulos Longos (Long Headlines)')}:\n`;
+                if (group.longHeadlines && group.longHeadlines.length > 0) {
+                    txtContent += `>> ${t('Títulos Longos (Long Headlines)')}:\n`;
                     group.longHeadlines.forEach(longHeadline => {
                         txtContent += `- ${longHeadline || ''}\n`;
                     });
@@ -805,7 +853,7 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
     const allGroups = plan.adGroups || [];
     const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
     const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
-    
+
     const sortedGroups = [...assignedGroups];
     if (unassignedGroup) {
         sortedGroups.push(unassignedGroup);
@@ -855,7 +903,7 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
     const allGroups = plan.adGroups || [];
     const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
     const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
-    
+
     const sortedGroups = [...assignedGroups];
     if (unassignedGroup) {
         sortedGroups.push(unassignedGroup);
@@ -897,7 +945,7 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
 
 export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string) => string) => {
     const reportHTML = buildGroupedKeywordsPdfHtml(plan, t);
-    
+
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -909,18 +957,18 @@ export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string
     try {
         const content = container.querySelector('#pdf-keywords-content') as HTMLElement;
         const canvas = await html2canvas(content, { scale: 2 });
-        
+
         const pdf = new jsPDF('p', 'mm', 'a4'); // portrait, mm, A4
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        
+
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         const aspectRatio = imgWidth / imgHeight;
-        
+
         let finalWidth = pdfWidth - 20; // with margin
         let finalHeight = finalWidth / aspectRatio;
-        
+
         const xOffset = 10;
         let yOffset = 10;
 
@@ -939,7 +987,7 @@ export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string
             pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset - position, finalWidth, finalHeight);
             heightLeft -= pageHeightInCanvas;
         }
-        
+
         pdf.save(`${plan.campaignName}-keywords.pdf`);
 
     } catch (error) {
@@ -953,11 +1001,11 @@ export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string
 export const exportGroupedKeywordsAsTXT = (plan: PlanData, t: (key: string, substitutions?: Record<string, string>) => string) => {
     let txtContent = `${t('ad_groups')} - ${plan.campaignName}\n`;
     txtContent += `=========================================\n\n`;
-    
+
     const allGroups = plan.adGroups || [];
     const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
     const unassignedGroup = allGroups.find(g => g.id === 'unassigned');
-    
+
     const sortedGroups = [...assignedGroups];
     if (unassignedGroup) {
         sortedGroups.push(unassignedGroup);
@@ -999,10 +1047,10 @@ export const callGeminiAPI = async (prompt: string, isJsonOutput: boolean = fals
         });
 
         let textResponse = response.text.trim();
-        
+
         // More robust stripping of markdown fences (e.g., ```json or ```html)
         textResponse = textResponse.replace(/^```(?:json|html)?\s*\n/, '').replace(/\n?```$/, '').trim();
-        
+
         if (isJsonOutput) {
             try {
                 return JSON.parse(textResponse);
@@ -1036,7 +1084,7 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
     });
 
     const monthsJsonStructure = planMonths.map(month => `"${month}": [ /* list of campaigns for ${month} */ ]`).join(',\n            ');
-    
+
     // Step 2: Extract budget information to guide the AI
     const budgetRegex = /(?:R\$|R\$ ?|budget of|orçamento de)\s*([\d.,]+(?:,\d{2})?)\s*(?:por mês|mensal|monthly)/i;
     const budgetMatch = prompt.match(budgetRegex);
@@ -1086,7 +1134,7 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
 
         ${langInstruction}
     `;
-    
+
     return callGeminiAPI(aiPrompt, true);
 };
 
@@ -1161,7 +1209,7 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
                 };
                 return [generatedImage];
             } else {
-                 throw new Error("Image editing failed or returned no image part.");
+                throw new Error("Image editing failed or returned no image part.");
             }
         } catch (error) {
             console.error("Error calling Gemini Image Editing API:", error);

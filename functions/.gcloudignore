@@ -1,0 +1,6 @@
+# Ignore node_modules but include package-lock.json
+node_modules/
+.git/
+.gitignore
+*.log
+.DS_Store

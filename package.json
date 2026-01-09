@@ -9,13 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.6.0",
+    "@stripe/stripe-js": "^8.6.0",
+    "firebase": "^12.7.0",
+    "firebase-functions": "^7.0.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "lucide-react": "^0.523.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@google/genai": "^1.6.0",
-    "lucide-react": "^0.523.0",
-    "recharts": "^2.12.7",
-    "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1"
+    "recharts": "^2.12.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

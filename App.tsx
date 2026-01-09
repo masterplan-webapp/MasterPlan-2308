@@ -3,21 +3,22 @@ import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Setting
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF } from './services';
-import { 
+import { httpsCallable } from 'firebase/functions';
+import { getAuth } from 'firebase/auth';
+import {
     PlanData, Campaign, User, UserProfileModalProps
 } from './types';
-import { 
+import {
     useLanguage, useTheme, useAuth
 } from './contexts';
-import { 
+import {
     LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage,
     PlanDetailsModal, RenamePlanModal,
     Card,
     AddMonthModal,
     CopyBuilderPage,
     AIPlanCreationModal,
-    ShareLinkModal,
-    ShareablePlanViewer,
+    ShareLinkModal, ShareablePlanViewer, PricingModal,
     LOGO_DARK,
     ICON_LOGO
 } from './components';
@@ -35,19 +36,20 @@ interface CustomSidebarProps {
     handleBackToDashboard: () => void;
     setAddMonthModalOpen: (isOpen: boolean) => void;
     setIsProfileModalOpen: (isOpen: boolean) => void;
+    onUpgradeClick: () => void;
     user: User;
     signOut: () => void;
 }
 
-const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, activePlan, activeView, handleNavigate, handleBackToDashboard, setAddMonthModalOpen, setIsProfileModalOpen, user, signOut }) => {
+const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, activePlan, activeView, handleNavigate, handleBackToDashboard, setAddMonthModalOpen, setIsProfileModalOpen, onUpgradeClick, user, signOut }) => {
     const { t } = useLanguage();
     const [isDetailingOpen, setIsDetailingOpen] = useState(true);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-    const plannedMonths = useMemo(() => 
+    const plannedMonths = useMemo(() =>
         Object.keys(activePlan.months || {}).sort(sortMonthKeys)
-    , [activePlan.months]);
-    
+        , [activePlan.months]);
+
     const formatMonthDisplay = (monthKey: string) => {
         const [year, monthName] = monthKey.split('-');
         return `${t(monthName)} ${year}`;
@@ -57,10 +59,10 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
     return (
         <aside className={`bg-gray-900 text-white flex flex-col shadow-lg transition-transform duration-300 ease-in-out lg:transition-all lg:duration-300 lg:ease-in-out fixed inset-y-0 left-0 z-40 w-64 transform ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
             <div className={`flex items-center h-16 shrink-0 border-b border-gray-700/50 ${isCollapsed ? 'justify-center' : 'px-4'}`}>
-                <img 
-                    src={isCollapsed ? ICON_LOGO : LOGO_DARK} 
-                    alt="MasterPlan Logo" 
-                    className={`transition-all duration-300 ${isCollapsed ? 'h-10 w-10 rounded-md' : 'h-8'}`} 
+                <img
+                    src={isCollapsed ? ICON_LOGO : LOGO_DARK}
+                    alt="MasterPlan Logo"
+                    className={`transition-all duration-300 ${isCollapsed ? 'h-10 w-10 rounded-md' : 'h-8'}`}
                 />
             </div>
             <div className='flex-grow px-2 overflow-y-auto overflow-x-hidden'>
@@ -70,36 +72,36 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                         <span className={isCollapsed ? 'hidden' : 'inline'}>{t('Voltar ao Dashboard')}</span>
                     </button>
                 </div>
-                 <div className={`text-center mb-4 ${isCollapsed ? '' : 'px-2'}`}>
-                     {activePlan.logoUrl && <img src={activePlan.logoUrl} alt="Logo do Cliente" className={`rounded-md mb-4 object-cover border border-gray-700 mx-auto transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-24 h-24'}`} onError={(e) => { const target = e.target as HTMLImageElement; target.onerror = null; target.src='https://placehold.co/100x100/7F1D1D/FFFFFF?text=Error'; }} />}
+                <div className={`text-center mb-4 ${isCollapsed ? '' : 'px-2'}`}>
+                    {activePlan.logoUrl && <img src={activePlan.logoUrl} alt="Logo do Cliente" className={`rounded-md mb-4 object-cover border border-gray-700 mx-auto transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-24 h-24'}`} onError={(e) => { const target = e.target as HTMLImageElement; target.onerror = null; target.src = 'https://placehold.co/100x100/7F1D1D/FFFFFF?text=Error'; }} />}
                     <p className={`text-lg font-semibold text-gray-200 break-words ${isCollapsed ? 'hidden' : 'block'}`}>{activePlan.campaignName || t("Nome da Campanha")}</p>
                 </div>
                 <nav>
                     <ul>
                         <li className={`px-0 pt-4 pb-2 text-xs font-bold text-gray-500 uppercase tracking-wider ${isCollapsed ? 'text-center' : 'px-2'}`}>{isCollapsed ? '...' : t('media_plan')}</li>
                         <li>
-                           <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Overview');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Overview' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('overview') : undefined}>
-                              <LayoutDashboard size={18}/> 
-                              <span className={isCollapsed ? 'hidden' : 'inline'}>{t('overview')}</span>
-                           </a>
+                            <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Overview'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Overview' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('overview') : undefined}>
+                                <LayoutDashboard size={18} />
+                                <span className={isCollapsed ? 'hidden' : 'inline'}>{t('overview')}</span>
+                            </a>
                         </li>
-                         <li>
+                        <li>
                             <button onClick={() => setIsDetailingOpen(!isDetailingOpen)} className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-4'} py-2.5 text-sm rounded-md transition-colors text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('detailing') : undefined}>
                                 <div className="flex items-center gap-3">
-                                    <List size={18}/> 
+                                    <List size={18} />
                                     <span className={isCollapsed ? 'hidden' : 'inline'}>{t('detailing')}</span>
                                 </div>
                                 <ChevronDown size={20} className={`transform transition-transform duration-200 ${isDetailingOpen ? 'rotate-180' : ''} ${isCollapsed ? 'hidden' : 'inline'}`} />
                             </button>
                         </li>
-                         {isDetailingOpen && (
+                        {isDetailingOpen && (
                             <ul className={`mt-1 space-y-1 ${isCollapsed ? '' : 'pl-5'}`}>
                                 {plannedMonths.map(month => (
                                     <li key={month}>
-                                       <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate(month);}} className={`block py-2 rounded-md text-sm flex items-center gap-3 transition-colors ${isCollapsed ? 'justify-center' : 'pl-7 pr-4'} ${activeView === month ? 'bg-blue-600 text-white font-semibold' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`} title={isCollapsed ? formatMonthDisplay(month) : undefined}>
-                                          <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
-                                          <span className={isCollapsed ? 'hidden' : 'inline'}>{formatMonthDisplay(month)}</span>
-                                       </a>
+                                        <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate(month); }} className={`block py-2 rounded-md text-sm flex items-center gap-3 transition-colors ${isCollapsed ? 'justify-center' : 'pl-7 pr-4'} ${activeView === month ? 'bg-blue-600 text-white font-semibold' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`} title={isCollapsed ? formatMonthDisplay(month) : undefined}>
+                                            <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
+                                            <span className={isCollapsed ? 'hidden' : 'inline'}>{formatMonthDisplay(month)}</span>
+                                        </a>
                                     </li>
                                 ))}
                                 <li>
@@ -110,33 +112,57 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                                 </li>
                             </ul>
                         )}
-                         <li className={`px-0 pt-8 pb-2 text-xs font-bold text-gray-500 uppercase tracking-wider ${isCollapsed ? 'text-center' : 'px-2'}`}>{isCollapsed ? '...' : t('tools')}</li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Keyword_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Keyword_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('keyword_builder') : undefined}><KeyRound size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('keyword_builder')}</span></a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Copy_builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Copy_builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('copy_builder') : undefined}><PencilRuler size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('copy_builder')}</span></a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Creative_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Creative_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('creative_builder') : undefined}><ImageIcon size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('creative_builder')}</span></a></li>
-                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('UTM_Builder');}} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'UTM_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('utm_builder') : undefined}><Link2 size={18}/> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('utm_builder')}</span></a></li>
+                        <li className={`px-0 pt-8 pb-2 text-xs font-bold text-gray-500 uppercase tracking-wider ${isCollapsed ? 'text-center' : 'px-2'}`}>{isCollapsed ? '...' : t('tools')}</li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Keyword_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Keyword_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('keyword_builder') : undefined}><KeyRound size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('keyword_builder')}</span></a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Copy_builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Copy_builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('copy_builder') : undefined}><PencilRuler size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('copy_builder')}</span></a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Creative_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Creative_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('creative_builder') : undefined}><ImageIcon size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('creative_builder')}</span></a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('UTM_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'UTM_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('utm_builder') : undefined}><Link2 size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('utm_builder')}</span></a></li>
                     </ul>
                 </nav>
             </div>
-             <div className="p-2 border-t border-gray-700/50 relative">
-                 <button onClick={() => setIsUserMenuOpen(prev => !prev)} className={`flex items-center gap-3 w-full hover:bg-gray-700/70 rounded-md transition-colors ${isCollapsed ? 'p-1 justify-center' : 'p-2'}`}>
-                     <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff&size=32`} alt="User avatar" className="w-8 h-8 rounded-full flex-shrink-0"/>
-                     <div className={`text-left overflow-hidden flex-1 ${isCollapsed ? 'hidden' : 'block'}`}>
-                        <p className="text-sm font-semibold text-white truncate">{user.displayName || 'Usuário'}</p>
+
+            {/* Upgrade CTA for Free Users */}
+            {user && user.subscription === 'free' && !isCollapsed && (
+                <div className="px-4 pb-4">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-3 text-center shadow-lg transform transition-transform hover:scale-105">
+                        <p className="text-xs font-semibold text-blue-100 mb-2">{t('Desbloqueie Todo o Potencial')}</p>
+                        <button
+                            onClick={onUpgradeClick}
+                            className="w-full bg-white text-blue-600 text-xs font-bold py-1.5 rounded shadow hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Sparkles size={12} />
+                            {t('Fazer Upgrade Agora')}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className="p-2 border-t border-gray-700/50 relative">
+                <button onClick={() => setIsUserMenuOpen(prev => !prev)} className={`flex items-center gap-3 w-full hover:bg-gray-700/70 rounded-md transition-colors ${isCollapsed ? 'p-1 justify-center' : 'p-2'}`}>
+                    <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff&size=32`} alt="User avatar" className="w-8 h-8 rounded-full flex-shrink-0" />
+                    <div className={`text-left overflow-hidden flex-1 ${isCollapsed ? 'hidden' : 'block'}`}>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-white truncate">{user.displayName || 'Usuário'}</p>
+                            {user.subscription !== 'free' && (
+                                <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 rounded border border-yellow-500/30 font-bold uppercase tracking-wider">
+                                    {user.subscription}
+                                </span>
+                            )}
+                        </div>
                         <p className="text-xs text-gray-400 truncate">{user.email || 'email@example.com'}</p>
-                     </div>
-                     <MoreVertical size={18} className={`text-gray-400 ${isCollapsed ? 'hidden' : 'inline'}`} />
-                 </button>
+                    </div>
+                    <MoreVertical size={18} className={`text-gray-400 ${isCollapsed ? 'hidden' : 'inline'}`} />
+                </button>
                 {isUserMenuOpen && (
-                     <div 
+                    <div
                         className={`absolute bottom-[calc(100%+0.5rem)] bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50 ${isCollapsed ? 'left-full ml-2 w-48' : 'left-4 right-4'}`}
                         onMouseLeave={() => setIsUserMenuOpen(false)}
-                     >
-                        <button onClick={() => {setIsProfileModalOpen(true); setIsUserMenuOpen(false);}} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/70 hover:text-white transition-colors">{t('my_profile')}</button>
+                    >
+                        <button onClick={() => { setIsProfileModalOpen(true); setIsUserMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/70 hover:text-white transition-colors">{t('my_profile')}</button>
                         <button onClick={signOut} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors">{t('sign_out')}</button>
-                     </div>
+                    </div>
                 )}
-             </div>
+            </div>
         </aside>
     );
 };
@@ -189,27 +215,27 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
         <header className="bg-gray-800 shadow-sm sticky top-0 z-20">
             <div className="w-full mx-auto px-4 sm:px-6 lg:px-8"><div className="flex justify-between items-center h-16">
                 <div className="flex items-center">
-                     <button onClick={toggleSidebar} className="mr-3 text-gray-400 hover:text-gray-200">
+                    <button onClick={toggleSidebar} className="mr-3 text-gray-400 hover:text-gray-200">
                         <Menu size={24} />
-                     </button>
+                    </button>
                     <h1 className="text-xl font-semibold text-gray-200">{getHeaderTitle()}</h1>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
-                     <button 
-                        onClick={toggleLanguage} 
+                    <button
+                        onClick={toggleLanguage}
                         className="p-2 text-2xl rounded-full text-gray-400 hover:bg-gray-700/70 transition-colors"
                         title={t('language')}
                     >
-                         {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
-                     </button>
+                        {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
+                    </button>
                     <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
                     <div className="relative" ref={exportMenuRef}>
                         <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
-                           {isExporting ? <LoaderIcon size={16} className="animate-spin" /> : <FileDown size={16} />} 
-                           <span className="hidden sm:inline">{isExporting ? t('generating_pdf') : t('export')}</span>
+                            {isExporting ? <LoaderIcon size={16} className="animate-spin" /> : <FileDown size={16} />}
+                            <span className="hidden sm:inline">{isExporting ? t('generating_pdf') : t('export')}</span>
                         </button>
                         {isExportMenuOpen && (
-                             <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
                                 <div className="py-1" role="menu" aria-orientation="vertical">
                                     <button
                                         onClick={() => { onExportPDF(); setIsExportMenuOpen(false); }}
@@ -219,7 +245,7 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                                         <FileText size={16} />
                                         {t('export_to_pdf')}
                                     </button>
-                                     <button
+                                    <button
                                         onClick={() => { onGetShareLink(); setIsExportMenuOpen(false); }}
                                         className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                                         role="menuitem"
@@ -279,38 +305,38 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
                 </div>
                 <div className="p-6 space-y-6">
                     <div className="flex flex-col items-center">
-                        <img 
-                            src={photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=random&color=fff&size=128`} 
-                            alt="Avatar" 
+                        <img
+                            src={photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=random&color=fff&size=128`}
+                            alt="Avatar"
                             className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-700"
                         />
-                         <button 
+                        <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             className="text-sm text-blue-400 hover:underline"
                         >
                             {t('Alterar foto')}
                         </button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            className="hidden" 
-                            accept="image/*" 
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
                             onChange={handlePhotoUpload}
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-300">{t('Nome')}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
-                     <div>
+                    <div>
                         <label className="block text-sm font-medium text-gray-300">{t('URL da Foto')}</label>
-                        <input type="text" value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder={t('Ou cole a URL da imagem aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+                        <input type="text" value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder={t('Ou cole a URL da imagem aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                     </div>
                 </div>
                 <div className="p-6 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">{t('cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"><Save size={18}/> {t('save')}</button>
+                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"><Save size={18} /> {t('save')}</button>
                 </div>
             </div>
         </div>
@@ -320,13 +346,13 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
 
 // --- Main Application Logic ---
 export default function App() {
-    const { user, loading, signOut } = useAuth();
+    const { user, loading, signOut, updateUser, functions } = useAuth();
     const { t, language } = useLanguage();
 
     const [allPlans, setAllPlans] = useState<PlanData[]>([]);
     const [activePlan, setActivePlan] = useState<PlanData | null>(null);
     const [activeView, setActiveView] = useState('Overview');
-    
+
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [isPlanDetailsModalOpen, setPlanDetailsModalOpen] = useState(false);
@@ -339,10 +365,70 @@ export default function App() {
     const [isExporting, setIsExporting] = useState(false);
     const [shareLink, setShareLink] = useState('');
     const [isShareLinkModalOpen, setIsShareLinkModalOpen] = useState(false);
+    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Initialize Stripe (Move outside component or memoize in real app, but fine here)
+    const stripePromise = useMemo(() => import("@stripe/stripe-js").then(module => module.loadStripe("pk_live_51S4MFQGr4FxMIDKzOCgsOO0kAHLQ3a8nBvhnqqkVaLimUINHgdEzfdWmlON6YAu5U4iHdXFDrP0ZXCFZaz2GQm2k00o4aVZyZL")), []);
+
+    const handleUpgrade = async (plan: 'pro' | 'ai') => {
+        if (!user) return;
+
+        try {
+            setIsLoading(true);
+
+            // Get the user's ID token for authentication
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                throw new Error("User not authenticated");
+            }
+
+            const idToken = await currentUser.getIdToken();
+
+            // Call the HTTP Cloud Function
+            const response = await fetch(
+                'https://us-central1-masterplan-52e06.cloudfunctions.net/createStripeCheckoutSession',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ plan })
+                }
+            );
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create checkout session');
+            }
+
+            const data = await response.json();
+
+            if (data?.sessionId) {
+                const stripe = await stripePromise;
+                if (stripe) {
+                    const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+                    if (error) {
+                        console.error("Stripe Redirect Error:", error);
+                        alert("Erro ao redirecionar para o pagamento.");
+                        setIsLoading(false);
+                    }
+                }
+            } else {
+                throw new Error("No session ID returned");
+            }
+        } catch (error) {
+            console.error("Erro ao iniciar checkout:", error);
+            alert("Erro ao iniciar pagamento. Tente novamente.");
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (user) {
-            setAllPlans(dbService.getPlans(user.uid));
+            dbService.getPlans(user.uid).then(plans => setAllPlans(plans));
         } else {
             setAllPlans([]);
             setActivePlan(null);
@@ -353,13 +439,20 @@ export default function App() {
         localStorage.setItem('sidebarCollapsed', String(isSidebarCollapsed));
     }, [isSidebarCollapsed]);
 
-    const handlePlanCreated = (type: 'ai' | 'blank' | 'template') => {
+    const handlePlanCreated = async (type: 'ai' | 'blank' | 'template') => {
         if (!user) return;
+
+        // --- PLAN LIMIT CHECK ---
+        if (user.subscription === 'free' && allPlans.length >= 1) {
+            alert(t('Limite do Plano Gratuito atingido!\nFaça Upgrade para criar planos ilimitados.'));
+            return;
+        }
+
         if (type === 'ai') {
             setAIPlanCreationModalOpen(true);
             return;
         }
-        const newPlan = type === 'blank' ? createNewEmptyPlan(user.uid) : createNewPlanFromTemplate(user.uid);
+        const newPlan = type === 'blank' ? await createNewEmptyPlan(user.uid) : await createNewPlanFromTemplate(user.uid);
         setAllPlans(prev => [...prev, newPlan]);
         setActivePlan(newPlan);
         setActiveView('Overview');
@@ -370,7 +463,7 @@ export default function App() {
             handlePlanCreated(newPlanOrType);
         } else {
             setAllPlans(prev => {
-                if(prev.find(p => p.id === newPlanOrType.id)) return prev;
+                if (prev.find(p => p.id === newPlanOrType.id)) return prev;
                 return [...prev, newPlanOrType];
             });
         }
@@ -400,7 +493,7 @@ export default function App() {
                 aiPrompt: prompt,
                 aiImagePrompt: partialPlan.aiImagePrompt,
             };
-            dbService.savePlan(user.uid, newPlan);
+            await dbService.savePlan(user.uid, newPlan);
             setAllPlans(prev => [...prev, newPlan]);
             setActivePlan(newPlan);
             setActiveView('Overview');
@@ -422,19 +515,19 @@ export default function App() {
         setActivePlan(null);
     };
 
-    const handleDeletePlan = (planId: string) => {
+    const handleDeletePlan = async (planId: string) => {
         if (!user) return;
-        dbService.deletePlan(user.uid, planId);
-        setAllPlans(allPlans.filter(p => p.id !== planId));
+        await dbService.deletePlan(user.uid, planId);
+        setAllPlans(activePlans => activePlans.filter(p => p.id !== planId));
     };
 
-    const updateActivePlan = (updatedPlan: PlanData) => {
+    const updateActivePlan = async (updatedPlan: PlanData) => {
         if (!user) return;
         setActivePlan(updatedPlan);
-        setAllPlans(allPlans.map(p => p.id === updatedPlan.id ? updatedPlan : p));
-        dbService.savePlan(user.uid, updatedPlan);
+        setAllPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+        await dbService.savePlan(user.uid, updatedPlan);
     };
-    
+
     const handleSavePlanDetails = (details: Partial<PlanData>) => {
         if (!activePlan) return;
         const updatedPlan = { ...activePlan, ...details };
@@ -445,41 +538,41 @@ export default function App() {
         setPlanToRename(plan);
         setRenameModalOpen(true);
     };
-    
-    const handleRenamePlan = (planId: string, newName: string) => {
-        if(!user) return;
+
+    const handleRenamePlan = async (planId: string, newName: string) => {
+        if (!user) return;
         const planToUpdate = allPlans.find(p => p.id === planId);
-        if(planToUpdate) {
-            const updatedPlan = {...planToUpdate, campaignName: newName};
+        if (planToUpdate) {
+            const updatedPlan = { ...planToUpdate, campaignName: newName };
             const updatedPlans = allPlans.map(p => p.id === planId ? updatedPlan : p);
             setAllPlans(updatedPlans);
-            dbService.savePlan(user.uid, updatedPlan);
-            if(activePlan?.id === planId) {
+            await dbService.savePlan(user.uid, updatedPlan);
+            if (activePlan?.id === planId) {
                 setActivePlan(updatedPlan);
             }
         }
         setRenameModalOpen(false);
         setPlanToRename(null);
     }
-    
-    const handleDuplicatePlan = (planToDuplicate: PlanData) => {
-        if(!user) return;
+
+    const handleDuplicatePlan = async (planToDuplicate: PlanData) => {
+        if (!user) return;
         const newPlan: PlanData = {
             ...JSON.parse(JSON.stringify(planToDuplicate)),
             id: `plan_${new Date().getTime()}`,
             campaignName: `${planToDuplicate.campaignName} ${t('Copy')}`
         };
-        dbService.savePlan(user.uid, newPlan);
+        await dbService.savePlan(user.uid, newPlan);
         setAllPlans(prev => [...prev, newPlan]);
     }
 
     const handleSaveCampaign = (month: string, campaign: Campaign) => {
         if (!activePlan) return;
         const updatedMonths = { ...(activePlan.months || {}) };
-    
+
         const cleanCampaigns = (updatedMonths[month] || []).filter(Boolean);
         const campaignIndex = cleanCampaigns.findIndex(c => c.id === campaign.id);
-    
+
         if (campaignIndex > -1) {
             updatedMonths[month] = cleanCampaigns.map(c => (c.id === campaign.id ? campaign : c));
         } else {
@@ -487,7 +580,7 @@ export default function App() {
         }
         updateActivePlan({ ...activePlan, months: updatedMonths });
     };
-    
+
     const handleDeleteCampaign = (month: string, campaignId: string) => {
         if (!activePlan) return;
         const updatedMonths = { ...(activePlan.months || {}) };
@@ -501,24 +594,24 @@ export default function App() {
         if (!activePlan || !month) return;
         if (!activePlan.months) activePlan.months = {};
         if (activePlan.months[month]) return;
-        
+
         const updatedMonths = { ...activePlan.months, [month]: [] };
         updateActivePlan({ ...activePlan, months: updatedMonths });
         setAddMonthModalOpen(false);
     };
-    
+
     const handleAddFormat = (format: string) => {
         if (!activePlan) return;
         const updatedFormats = [...new Set([...(activePlan.customFormats || []), format])];
-        updateActivePlan({...activePlan, customFormats: updatedFormats});
+        updateActivePlan({ ...activePlan, customFormats: updatedFormats });
     };
-    
+
     const handleRegeneratePlan = async (prompt: string) => {
         if (!user || !activePlan) return;
         setIsRegeneratingPlan(true);
         try {
-             const partialPlan = await generateAIPlan(prompt, language);
-             const updatedPlan = {
+            const partialPlan = await generateAIPlan(prompt, language);
+            const updatedPlan = {
                 ...activePlan,
                 campaignName: partialPlan.campaignName || activePlan.campaignName,
                 objective: partialPlan.objective || activePlan.objective,
@@ -532,8 +625,8 @@ export default function App() {
                 }, {} as Record<string, Campaign[]>) : activePlan.months,
                 aiPrompt: prompt,
                 aiImagePrompt: partialPlan.aiImagePrompt || activePlan.aiImagePrompt,
-             };
-             updateActivePlan(updatedPlan);
+            };
+            updateActivePlan(updatedPlan);
         } catch (error) {
             console.error("Error regenerating AI plan:", error);
             alert(t('Erro ao criar o plano com IA. Por favor, tente novamente.'));
@@ -541,11 +634,12 @@ export default function App() {
             setIsRegeneratingPlan(false);
         }
     };
-    
+
     const handleExportPDF = async () => {
-        if (!activePlan) return;
+        if (!activePlan || !user) return;
         setIsExporting(true);
-        await exportPlanAsPDF(activePlan, t);
+        const isPro = user.subscription === 'pro' || user.subscription === 'ai';
+        await exportPlanAsPDF(activePlan, t, isPro);
         setIsExporting(false);
     };
 
@@ -563,20 +657,20 @@ export default function App() {
             // Make the base64 string URL-safe
             const urlSafeEncodedData = encodedData.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
             const baseUrl = `${window.location.origin}${window.location.pathname}?plan_data=`;
-            
+
             // Check for URL length to avoid errors in some browsers
             if ((baseUrl + urlSafeEncodedData).length > 4096) {
                 console.error("Plan is too large to share via URL");
                 setShareLink(t('link_generation_error_too_long'));
             } else {
-                 const url = baseUrl + urlSafeEncodedData;
-                 setShareLink(url);
+                const url = baseUrl + urlSafeEncodedData;
+                setShareLink(url);
             }
         } catch (e) {
             console.error("Error encoding plan data for sharing:", e);
             setShareLink(t('link_generation_error'));
         }
-        
+
         setIsShareLinkModalOpen(true);
     };
 
@@ -588,7 +682,7 @@ export default function App() {
             setIsSidebarCollapsed(!isSidebarCollapsed);
         }
     };
-    
+
     const handleNavigate = (view: string) => {
         setActiveView(view);
         if (window.innerWidth < 1024) {
@@ -600,7 +694,7 @@ export default function App() {
     if (loading) {
         return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
     }
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     const encodedPlanData = urlParams.get('plan_data');
 
@@ -616,7 +710,7 @@ export default function App() {
         return (
             <>
                 <OnboardingPage onPlanCreated={handlePlanCreated} />
-                 <AIPlanCreationModal 
+                <AIPlanCreationModal
                     isOpen={isAIPlanCreationModalOpen}
                     onClose={() => setAIPlanCreationModalOpen(false)}
                     onGenerate={handleAIPlanGenerated}
@@ -625,21 +719,21 @@ export default function App() {
             </>
         );
     }
-    
+
     if (!activePlan) {
-         return (
+        return (
             <>
-                <PlanSelectorPageComponent 
-                    plans={allPlans} 
-                    onSelectPlan={handleSelectPlan} 
-                    onPlanCreated={handlePlanCreatedOrSelected} 
-                    user={user} 
-                    onProfileClick={() => setIsProfileModalOpen(true)} 
+                <PlanSelectorPageComponent
+                    plans={allPlans}
+                    onSelectPlan={handleSelectPlan}
+                    onPlanCreated={handlePlanCreatedOrSelected}
+                    user={user}
+                    onProfileClick={() => setIsProfileModalOpen(true)}
                     onDeletePlan={handleDeletePlan}
                     onRenamePlan={handleRenamePlan}
                     onRenameRequest={handleRenameRequest}
                 />
-                 <AIPlanCreationModal 
+                <AIPlanCreationModal
                     isOpen={isAIPlanCreationModalOpen}
                     onClose={() => setAIPlanCreationModalOpen(false)}
                     onGenerate={handleAIPlanGenerated}
@@ -655,27 +749,28 @@ export default function App() {
                 )}
                 <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
             </>
-         );
+        );
     }
 
 
     return (
         <div className={`flex h-screen bg-gray-900 font-sans`}>
-             <Sidebar 
+            <Sidebar
                 isCollapsed={isSidebarCollapsed}
                 isMobileOpen={isMobileSidebarOpen}
-                activePlan={activePlan} 
-                activeView={activeView} 
-                handleNavigate={handleNavigate} 
+                activePlan={activePlan}
+                activeView={activeView}
+                handleNavigate={handleNavigate}
                 handleBackToDashboard={handleBackToDashboard}
                 setAddMonthModalOpen={setAddMonthModalOpen}
                 setIsProfileModalOpen={setIsProfileModalOpen}
+                onUpgradeClick={() => setIsPricingModalOpen(true)}
                 user={user}
                 signOut={signOut}
-             />
-             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header 
-                    activeView={activeView} 
+            />
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Header
+                    activeView={activeView}
                     toggleSidebar={toggleSidebar}
                     setPlanModalOpen={setPlanDetailsModalOpen}
                     activePlan={activePlan}
@@ -684,10 +779,10 @@ export default function App() {
                     onGetShareLink={handleGetShareLink}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-                     {activeView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
-                     {Object.keys(activePlan.months || {}).includes(activeView) && (
-                        <MonthlyPlanPage 
-                            month={activeView} 
+                    {activeView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
+                    {Object.keys(activePlan.months || {}).includes(activeView) && (
+                        <MonthlyPlanPage
+                            month={activeView}
                             campaigns={activePlan.months[activeView]}
                             onSave={handleSaveCampaign}
                             onDelete={handleDeleteCampaign}
@@ -696,14 +791,14 @@ export default function App() {
                             onAddFormat={handleAddFormat}
                             totalInvestment={activePlan.totalInvestment}
                         />
-                     )}
-                     {activeView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                     {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                     {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                     {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
+                    )}
+                    {activeView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                    {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                    {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                    {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
                 </main>
-             </div>
-             {isPlanDetailsModalOpen && (
+            </div>
+            {isPlanDetailsModalOpen && (
                 <PlanDetailsModal
                     isOpen={isPlanDetailsModalOpen}
                     onClose={() => setPlanDetailsModalOpen(false)}
@@ -712,23 +807,30 @@ export default function App() {
                     onRename={handleRenameRequest}
                     onDuplicate={handleDuplicatePlan}
                 />
-             )}
+            )}
             {isRenameModalOpen && planToRename && (
-                <RenamePlanModal 
-                    isOpen={isRenameModalOpen} 
+                <RenamePlanModal
+                    isOpen={isRenameModalOpen}
                     onClose={() => { setRenameModalOpen(false); setPlanToRename(null); }}
                     plan={planToRename}
                     onSave={handleRenamePlan}
                 />
             )}
-             <AddMonthModal 
-                isOpen={isAddMonthModalOpen} 
+            <AddMonthModal
+                isOpen={isAddMonthModalOpen}
                 onClose={() => setAddMonthModalOpen(false)}
                 onAddMonth={handleAddMonth}
                 existingMonths={Object.keys(activePlan.months || {})}
-             />
-             <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
-             <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
+            />
+            <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+            <PricingModal
+                isOpen={isPricingModalOpen}
+                onClose={() => setIsPricingModalOpen(false)}
+                onUpgrade={handleUpgrade}
+                currentPlan={user?.subscription || 'free'}
+            />
+            <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
+
         </div>
     );
 }
