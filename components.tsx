@@ -880,6 +880,11 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated })
     return (
         <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
             <Card className="max-w-4xl w-full text-center">
+                <img
+                    src={LOGO_DARK}
+                    alt="MasterPlan Logo"
+                    className="h-12 mx-auto mb-6"
+                />
                 <h1 className="text-3xl font-bold text-gray-100">{t('welcome_to_masterplan')}</h1>
                 <p className="mt-2 mb-8 text-lg text-gray-400">{t('create_first_plan')}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2717,8 +2722,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
 
                 <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                     {plans.map((plan) => (
-                        <div 
-                            key={plan.id} 
+                        <div
+                            key={plan.id}
                             className={`relative rounded-xl p-6 flex flex-col border transition-all duration-300 ${plan.recommended ? 'bg-gray-800/80 border-blue-500 shadow-lg shadow-blue-500/10 transform scale-105 z-10' : 'bg-gray-800/40 border-gray-700 hover:border-gray-600'}`}
                         >
                             {plan.recommended && (
@@ -2733,7 +2738,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
                                     {plan.period && <span className="text-gray-400 text-sm">{plan.period}</span>}
                                 </div>
                             </div>
-                            
+
                             <ul className="flex-1 space-y-3 mb-6">
                                 {plan.features.map((feature, idx) => (
                                     <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
@@ -2746,20 +2751,19 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
                             <button
                                 onClick={() => !plan.current && onUpgrade(plan.id as 'pro' | 'ai')}
                                 disabled={plan.current || plan.disabled}
-                                className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${
-                                    plan.current 
+                                className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${plan.current
                                         ? 'bg-gray-700 text-gray-400 cursor-default'
-                                        : plan.recommended 
+                                        : plan.recommended
                                             ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-600/20'
                                             : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-white'
-                                }`}
+                                    }`}
                             >
                                 {plan.buttonText}
                             </button>
                         </div>
                     ))}
                 </div>
-                
+
                 <div className="p-6 bg-gray-900 border-t border-gray-800 text-center">
                     <p className="text-xs text-gray-500">
                         Pagamento seguro via Stripe. Cancele a qualquer momento.
