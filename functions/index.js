@@ -104,8 +104,8 @@ exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res)
 exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     const signature = req.headers["stripe-signature"];
 
-    // Webhook Signing Secret from Stripe Dashboard
-    const endpointSecret = "whsec_ivNfwetVxRuo81cfc7AVuUGhFabmMnxz";
+    // Webhook Signing Secret from Stripe Dashboard (TEST mode)
+    const endpointSecret = "whsec_yha72OxH3AfWwYQruP9FSI46DBPot1rk";
 
     let event;
 
