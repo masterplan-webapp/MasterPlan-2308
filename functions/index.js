@@ -5,7 +5,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Initialize Stripe with the Secret Key
-const stripe = require("stripe")("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");
+const stripe = require("stripe")("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");
 
 /**
  * Creates a Stripe Checkout Session for subscription upgrade.
