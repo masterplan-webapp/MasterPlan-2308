@@ -406,18 +406,11 @@ export default function App() {
 
             const data = await response.json();
 
-            if (data?.sessionId) {
-                const stripe = await stripePromise;
-                if (stripe) {
-                    const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-                    if (error) {
-                        console.error("Stripe Redirect Error:", error);
-                        alert("Erro ao redirecionar para o pagamento.");
-                        setIsLoading(false);
-                    }
-                }
+            // Redirect directly to the Stripe Checkout URL
+            if (data?.url) {
+                window.location.href = data.url;
             } else {
-                throw new Error("No session ID returned");
+                throw new Error("No checkout URL returned");
             }
         } catch (error) {
             console.error("Erro ao iniciar checkout:", error);
