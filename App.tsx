@@ -351,6 +351,7 @@ export default function App() {
 
     const [allPlans, setAllPlans] = useState<PlanData[]>([]);
     const [activePlan, setActivePlan] = useState<PlanData | null>(null);
+    const [plansLoading, setPlansLoading] = useState(true);
     const [activeView, setActiveView] = useState('Overview');
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
@@ -421,10 +422,15 @@ export default function App() {
 
     useEffect(() => {
         if (user) {
-            dbService.getPlans(user.uid).then(plans => setAllPlans(plans));
+            setPlansLoading(true);
+            dbService.getPlans(user.uid).then(plans => {
+                setAllPlans(plans);
+                setPlansLoading(false);
+            });
         } else {
             setAllPlans([]);
             setActivePlan(null);
+            setPlansLoading(false);
         }
     }, [user]);
 
@@ -697,6 +703,15 @@ export default function App() {
 
     if (!user) {
         return <LoginPage />;
+    }
+
+    // Show loading while fetching plans
+    if (plansLoading) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-gray-900">
+                <LoaderIcon className="animate-spin text-blue-500" size={48} />
+            </div>
+        );
     }
 
     if (allPlans.length === 0 && !activePlan) {
