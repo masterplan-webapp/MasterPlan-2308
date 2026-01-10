@@ -4,8 +4,8 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-// Initialize Stripe with the Secret Key
-const stripe = require("stripe")("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");
+// Initialize Stripe with the TEST Secret Key (safe to expose)
+const stripe = require("stripe")("sk_test_51S4MFQGr4FxMIDKzj2RRsrmrW3sfMxhkbSLunJHy3HejWokhIEN5TZyGDzUakHbTDpRTVfFx95X9hEAzVG3zMmHs002Rc0elWS");
 
 /**
  * Creates a Stripe Checkout Session for subscription upgrade.
