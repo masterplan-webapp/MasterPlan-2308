@@ -878,13 +878,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated })
     const { t } = useLanguage();
 
     return (
-        <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
+        <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 p-4 gap-8">
+            <img
+                src={LOGO_DARK}
+                alt="MasterPlan Logo"
+                className="h-16"
+            />
             <Card className="max-w-4xl w-full text-center">
-                <img
-                    src={LOGO_DARK}
-                    alt="MasterPlan Logo"
-                    className="h-12 mx-auto mb-6"
-                />
                 <h1 className="text-3xl font-bold text-gray-100">{t('welcome_to_masterplan')}</h1>
                 <p className="mt-2 mb-8 text-lg text-gray-400">{t('create_first_plan')}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2752,10 +2752,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
                                 onClick={() => !plan.current && onUpgrade(plan.id as 'pro' | 'ai')}
                                 disabled={plan.current || plan.disabled}
                                 className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${plan.current
-                                        ? 'bg-gray-700 text-gray-400 cursor-default'
-                                        : plan.recommended
-                                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-600/20'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-white'
+                                    ? 'bg-gray-700 text-gray-400 cursor-default'
+                                    : plan.recommended
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-600/20'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-white'
                                     }`}
                             >
                                 {plan.buttonText}
