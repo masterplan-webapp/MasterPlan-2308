@@ -802,8 +802,8 @@ export const LoginPage: React.FC = () => {
                     alt="MasterPlan Logo"
                     className="mx-auto h-16 mb-4"
                 />
-                <h1 className="text-3xl font-bold text-gray-100">{t('Planeamento de Mídia Inteligente')}</h1>
-                <p className="mt-2 mb-8 text-gray-400">{t('Ferramenta de IA para Marketing.')}</p>
+                <h1 className="text-3xl font-bold text-gray-100">{t('Plano de Mídia com Inteligência')}</h1>
+                <p className="mt-2 mb-8 text-gray-400">{t('A Única ferramenta que o profissional de mídia paga precisa.')}</p>
 
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
                     <div>
@@ -1060,7 +1060,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
             </div>
             <div className="min-w-0 flex-1">
                 <p className="text-sm text-gray-400 truncate">{title}</p>
-                <p className="truncate text-2xl lg:text-xl xl:text-lg font-bold text-gray-100">{value}</p>
+                <p className="truncate text-xl md:text-2xl lg:text-xl font-bold text-gray-100">{value}</p>
             </div>
         </Card>
     );
