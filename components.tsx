@@ -1054,13 +1054,13 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
 
 const MetricCard: React.FC<{ title: string; value: string | number; icon: React.ElementType, isCurrency?: boolean, isPercentage?: boolean, isReadOnly?: boolean }> = ({ title, value, icon: Icon, isReadOnly = false }) => {
     return (
-        <Card className="flex items-start gap-4">
-            <div className="p-3 bg-blue-900/30 rounded-lg shrink-0">
-                <Icon className="w-6 h-6 text-blue-400" />
+        <Card className="flex items-start gap-3">
+            <div className="p-2.5 bg-blue-900/30 rounded-lg shrink-0">
+                <Icon className="w-5 h-5 text-blue-400" />
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-sm text-gray-400 truncate">{title}</p>
-                <p className="truncate text-lg md:text-xl font-bold text-gray-100">{value}</p>
+                <p className="text-xs text-gray-400 truncate">{title}</p>
+                <p className="truncate text-base md:text-lg font-bold text-gray-100">{value}</p>
             </div>
         </Card>
     );
