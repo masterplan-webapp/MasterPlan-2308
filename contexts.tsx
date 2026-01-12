@@ -19,7 +19,7 @@ import { LanguageCode, LanguageContextType, Theme, ThemeContextType, AuthContext
 // --- Firebase Initialization ---
 const firebaseConfig = {
     apiKey: "AIzaSyDJ-A3pRyeonwxTH_pQMojJ-WFcrRptuWY",
-    authDomain: "app.masterplanai.com.br",
+    authDomain: "masterplan-52e06.firebaseapp.com",
     projectId: "masterplan-52e06",
     storageBucket: "masterplan-52e06.firebasestorage.app",
     messagingSenderId: "329808307895",
