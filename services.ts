@@ -975,47 +975,57 @@ export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string
         const pdf = new jsPDF('p', 'mm', 'a4'); // portrait, mm, A4
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
+        const currentYear = new Date().getFullYear();
+
+        const margin = 10;
+        const footerHeight = 10;
+        const usableHeight = pdfHeight - (2 * margin) - footerHeight;
 
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        const aspectRatio = imgWidth / imgHeight;
 
-        let finalWidth = pdfWidth - 20; // with margin
-        let finalHeight = finalWidth / aspectRatio;
+        const finalWidth = pdfWidth - (2 * margin);
+        const scaleFactor = finalWidth / imgWidth;
+        const scaledImgHeight = imgHeight * scaleFactor;
 
-        const xOffset = 10;
-        let yOffset = 10;
+        // Calculate how many pixels of the canvas fit on one page
+        const pageContentHeight = usableHeight / scaleFactor;
 
-        // Basic handling for content that might be taller than one page
-        const pageHeightInCanvas = (pdfHeight - 2 * yOffset) * (imgWidth / finalWidth);
+        let currentY = 0;
+        let pageNum = 0;
 
-        let heightLeft = imgHeight;
-        let position = 0;
-        let pageNumber = 1;
-        const currentYear = new Date().getFullYear();
+        while (currentY < imgHeight) {
+            if (pageNum > 0) {
+                pdf.addPage();
+            }
 
-        // Add first page
-        pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+            // Create a temporary canvas for this page slice
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = imgWidth;
+            const sliceHeight = Math.min(pageContentHeight, imgHeight - currentY);
+            pageCanvas.height = sliceHeight;
 
-        // Add footer to first page
-        pdf.setFontSize(8);
-        pdf.setTextColor(102, 102, 102);
-        pdf.text(`© ${currentYear} MasterPlan - masterplanai.com.br`, pdfWidth / 2, pdfHeight - 5, { align: 'center' });
+            const ctx = pageCanvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(
+                    canvas,
+                    0, currentY,           // source x, y
+                    imgWidth, sliceHeight, // source width, height
+                    0, 0,                  // dest x, y
+                    imgWidth, sliceHeight  // dest width, height
+                );
+            }
 
-        heightLeft -= pageHeightInCanvas;
+            const sliceScaledHeight = sliceHeight * scaleFactor;
+            pdf.addImage(pageCanvas.toDataURL('image/png', 0.9), 'PNG', margin, margin, finalWidth, sliceScaledHeight);
 
-        while (heightLeft > 0) {
-            position += pageHeightInCanvas;
-            pageNumber++;
-            pdf.addPage();
-            pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset - position, finalWidth, finalHeight);
-
-            // Add footer to each page
+            // Add footer
             pdf.setFontSize(8);
             pdf.setTextColor(102, 102, 102);
             pdf.text(`© ${currentYear} MasterPlan - masterplanai.com.br`, pdfWidth / 2, pdfHeight - 5, { align: 'center' });
 
-            heightLeft -= pageHeightInCanvas;
+            currentY += sliceHeight;
+            pageNum++;
         }
 
         pdf.save(`${plan.campaignName}-keywords.pdf`);
