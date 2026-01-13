@@ -1373,12 +1373,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                             <thead className="text-xs uppercase bg-gray-700 text-gray-400">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">{t('Mês')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Invest. Total')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('% Share')}</th>
+                                    <th scope="col" className="px-6 py-3">Budget</th>
+                                    <th scope="col" className="px-6 py-3">Share</th>
                                     <th scope="col" className="px-6 py-3">{t('Impressões')}</th>
                                     <th scope="col" className="px-6 py-3">{t('Cliques')}</th>
+                                    <th scope="col" className="px-6 py-3">CTR (%)</th>
+                                    <th scope="col" className="px-6 py-3">CPC (R$)</th>
                                     <th scope="col" className="px-6 py-3">{t('Conversões')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Tx. Conversão')}</th>
+                                    <th scope="col" className="px-6 py-3">Taxa Conversão (%)</th>
+                                    <th scope="col" className="px-6 py-3">CPA (R$)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1386,6 +1389,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                     const monthData = monthlySummary[month];
                                     const share = summary.budget > 0 ? (monthData.budget / summary.budget) * 100 : 0;
                                     const [year, monthName] = month.split('-');
+                                    const ctr = monthData.impressoes > 0 ? (monthData.cliques / monthData.impressoes * 100) : 0;
+                                    const cpc = monthData.cliques > 0 ? (monthData.budget / monthData.cliques) : 0;
+                                    const cpa = monthData.conversoes > 0 ? (monthData.budget / monthData.conversoes) : 0;
 
                                     return (
                                         <tr key={month} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600">
@@ -1395,11 +1401,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                                 </a>
                                             </th>
                                             <td className="px-6 py-4">{formatCurrency(monthData.budget)}</td>
-                                            <td className="px-6 py-4">{formatPercentage(share)}</td>
+                                            <td className="px-6 py-4">{share.toFixed(1)}%</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.impressoes)}</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.cliques)}</td>
+                                            <td className="px-6 py-4">{ctr.toFixed(2)}%</td>
+                                            <td className="px-6 py-4">{formatCurrency(cpc)}</td>
                                             <td className="px-6 py-4">{formatNumber(monthData.conversoes)}</td>
-                                            <td className="px-6 py-4">{formatPercentage(monthData.taxaConversao)}</td>
+                                            <td className="px-6 py-4">{monthData.taxaConversao?.toFixed(2)}%</td>
+                                            <td className="px-6 py-4">{formatCurrency(cpa)}</td>
                                         </tr>
                                     );
                                 })}
@@ -1409,8 +1418,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                                     <td className="px-6 py-3">100%</td>
                                     <td className="px-6 py-3">{formatNumber(summary.impressoes)}</td>
                                     <td className="px-6 py-3">{formatNumber(summary.cliques)}</td>
+                                    <td className="px-6 py-3">{summary.impressoes > 0 ? (summary.cliques / summary.impressoes * 100).toFixed(2) : '0.00'}%</td>
+                                    <td className="px-6 py-3">{formatCurrency(summary.cliques > 0 ? summary.budget / summary.cliques : 0)}</td>
                                     <td className="px-6 py-3">{formatNumber(summary.conversoes)}</td>
-                                    <td className="px-6 py-3">{formatPercentage(summary.taxaConversao)}</td>
+                                    <td className="px-6 py-3">{summary.taxaConversao?.toFixed(2)}%</td>
+                                    <td className="px-6 py-3">{formatCurrency(summary.conversoes > 0 ? summary.budget / summary.conversoes : 0)}</td>
                                 </tr>
                             </tbody>
                         </table>
