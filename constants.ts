@@ -22,13 +22,55 @@ export const OPTIONS = {
 };
 
 export const DEFAULT_METRICS_BY_OBJECTIVE: Record<string, Partial<Campaign>> = {
-    "Awareness": { cpm: 15.00, ctr: 0.80, taxaConversao: 0.10, connectRate: 50, unidadeCompra: 'CPM' },
-    "Alcance": { cpm: 12.00, ctr: 0.90, taxaConversao: 0.20, connectRate: 55, unidadeCompra: 'CPM' },
-    "Tráfego": { cpc: 1.20, ctr: 2.00, taxaConversao: 0.50, connectRate: 80, unidadeCompra: 'CPC' },
-    "Engajamento": { cpc: 1.40, ctr: 2.50, taxaConversao: 1.00, connectRate: 75, unidadeCompra: 'CPC' },
-    "Geração de Leads": { cpc: 2.50, ctr: 1.50, taxaConversao: 5.00, connectRate: 85, unidadeCompra: 'CPC' },
-    "Conversão": { cpc: 3.00, ctr: 2.20, taxaConversao: 8.00, connectRate: 90, unidadeCompra: 'CPC' },
-    "Retargeting": { cpc: 2.80, ctr: 3.50, taxaConversao: 10.00, connectRate: 95, unidadeCompra: 'CPC' },
+    "Awareness": {
+        cpm: 15.00,
+        ctr: 0.80,
+        taxaConversao: 0.10,
+        connectRate: 50,
+        unidadeCompra: 'CPM'
+    },
+    "Alcance": {
+        cpm: 12.00,
+        ctr: 0.90,
+        taxaConversao: 0.20,
+        connectRate: 55,
+        unidadeCompra: 'CPM'
+    },
+    "Tráfego": {
+        cpc: 2.50,  // Ajustado de 1.20 para 2.50
+        ctr: 2.00,
+        taxaConversao: 0.50,
+        connectRate: 80,
+        unidadeCompra: 'CPC'
+    },
+    "Engajamento": {
+        cpc: 3.00,  // Ajustado de 1.40 para 3.00
+        ctr: 2.50,
+        taxaConversao: 1.00,
+        connectRate: 75,
+        unidadeCompra: 'CPC'
+    },
+    "Geração de Leads": {
+        cpc: 5.00,  // Ajustado de 2.50 para 5.00
+        ctr: 1.50,
+        taxaConversao: 3.50,  // Ajustado de 5.00 para 3.50
+        connectRate: 85,
+        unidadeCompra: 'CPC'
+    },
+    "Conversão": {
+        cpc: 8.00,  // Ajustado de 3.00 para 8.00
+        ctr: 2.20,
+        taxaConversao: 4.00,  // Ajustado de 8.00 para 4.00
+        connectRate: 90,
+        unidadeCompra: 'CPC'
+    },
+    "Retargeting": {
+        cpc: 6.00,  // Ajustado de 2.80 para 6.00
+        ctr: 3.50,
+        taxaConversao: 6.00,  // Ajustado de 10.00 para 6.00
+        connectRate: 95,
+        unidadeCompra: 'CPC'
+    },
 };
 
 export const MONTHS_LIST = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
