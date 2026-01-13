@@ -1,4 +1,3 @@
-```
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
@@ -43,7 +42,7 @@ export const Card: React.FC<CardProps> = ({ children, className, onClick }) => {
     const baseClasses = "bg-gray-800 shadow-sm rounded-lg p-6";
     const clickableClasses = onClick ? "cursor-pointer hover:shadow-md transition-shadow" : "";
     return (
-        <div className={`${ baseClasses } ${ clickableClasses } ${ className } `} onClick={onClick}>
+        <div className={`${baseClasses} ${clickableClasses} ${className} `} onClick={onClick}>
             {children}
         </div>
     );
@@ -59,7 +58,7 @@ export const CharacterCountInput: React.FC<CharacterCountInputProps> = ({ value,
         maxLength,
         placeholder,
         onBlur,
-        className: `w - full border - gray - 600 rounded - md shadow - sm py - 2 px - 3 bg - gray - 700 text - gray - 200 focus: outline - none focus: ring - 2 ${ isError ? 'ring-red-500 border-red-500' : 'focus:ring-blue-500 focus:border-transparent' } `
+        className: `w - full border - gray - 600 rounded - md shadow - sm py - 2 px - 3 bg - gray - 700 text - gray - 200 focus: outline - none focus: ring - 2 ${isError ? 'ring-red-500 border-red-500' : 'focus:ring-blue-500 focus:border-transparent'} `
     };
 
     return (
@@ -69,7 +68,7 @@ export const CharacterCountInput: React.FC<CharacterCountInputProps> = ({ value,
             ) : (
                 <input type="text" {...commonProps} />
             )}
-            <p className={`text - xs mt - 1 text - right ${ isError ? 'text-red-500 font-semibold' : 'text-gray-400' } `}>
+            <p className={`text - xs mt - 1 text - right ${isError ? 'text-red-500 font-semibold' : 'text-gray-400'} `}>
                 {remaining}
             </p>
         </div>
@@ -124,7 +123,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
         } else if (isOpen) {
             const defaultMetrics = DEFAULT_METRICS_BY_OBJECTIVE['Tráfego']; // Default to Tráfego
             const newCampaign = calculateKPIs({
-                id: `c_${ new Date().getTime() } `,
+                id: `c_${new Date().getTime()} `,
                 tipoCampanha: 'Tráfego',
                 budget: 1000,
                 ...defaultMetrics
@@ -195,9 +194,9 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
         setAISuggestion('');
         try {
             const prompt = `Based on a media plan with the general objective "${planObjective}", generate a concise target audience suggestion(max 200 characters) for a specific campaign.
-            Campaign Type: ${ campaign.tipoCampanha }
-Channel: ${ campaign.canal }
-            Specific Objective: ${ campaign.objetivo }
+            Campaign Type: ${campaign.tipoCampanha}
+Channel: ${campaign.canal}
+            Specific Objective: ${campaign.objetivo}
             
             Provide only the audience description text, with no preamble.For example: "Young professionals aged 25-35 interested in productivity software and tech news."`;
 
@@ -507,7 +506,7 @@ export const AddMonthModal: React.FC<AddMonthModalProps> = ({ isOpen, onClose, o
         for (let i = 0; i < 12; i++) {
             const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
             const monthName = MONTHS_LIST[d.getMonth()];
-            const key = `${ d.getFullYear() } -${ monthName } `;
+            const key = `${d.getFullYear()} -${monthName} `;
             if (!existingMonths.includes(key)) {
                 months.push(key);
             }
@@ -743,14 +742,14 @@ export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ enc
                 <div className="max-w-7xl mx-auto">
                     {/* Simplified navigation for read-only view */}
                     <div className="flex overflow-x-auto gap-2 mb-6 pb-2">
-                        <button onClick={() => setActiveView('Overview')} className={`px - 4 py - 2 rounded - full text - sm whitespace - nowrap transition - colors ${ activeView === 'Overview' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' } `}>
+                        <button onClick={() => setActiveView('Overview')} className={`px - 4 py - 2 rounded - full text - sm whitespace - nowrap transition - colors ${activeView === 'Overview' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'} `}>
                             {t('overview')}
                         </button>
                         {Object.keys(planData.months || {}).sort(sortMonthKeys).map(month => {
                             const [year, monthName] = month.split('-');
                             return (
-                                <button key={month} onClick={() => setActiveView(month)} className={`px - 4 py - 2 rounded - full text - sm whitespace - nowrap transition - colors ${ activeView === month ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' } `}>
-                                    {`${ t(monthName) } ${ year } `}
+                                <button key={month} onClick={() => setActiveView(month)} className={`px - 4 py - 2 rounded - full text - sm whitespace - nowrap transition - colors ${activeView === month ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'} `}>
+                                    {`${t(monthName)} ${year} `}
                                 </button>
                             );
                         })}
@@ -969,8 +968,8 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
     const handleDuplicate = (planToDuplicate: PlanData) => {
         const newPlan: PlanData = {
             ...JSON.parse(JSON.stringify(planToDuplicate)), // Deep copy
-            id: `plan_${ new Date().getTime() } `,
-            campaignName: `${ planToDuplicate.campaignName } ${ t('Copy') } `,
+            id: `plan_${new Date().getTime()} `,
+            campaignName: `${planToDuplicate.campaignName} ${t('Copy')} `,
         };
         onPlanCreated(newPlan);
     }
@@ -1037,11 +1036,11 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                         <div className="flex items-center gap-4">
                             <button onClick={onProfileClick} className="flex items-center gap-2">
                                 <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff`} alt="User avatar" className="w-8 h-8 rounded-full" />
-<span className="hidden sm:inline font-medium text-gray-200">{user.displayName}</span>
+                                <span className="hidden sm:inline font-medium text-gray-200">{user.displayName}</span>
                             </button >
-    <button onClick={signOut} className="p-2 text-gray-400 hover:bg-gray-700 rounded-full" title={t('sign_out')}>
-        <LogOut size={20} />
-    </button>
+                            <button onClick={signOut} className="p-2 text-gray-400 hover:bg-gray-700 rounded-full" title={t('sign_out')}>
+                                <LogOut size={20} />
+                            </button>
                         </div >
                     </div >
                 </div >
