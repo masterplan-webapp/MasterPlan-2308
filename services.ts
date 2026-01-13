@@ -1236,7 +1236,7 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
         allParts.push({ text: prompt });
 
         const response: GenerateContentResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image-generation',
+            model: 'gemini-2.5-flash-image',
             contents: { parts: allParts },
             config: {
                 responseModalities: [Modality.IMAGE, Modality.TEXT],
