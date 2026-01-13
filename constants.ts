@@ -112,6 +112,39 @@ export const CHANNEL_METRIC_ADJUSTMENTS: Record<string, { cpcMultiplier: number;
     },
 };
 
+// Multiplicadores por formato (aplicados APÓS os ajustes de canal)
+export const FORMAT_METRIC_ADJUSTMENTS: Record<string, { cpcMultiplier: number; cpmMultiplier: number; ctrMultiplier: number }> = {
+    // Google Ads
+    "Search": { cpcMultiplier: 1.2, cpmMultiplier: 1.3, ctrMultiplier: 1.5 },      // Search é caro mas tem alto CTR
+    "Display": { cpcMultiplier: 0.4, cpmMultiplier: 0.5, ctrMultiplier: 0.3 },     // Display é barato, CTR baixo
+    "YouTube": { cpcMultiplier: 0.6, cpmMultiplier: 0.7, ctrMultiplier: 0.8 },     // Video intermediário
+    "PMax": { cpcMultiplier: 1.0, cpmMultiplier: 1.0, ctrMultiplier: 1.0 },        // Performance Max balanceado
+    "Demand Gen": { cpcMultiplier: 0.9, cpmMultiplier: 0.9, ctrMultiplier: 1.1 },  // Novo formato
+
+    // Meta Ads
+    "Feed": { cpcMultiplier: 1.0, cpmMultiplier: 1.0, ctrMultiplier: 1.0 },        // Feed padrão
+    "Stories/Reels": { cpcMultiplier: 0.8, cpmMultiplier: 0.8, ctrMultiplier: 1.2 }, // Stories mais barato, CTR melhor
+    "Feed/Stories": { cpcMultiplier: 0.9, cpmMultiplier: 0.9, ctrMultiplier: 1.1 },
+    "Carrossel": { cpcMultiplier: 1.1, cpmMultiplier: 1.0, ctrMultiplier: 1.3 },   // Carrossel tem CTR alto
+    "Video Views": { cpcMultiplier: 0.5, cpmMultiplier: 0.6, ctrMultiplier: 0.7 }, // Video views barato
+    "Lead Ad": { cpcMultiplier: 1.3, cpmMultiplier: 1.2, ctrMultiplier: 1.4 },     // Lead ads mais caro
+    "Darkpost": { cpcMultiplier: 1.0, cpmMultiplier: 1.0, ctrMultiplier: 1.0 },
+    "Faceleads": { cpcMultiplier: 1.2, cpmMultiplier: 1.1, ctrMultiplier: 1.3 },
+
+    // LinkedIn Ads
+    "Sponsored Content": { cpcMultiplier: 1.0, cpmMultiplier: 1.0, ctrMultiplier: 1.0 },
+    "Sponsored Messaging": { cpcMultiplier: 1.5, cpmMultiplier: 1.4, ctrMultiplier: 0.8 },
+    "Lead Gen Forms": { cpcMultiplier: 1.3, cpmMultiplier: 1.2, ctrMultiplier: 1.2 },
+    "Dynamic Ads": { cpcMultiplier: 0.9, cpmMultiplier: 0.9, ctrMultiplier: 1.1 },
+    "Text Ads": { cpcMultiplier: 0.7, cpmMultiplier: 0.8, ctrMultiplier: 0.9 },
+
+    // TikTok Ads
+    "In-Feed Ads": { cpcMultiplier: 1.0, cpmMultiplier: 1.0, ctrMultiplier: 1.0 },
+    "TopView": { cpcMultiplier: 2.0, cpmMultiplier: 1.8, ctrMultiplier: 1.5 },
+    "Branded Hashtag Challenge": { cpcMultiplier: 3.0, cpmMultiplier: 2.5, ctrMultiplier: 2.0 },
+    "Branded Effects": { cpcMultiplier: 2.5, cpmMultiplier: 2.0, ctrMultiplier: 1.8 },
+};
+
 export const MONTHS_LIST = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export const TRANSLATIONS: Translations = {

@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Ba
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
 import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
-import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS } from './constants';
+import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
 import {
     PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
     CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps,
@@ -159,6 +159,23 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
                     cpc: baseCpc * channelAdjustments.cpcMultiplier,
                     cpm: baseCpm * channelAdjustments.cpmMultiplier,
                     ctr: baseCtr * channelAdjustments.ctrMultiplier,
+                };
+            }
+        }
+
+        // Apply format-specific adjustments when changing format
+        if (field === 'formato' && value) {
+            const formatAdjustments = FORMAT_METRIC_ADJUSTMENTS[value as string];
+            if (formatAdjustments) {
+                const baseCpc = campaignWithUpdate.cpc || 0;
+                const baseCpm = campaignWithUpdate.cpm || 0;
+                const baseCtr = campaignWithUpdate.ctr || 0;
+
+                campaignWithUpdate = {
+                    ...campaignWithUpdate,
+                    cpc: baseCpc * formatAdjustments.cpcMultiplier,
+                    cpm: baseCpm * formatAdjustments.cpmMultiplier,
+                    ctr: baseCtr * formatAdjustments.ctrMultiplier,
                 };
             }
         }
