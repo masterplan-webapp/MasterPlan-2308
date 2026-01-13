@@ -399,6 +399,8 @@ Channel: ${campaign.canal}
 export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onClose, onSave, planData, onRename, onDuplicate }) => {
     const { t } = useLanguage();
     const [details, setDetails] = useState<Partial<PlanData>>({});
+    const [logoPreview, setLogoPreview] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen && planData) {
@@ -410,11 +412,37 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onCl
                 totalInvestment: planData.totalInvestment,
                 logoUrl: planData.logoUrl
             });
+            setLogoPreview(planData.logoUrl || '');
         }
     }, [isOpen, planData]);
 
     const handleChange = (field: string, value: any) => {
         setDetails(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor, selecione apenas arquivos de imagem.');
+                return;
+            }
+
+            // Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('A imagem deve ter no máximo 2MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                setLogoPreview(base64String);
+                handleChange('logoUrl', base64String);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = () => {
@@ -440,8 +468,54 @@ export const PlanDetailsModal: React.FC<PlanDetailsModalProps> = ({ isOpen, onCl
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300">{t('Logotipo')}</label>
-                        <input type="text" value={details.logoUrl || ''} onChange={e => handleChange('logoUrl', e.target.value)} placeholder={t('Cole a URL do logotipo aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <label className="block text-sm font-medium text-gray-300 mb-2">{t('Logotipo')}</label>
+                        <div className="space-y-3">
+                            {/* Logo Preview */}
+                            {logoPreview && (
+                                <div className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-md border border-gray-600">
+                                    <img src={logoPreview} alt="Logo preview" className="h-12 w-12 object-contain rounded" />
+                                    <button
+                                        onClick={() => { setLogoPreview(''); handleChange('logoUrl', ''); }}
+                                        className="ml-auto text-red-400 hover:text-red-300 text-sm"
+                                    >
+                                        Remover
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Upload Button */}
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                                <Upload size={18} />
+                                {t('Fazer Upload de Imagem')}
+                            </button>
+
+                            {/* URL Input */}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400 text-xs">
+                                    ou
+                                </div>
+                                <input
+                                    type="text"
+                                    value={details.logoUrl || ''}
+                                    onChange={e => {
+                                        handleChange('logoUrl', e.target.value);
+                                        setLogoPreview(e.target.value);
+                                    }}
+                                    placeholder={t('Cole a URL do logotipo aqui')}
+                                    className="block w-full border-gray-600 rounded-md shadow-sm py-2 pl-10 pr-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-300">{t('Objetivo Geral')}</label>
