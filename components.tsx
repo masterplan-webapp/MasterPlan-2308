@@ -1509,49 +1509,83 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                         <table className="w-full text-sm text-left text-gray-400">
                             <thead className="text-xs uppercase bg-gray-700/50 text-gray-400">
                                 <tr>
-                                    <th scope="col" className="px-6 py-3">{t('Tipo')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Funil')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Canal')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Formato')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Budget')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Impressões')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Cliques')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Conversões')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('Orçamento Diário')}</th>
-                                    {!isReadOnly && <th scope="col" className="px-6 py-3">{t('actions')}</th>}
+                                    <th scope="col" className="px-4 py-3">{t('Tipo')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Funil')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Canal')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Formato')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Objetivo')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('KPI')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Público-Alvo')}</th>
+                                    <th scope="col" className="px-4 py-3">% Share</th>
+                                    <th scope="col" className="px-4 py-3">{t('Budget')}</th>
+                                    <th scope="col" className="px-4 py-3">Budget/Dia</th>
+                                    <th scope="col" className="px-4 py-3">{t('Unidade de Compra')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Impressões')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Alcance')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Cliques')}</th>
+                                    <th scope="col" className="px-4 py-3">CTR (%)</th>
+                                    <th scope="col" className="px-4 py-3">Connect Rate (%)</th>
+                                    <th scope="col" className="px-4 py-3">{t('Visitas')}</th>
+                                    <th scope="col" className="px-4 py-3">{t('Conversões')}</th>
+                                    <th scope="col" className="px-4 py-3">Tx. Conversão (%)</th>
+                                    <th scope="col" className="px-4 py-3">CPA (R$)</th>
+                                    {!isReadOnly && <th scope="col" className="px-4 py-3">{t('actions')}</th>}
                                 </tr>
                             </thead>
                             <tbody>
-                                {(campaigns || []).filter(Boolean).map(campaign => (
-                                    <tr key={campaign.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600/50">
-                                        <td className="px-6 py-4 text-white">{campaign.tipoCampanha}</td>
-                                        <td className="px-6 py-4">{campaign.etapaFunil}</td>
-                                        <td className="px-6 py-4"><ChannelDisplay channel={campaign.canal || 'N/A'} /></td>
-                                        <td className="px-6 py-4">{campaign.formato}</td>
-                                        <td className="px-6 py-4">{formatCurrency(campaign.budget)}</td>
-                                        <td className="px-6 py-4">{formatNumber(campaign.impressoes)}</td>
-                                        <td className="px-6 py-4">{formatNumber(campaign.cliques)}</td>
-                                        <td className="px-6 py-4">{formatNumber(campaign.conversoes)}</td>
-                                        <td className="px-6 py-4">{formatCurrency(campaign.orcamentoDiario)}</td>
-                                        {!isReadOnly && (
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <button onClick={() => handleEdit(campaign)} className="p-1.5 text-blue-400 hover:bg-gray-700 rounded-md"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:bg-gray-700 rounded-md"><Trash2 size={16} /></button>
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
+                                {(campaigns || []).filter(Boolean).map((campaign, idx) => {
+                                    const campaignShare = totals.budget > 0 ? (campaign.budget / totals.budget * 100) : 0;
+                                    const alcance = campaign.impressoes ? Math.round(campaign.impressoes * 0.7) : 0;
+                                    return (
+                                        <tr key={campaign.id} className="border-b bg-gray-800 border-gray-700 hover:bg-gray-600/50">
+                                            <td className="px-4 py-4 text-white">{campaign.tipoCampanha}</td>
+                                            <td className="px-4 py-4">{campaign.etapaFunil}</td>
+                                            <td className="px-4 py-4"><ChannelDisplay channel={campaign.canal || 'N/A'} /></td>
+                                            <td className="px-4 py-4">{campaign.formato}</td>
+                                            <td className="px-4 py-4">{campaign.objetivo || '-'}</td>
+                                            <td className="px-4 py-4">{campaign.kpi || '-'}</td>
+                                            <td className="px-4 py-4">{campaign.publicoAlvo || '-'}</td>
+                                            <td className="px-4 py-4">{campaignShare.toFixed(1)}%</td>
+                                            <td className="px-4 py-4">{formatCurrency(campaign.budget)}</td>
+                                            <td className="px-4 py-4">{formatCurrency(campaign.orcamentoDiario)}</td>
+                                            <td className="px-4 py-4">{campaign.unidadeCompra || '-'}</td>
+                                            <td className="px-4 py-4">{formatNumber(campaign.impressoes)}</td>
+                                            <td className="px-4 py-4">{formatNumber(alcance)}</td>
+                                            <td className="px-4 py-4">{formatNumber(campaign.cliques)}</td>
+                                            <td className="px-4 py-4">{campaign.ctr?.toFixed(2)}%</td>
+                                            <td className="px-4 py-4">{campaign.connectRate?.toFixed(1)}%</td>
+                                            <td className="px-4 py-4">{formatNumber(campaign.visitas)}</td>
+                                            <td className="px-4 py-4">{formatNumber(campaign.conversoes)}</td>
+                                            <td className="px-4 py-4">{campaign.taxaConversao?.toFixed(2)}%</td>
+                                            <td className="px-4 py-4">{formatCurrency(campaign.cpa)}</td>
+                                            {!isReadOnly && (
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => handleEdit(campaign)} className="p-1.5 text-blue-400 hover:bg-gray-700 rounded-md"><Edit size={16} /></button>
+                                                        <button onClick={() => handleDelete(campaign.id)} className="p-1.5 text-red-400 hover:bg-gray-700 rounded-md"><Trash2 size={16} /></button>
+                                                    </div>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                             <tfoot className="font-semibold text-white bg-gray-700/50">
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-3 text-base">{t('Totais do Mês')}</td>
-                                    <td className="px-6 py-3">{formatCurrency(totals.budget)}</td>
-                                    <td className="px-6 py-3">{formatNumber(totals.impressoes)}</td>
-                                    <td className="px-6 py-3">{formatNumber(totals.cliques)}</td>
-                                    <td className="px-6 py-3">{formatNumber(totals.conversoes)}</td>
-                                    <td colSpan={isReadOnly ? 1 : 2} className="px-6 py-3">{formatCurrency(totals.budget / 30.4)}</td>
+                                    <td colSpan={8} className="px-4 py-3 text-base">{t('Totais do Mês')}</td>
+                                    <td className="px-4 py-3">{formatCurrency(totals.budget)}</td>
+                                    <td className="px-4 py-3">{formatCurrency(totals.budget / 30.4)}</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">{formatNumber(totals.impressoes)}</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">{formatNumber(totals.cliques)}</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">{formatNumber(totals.conversoes)}</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td colSpan={isReadOnly ? 1 : 2} className="px-4 py-3"></td>
                                 </tr>
                             </tfoot>
                         </table>
