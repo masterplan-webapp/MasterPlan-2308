@@ -1731,13 +1731,23 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
         setIsAISuggestionsModalOpen(true);
         setSuggestions(null);
         try {
-            const contextPrompt = `
-                **Contexto Geral do Plano:**
-                - **Objetivo Principal:** ${planData.objective}
-                - **Público-Alvo Principal:** ${planData.targetAudience}
-                - **Canal de Mídia:** ${channel}
+            // Build context, prioritizing the specific group context
+            const groupContext = localGroup.context?.trim() || '';
+            const planObjective = planData.objective?.trim() || '';
+            const planAudience = planData.targetAudience?.trim() || '';
 
-                **Contexto Específico do Grupo de Criativos:** ${localGroup.context}
+            const contextPrompt = `
+                IMPORTANTE: Gere criativos EXCLUSIVAMENTE para o negócio/produto descrito abaixo. NÃO invente ou mude o segmento.
+
+                **NEGÓCIO/PRODUTO (USE ESTE COMO BASE PRINCIPAL):**
+                ${groupContext || 'Não especificado - use o objetivo e público-alvo do plano abaixo'}
+
+                **Contexto Adicional do Plano:**
+                - Objetivo: ${planObjective || 'Não especificado'}
+                - Público-Alvo: ${planAudience || 'Não especificado'}
+                - Canal: ${channel}
+
+                **REGRA CRÍTICA:** Os criativos devem ser 100% relevantes para "${groupContext || planObjective || 'o negócio do cliente'}". NÃO gere conteúdo genérico ou de outros segmentos.
             `;
 
             let generationPrompt;
@@ -1748,9 +1758,9 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
                     descriptions: { name: "descrições (descriptions)", count: 3, constraint: "máximo de 90 caracteres" }
                 };
                 const currentType = typeMap[type];
-                generationPrompt = `Gere uma lista de ${currentType.count} ${currentType.name} para um anúncio, seguindo a regra de ${currentType.constraint}.`;
+                generationPrompt = `Gere ${currentType.count} ${currentType.name} para anúncio, com ${currentType.constraint}. Foque no negócio mencionado acima.`;
             } else {
-                generationPrompt = `Gere sugestões de criativos para um anúncio, incluindo 5 títulos (máx 30 caracteres), 3 títulos longos (máx 90 caracteres) e 3 descrições (máx 90 caracteres).`;
+                generationPrompt = `Gere sugestões de criativos: 5 títulos (máx 30 chars), 3 títulos longos (máx 90 chars) e 3 descrições (máx 90 chars). Todos focados no negócio acima.`;
             }
 
             const finalPrompt = `
@@ -1758,17 +1768,11 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
                 
                 **Tarefa:** ${generationPrompt}
 
-                **Instruções de Saída:**
-                - A saída DEVE ser um objeto JSON válido.
-                - Não inclua NENHUM texto, explicação ou markdown fences (como \`\`\`json) antes ou depois do JSON.
-                - As chaves do JSON devem ser "headlines", "longHeadlines", e "descriptions".
-                - Cada chave deve conter um array de strings.
-                
-                Exemplo de saída:
+                **Formato de Saída (JSON válido, sem markdown):**
                 {
-                  "headlines": ["Título 1", "Título 2"],
-                  "longHeadlines": ["Título Longo 1"],
-                  "descriptions": ["Descrição 1", "Descrição 2"]
+                  "headlines": ["Título 1", "Título 2", ...],
+                  "longHeadlines": ["Título Longo 1", ...],
+                  "descriptions": ["Descrição 1", ...]
                 }
             `;
             const result = await callGeminiAPI(finalPrompt, true);
