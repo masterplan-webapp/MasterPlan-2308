@@ -2385,7 +2385,7 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const UTMInputField: React.FC<{ name: keyof typeof utm, label: string, required?: boolean, helperText?: string }> = ({ name, label, required, helperText }) => (
+    const renderUTMInput = (name: keyof typeof utm, label: string, required?: boolean, helperText?: string) => (
         <div>
             <label className="block text-sm font-medium text-gray-300">
                 <div className="flex items-center gap-1.5">
@@ -2410,15 +2410,15 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2">
                     <div className="space-y-4">
-                        <UTMInputField name="url" label={t('URL do Site *')} required helperText={t('utm_url_helper')} />
+                        {renderUTMInput('url', t('URL do Site'), true, t('utm_url_helper'))}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <UTMInputField name="source" label={t('Campaign Source *')} required helperText={t('utm_source_helper')} />
-                            <UTMInputField name="medium" label={t('Campaign Medium *')} required helperText={t('utm_medium_helper')} />
+                            {renderUTMInput('source', t('Campaign Source'), true, t('utm_source_helper'))}
+                            {renderUTMInput('medium', t('Campaign Medium'), true, t('utm_medium_helper'))}
                         </div>
-                        <UTMInputField name="campaign" label={t('Campaign Name *')} required helperText={t('utm_campaign_helper')} />
+                        {renderUTMInput('campaign', t('Campaign Name'), true, t('utm_campaign_helper'))}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <UTMInputField name="term" label={t('Campaign Term')} helperText={t('utm_term_helper')} />
-                            <UTMInputField name="content" label={t('Campaign Content')} helperText={t('utm_content_helper')} />
+                            {renderUTMInput('term', t('Campaign Term'), false, t('utm_term_helper'))}
+                            {renderUTMInput('content', t('Campaign Content'), false, t('utm_content_helper'))}
                         </div>
                     </div>
                 </Card>
