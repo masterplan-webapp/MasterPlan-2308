@@ -73,6 +73,45 @@ export const DEFAULT_METRICS_BY_OBJECTIVE: Record<string, Partial<Campaign>> = {
     },
 };
 
+// Multiplicadores de métricas por canal (aplicados sobre os valores base do objetivo)
+export const CHANNEL_METRIC_ADJUSTMENTS: Record<string, { cpcMultiplier: number; cpmMultiplier: number; ctrMultiplier: number }> = {
+    "Google Ads": {
+        cpcMultiplier: 1.3,   // Google Ads Search é mais caro
+        cpmMultiplier: 1.2,
+        ctrMultiplier: 1.4    // Mas tem CTR melhor
+    },
+    "Meta Ads": {
+        cpcMultiplier: 0.8,   // Meta é mais barato
+        cpmMultiplier: 0.9,
+        ctrMultiplier: 0.9    // CTR um pouco menor
+    },
+    "LinkedIn Ads": {
+        cpcMultiplier: 2.5,   // LinkedIn é MUITO mais caro (B2B)
+        cpmMultiplier: 2.0,
+        ctrMultiplier: 0.7    // CTR menor
+    },
+    "TikTok Ads": {
+        cpcMultiplier: 0.7,   // TikTok é barato
+        cpmMultiplier: 0.6,   // CPM muito baixo
+        ctrMultiplier: 1.2    // CTR bom
+    },
+    "Microsoft Ads": {
+        cpcMultiplier: 1.1,   // Similar ao Google mas um pouco mais barato
+        cpmMultiplier: 1.0,
+        ctrMultiplier: 1.2
+    },
+    "Pinterest Ads": {
+        cpcMultiplier: 0.9,
+        cpmMultiplier: 0.8,
+        ctrMultiplier: 1.0
+    },
+    "X Ads": {
+        cpcMultiplier: 1.0,
+        cpmMultiplier: 1.1,
+        ctrMultiplier: 0.8
+    },
+};
+
 export const MONTHS_LIST = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export const TRANSLATIONS: Translations = {
