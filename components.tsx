@@ -1009,22 +1009,47 @@ export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ enc
 };
 
 export const LoginPage: React.FC = () => {
-    const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail, updateUser } = useAuth();
     const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const validateForm = () => {
+        if (isSignUp) {
+            if (!displayName.trim()) {
+                setError('Por favor, informe seu nome.');
+                return false;
+            }
+            if (password.length < 6) {
+                setError('A senha deve ter pelo menos 6 caracteres.');
+                return false;
+            }
+            if (password !== confirmPassword) {
+                setError('As senhas não coincidem.');
+                return false;
+            }
+        }
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!validateForm()) return;
+
         setIsLoading(true);
 
         try {
             if (isSignUp) {
                 await signUpWithEmail(email, password);
+                // Update profile with display name after signup
+                updateUser({ displayName: displayName.trim() });
             } else {
                 await signInWithEmail(email, password);
             }
@@ -1033,15 +1058,24 @@ export const LoginPage: React.FC = () => {
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
                 setError(t('invalid_credentials'));
             } else if (err.code === 'auth/email-already-in-use') {
-                setError("Este email já está em uso.");
+                setError('Este email já está em uso. Tente fazer login.');
             } else if (err.code === 'auth/weak-password') {
-                setError("A senha deve ter pelo menos 6 caracteres.");
+                setError('A senha deve ter pelo menos 6 caracteres.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('Email inválido.');
             } else {
-                setError("Ocorreu um erro. Tente novamente.");
+                setError('Ocorreu um erro. Tente novamente.');
             }
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const switchMode = () => {
+        setIsSignUp(!isSignUp);
+        setError('');
+        setPassword('');
+        setConfirmPassword('');
     };
 
     return (
@@ -1053,9 +1087,40 @@ export const LoginPage: React.FC = () => {
                     className="mx-auto h-16 mb-4"
                 />
                 <h1 className="text-3xl font-bold text-gray-100">{t('Plano de Mídia com Inteligência')}</h1>
-                <p className="mt-2 mb-8 text-gray-400">{t('A Única ferramenta que o profissional de mídia paga precisa.')}</p>
+                <p className="mt-2 mb-6 text-gray-400">{t('A Única ferramenta que o profissional de mídia paga precisa.')}</p>
+
+                {/* Tab-like toggle */}
+                <div className="flex mb-6 bg-gray-700 rounded-lg p-1">
+                    <button
+                        type="button"
+                        onClick={() => !isSignUp || switchMode()}
+                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${!isSignUp ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        {t('Login')}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => isSignUp || switchMode()}
+                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${isSignUp ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        {t('Criar Conta')}
+                    </button>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
+                    {isSignUp && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300">{t('Nome')}</label>
+                            <input
+                                type="text"
+                                required={isSignUp}
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                placeholder="Seu nome completo"
+                                className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-300">{t('Email')}</label>
                         <input
@@ -1063,40 +1128,52 @@ export const LoginPage: React.FC = () => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="seu@email.com"
+                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-300">{t('Password')}</label>
+                        <label className="block text-sm font-medium text-gray-300">{t('Senha')}</label>
                         <input
                             type="password"
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder={isSignUp ? "Mínimo 6 caracteres" : "••••••••"}
+                            className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+                    {isSignUp && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300">{t('Confirmar Senha')}</label>
+                            <input
+                                type="password"
+                                required={isSignUp}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Digite a senha novamente"
+                                className={`mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 ${confirmPassword && password !== confirmPassword ? 'ring-2 ring-red-500' : 'focus:ring-blue-500'}`}
+                            />
+                            {confirmPassword && password !== confirmPassword && (
+                                <p className="text-red-400 text-xs mt-1">As senhas não coincidem</p>
+                            )}
+                        </div>
+                    )}
 
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    {error && (
+                        <div className="p-3 bg-red-900/30 border border-red-700 rounded-md">
+                            <p className="text-red-400 text-sm">{error}</p>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50"
+                        disabled={isLoading || (isSignUp && password !== confirmPassword)}
+                        className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? <LoaderIcon className="animate-spin" size={20} /> : (isSignUp ? t('sign_up') : t('sign_in'))}
+                        {isLoading ? <LoaderIcon className="animate-spin" size={20} /> : (isSignUp ? t('Criar Minha Conta') : t('Entrar'))}
                     </button>
                 </form>
-
-                <div className="mt-4 text-sm text-gray-400">
-                    {isSignUp ? t('already_have_account') : t('dont_have_account')}
-                    <button
-                        onClick={() => setIsSignUp(!isSignUp)}
-                        className="ml-1 text-blue-400 hover:underline focus:outline-none"
-                    >
-                        {isSignUp ? t('Login') : t('Register')}
-                    </button>
-                </div>
 
                 <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
@@ -1119,8 +1196,8 @@ export const LoginPage: React.FC = () => {
                     </svg>
                     {t('Entrar com Google')}
                 </button>
-            </Card>
-        </div>
+            </Card >
+        </div >
     );
 };
 
