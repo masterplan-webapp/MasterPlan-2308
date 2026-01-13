@@ -1889,7 +1889,7 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
 }
 
 export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setPlanData }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     const channels = useMemo(() => {
         const allChannels = new Set<string>();
@@ -1904,6 +1904,8 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 
     const [activeChannel, setActiveChannel] = useState<string>(channels[0] || '');
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isGeneratingAllChannels, setIsGeneratingAllChannels] = useState(false);
+    const [generationProgress, setGenerationProgress] = useState<string>('');
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -1925,6 +1927,75 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Generate copies for all channels at once
+    const handleGenerateForAllChannels = async () => {
+        if (channels.length === 0) return;
+
+        const context = window.prompt(t('Digite o contexto/descrição do negócio para gerar copies:'));
+        if (!context?.trim()) return;
+
+        setIsGeneratingAllChannels(true);
+        const updatedCreatives = { ...(planData.creatives || {}) };
+
+        try {
+            for (let i = 0; i < channels.length; i++) {
+                const channel = channels[i];
+                setGenerationProgress(`${t('Gerando para')} ${channel} (${i + 1}/${channels.length})...`);
+
+                const groupContext = context.trim();
+                const planObjective = planData.objective?.trim() || '';
+                const planAudience = planData.targetAudience?.trim() || '';
+
+                const prompt = `
+                    IMPORTANTE: Gere criativos EXCLUSIVAMENTE para o negócio/produto descrito abaixo. NÃO invente ou mude o segmento.
+
+                    **NEGÓCIO/PRODUTO (USE ESTE COMO BASE PRINCIPAL):**
+                    ${groupContext}
+
+                    **Contexto Adicional do Plano:**
+                    - Objetivo: ${planObjective || 'Não especificado'}
+                    - Público-Alvo: ${planAudience || 'Não especificado'}
+                    - Canal: ${channel}
+
+                    **REGRA CRÍTICA:** Os criativos devem ser 100% relevantes para "${groupContext}". NÃO gere conteúdo genérico ou de outros segmentos.
+                    
+                    **Tarefa:** Gere sugestões de criativos otimizados para ${channel}: 5 títulos (máx 30 chars), 3 títulos longos (máx 90 chars) e 3 descrições (máx 90 chars). Todos focados no negócio acima.
+
+                    **Formato de Saída (JSON válido, sem markdown):**
+                    {
+                      "headlines": ["Título 1", "Título 2", ...],
+                      "longHeadlines": ["Título Longo 1", ...],
+                      "descriptions": ["Descrição 1", ...]
+                    }
+                `;
+
+                const result = await callGeminiAPI(prompt, true);
+
+                const newGroup: CreativeTextData = {
+                    id: new Date().getTime() + i,
+                    name: `${channel} - ${t('Gerado por IA')}`,
+                    context: groupContext,
+                    headlines: result.headlines || [],
+                    longHeadlines: result.longHeadlines || [],
+                    descriptions: result.descriptions || []
+                };
+
+                const existingGroups = updatedCreatives[channel] || [];
+                updatedCreatives[channel] = [...existingGroups, newGroup];
+            }
+
+            setPlanData({ ...planData, creatives: updatedCreatives });
+            setGenerationProgress('');
+            alert(t('Copies geradas para todos os canais com sucesso!'));
+        } catch (error) {
+            console.error(error);
+            alert(t('Erro ao gerar copies. Tente novamente.'));
+        } finally {
+            setIsGeneratingAllChannels(false);
+            setGenerationProgress('');
+        }
+    };
 
     if (channels.length === 0) {
         return (
@@ -1985,9 +2056,26 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                             ))}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <button onClick={handleAddGroup} className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
-                            <PlusCircle size={18} /> {t('Novo Grupo de Criativos')}
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                        <button
+                            onClick={handleGenerateForAllChannels}
+                            disabled={isGeneratingAllChannels}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-md shadow-sm hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGeneratingAllChannels ? (
+                                <>
+                                    <LoaderIcon size={18} className="animate-spin" />
+                                    {generationProgress || t('Gerando...')}
+                                </>
+                            ) : (
+                                <>
+                                    <Wand2 size={18} />
+                                    {t('Gerar IA p/ Todos Canais')}
+                                </>
+                            )}
+                        </button>
+                        <button onClick={handleAddGroup} className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+                            <PlusCircle size={18} /> {t('Novo Grupo')}
                         </button>
                         <div className="relative" ref={exportMenuRef}>
                             <button onClick={() => setIsExportMenuOpen(prev => !prev)} className="p-2.5 bg-gray-600 text-white rounded-md hover:bg-gray-500 transition-colors"><FileDown size={18} /></button>
