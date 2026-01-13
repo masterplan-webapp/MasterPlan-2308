@@ -1217,69 +1217,48 @@ export const generateAIKeywords = async (planData: PlanData, mode: 'seed' | 'pro
 export const generateAIImages = async (prompt: string, images?: { base64: string; mimeType: string }[]): Promise<GeneratedImage[]> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    if (images && images.length > 0) {
-        // --- Image Editing Task ---
-        try {
+    // Use Gemini 2.5 Flash Image for both generation and editing (FREE tier - 500 images/day)
+    try {
+        let allParts: any[] = [];
+
+        if (images && images.length > 0) {
+            // Include source images for editing
             const imageParts = images.map(image => ({
                 inlineData: {
                     mimeType: image.mimeType,
                     data: image.base64,
                 },
             }));
-            const textPart = { text: prompt };
-            const allParts = [...imageParts, textPart];
-
-            const response: GenerateContentResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image-preview',
-                contents: { parts: allParts },
-                config: {
-                    responseModalities: [Modality.IMAGE, Modality.TEXT],
-                },
-            });
-
-            const imagePartsFromResponse = response.candidates[0].content.parts.filter(part => part.inlineData);
-
-            if (imagePartsFromResponse.length > 0 && imagePartsFromResponse[0].inlineData) {
-                // The model returns one image; we return it in an array to match the function signature.
-                // The aspect ratio of the edited image will be the same as the input. 
-                // We use '1:1' as a placeholder since the exact ratio isn't known and the type requires a value.
-                const generatedImage: GeneratedImage = {
-                    base64: imagePartsFromResponse[0].inlineData.data,
-                    aspectRatio: '1:1',
-                };
-                return [generatedImage];
-            } else {
-                throw new Error("Image editing failed or returned no image part.");
-            }
-        } catch (error) {
-            console.error("Error calling Gemini Image Editing API:", error);
-            throw error;
+            allParts = [...imageParts];
         }
-    } else {
-        // --- Image Generation Task ---
-        try {
-            const response = await ai.models.generateImages({
-                model: 'imagen-4.0-generate-001',
-                prompt: prompt,
-                config: {
-                    numberOfImages: 2, // Generate two options for the user
-                    outputMimeType: 'image/png',
-                    aspectRatio: '1:1', // Always generate a square base image
-                },
-            });
 
-            if (response.generatedImages && response.generatedImages.length > 0) {
-                const validImages = response.generatedImages.map(img => ({
-                    base64: img.image.imageBytes,
+        // Add the prompt
+        allParts.push({ text: prompt });
+
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-preview-05-20',
+            contents: { parts: allParts },
+            config: {
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
+            },
+        });
+
+        const imagePartsFromResponse = response.candidates[0].content.parts.filter(part => part.inlineData);
+
+        if (imagePartsFromResponse.length > 0) {
+            // Return all generated images
+            const generatedImages: GeneratedImage[] = imagePartsFromResponse
+                .filter(part => part.inlineData)
+                .map(part => ({
+                    base64: part.inlineData!.data,
                     aspectRatio: '1:1' as AspectRatio,
                 }));
-                return validImages;
-            } else {
-                throw new Error("Image generation returned no images.");
-            }
-        } catch (error) {
-            console.error(`Error generating images:`, error);
-            throw new Error("Image generation failed.");
+            return generatedImages;
+        } else {
+            throw new Error("Image generation returned no images.");
         }
+    } catch (error) {
+        console.error("Error calling Gemini Image API:", error);
+        throw new Error("Image generation failed.");
     }
 };
