@@ -2385,20 +2385,10 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const renderUTMInput = (name: keyof typeof utm, label: string, required?: boolean, helperText?: string, placeholder?: string) => (
+    const renderUTMInput = (name: keyof typeof utm, label: string, required?: boolean, placeholder?: string) => (
         <div>
             <label className="block text-sm font-medium text-gray-300">
-                <div className="flex items-center gap-1.5">
-                    <span>{label} {required && '*'}</span>
-                    {helperText && (
-                        <div className="group relative flex">
-                            <HelpCircle size={14} className="text-gray-400 cursor-help" />
-                            <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-gray-900 text-gray-200 text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                                {helperText}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                {label} {required && '*'}
             </label>
             <input
                 type="text"
@@ -2417,15 +2407,15 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="lg:col-span-2">
                     <div className="space-y-4">
-                        {renderUTMInput('url', t('URL do Site'), true, t('utm_url_helper'), 'https://seusite.com.br/pagina')}
+                        {renderUTMInput('url', t('URL do Site'), true, 'https://seusite.com.br/pagina')}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {renderUTMInput('source', t('Campaign Source'), true, t('utm_source_helper'), 'google, facebook, instagram, linkedin')}
-                            {renderUTMInput('medium', t('Campaign Medium'), true, t('utm_medium_helper'), 'cpc, email, banner, social, organic')}
+                            {renderUTMInput('source', t('Campaign Source'), true, 'google, facebook, instagram')}
+                            {renderUTMInput('medium', t('Campaign Medium'), true, 'cpc, email, banner, social')}
                         </div>
-                        {renderUTMInput('campaign', t('Campaign Name'), true, t('utm_campaign_helper'), 'lancamento_produto_jan2026')}
+                        {renderUTMInput('campaign', t('Campaign Name'), true, 'lancamento_produto_jan2026')}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {renderUTMInput('term', t('Campaign Term'), false, t('utm_term_helper'), 'marketing+digital, agencia+seo')}
-                            {renderUTMInput('content', t('Campaign Content'), false, t('utm_content_helper'), 'banner_hero, cta_azul, video_30s')}
+                            {renderUTMInput('term', t('Campaign Term'), false, 'marketing+digital')}
+                            {renderUTMInput('content', t('Campaign Content'), false, 'banner_hero, cta_azul')}
                         </div>
                     </div>
                 </Card>
