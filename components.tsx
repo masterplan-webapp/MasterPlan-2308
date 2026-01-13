@@ -140,16 +140,16 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
 
         let campaignWithUpdate = { ...campaign, [field]: value };
 
+        // Apply default metrics when changing campaign type
         if (field === 'tipoCampanha') {
             const defaults = DEFAULT_METRICS_BY_OBJECTIVE[value as string] || {};
-            campaignWithUpdate = { ...defaults, ...campaignWithUpdate };
+            campaignWithUpdate = { ...campaignWithUpdate, ...defaults, [field]: value };
         }
 
+        // Recalculate all metrics based on the updated campaign
         const recalculatedCampaign = recalculateCampaignMetrics(campaignWithUpdate);
 
-        const finalCampaignState = { ...recalculatedCampaign, [field]: value };
-
-        setCampaign(finalCampaignState);
+        setCampaign(recalculatedCampaign);
     };
 
     const handleSave = () => {
