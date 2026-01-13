@@ -1,37 +1,188 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const { Resend } = require("resend");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// Initialize Stripe with the TEST Secret Key (safe to expose)
+// Initialize Resend with API Key
+const resend = new Resend("re_aWrKWyjG_4KWcFcwnsT89FvEStSbwTZw7");
+
+// Initialize Stripe with the TEST Secret Key
 const stripe = require("stripe")("sk_test_51S4MFQGr4FxMIDKzj2RRsrmrW3sfMxhkbSLunJHy3HejWokhIEN5TZyGDzUakHbTDpRTVfFx95X9hEAzVG3zMmHs002Rc0elWS");
+
+// ============================================
+// EMAIL TEMPLATES
+// ============================================
+
+const emailStyles = `
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; }
+    .container { max-width: 600px; margin: 0 auto; background: #1a1a2e; padding: 40px; border-radius: 16px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .logo { height: 50px; margin-bottom: 20px; }
+    h1 { color: #ffffff; font-size: 28px; margin: 0; }
+    p { color: #b0b0b0; font-size: 16px; line-height: 1.6; }
+    .highlight { color: #4f9cf9; font-weight: bold; }
+    .button { display: inline-block; background: linear-gradient(135deg, #4f9cf9 0%, #6366f1 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+    .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; }
+    .footer p { color: #666; font-size: 12px; }
+`;
+
+const getWelcomeEmailHtml = (userName) => `
+<!DOCTYPE html>
+<html>
+<head><style>${emailStyles}</style></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://app.masterplanai.com.br/logo-dark.png" alt="MasterPlan" class="logo" />
+            <h1>Bem-vindo ao MasterPlan! 🎉</h1>
+        </div>
+        <p>Olá <span class="highlight">${userName || 'Profissional'}</span>,</p>
+        <p>Sua conta foi criada com sucesso! Agora você tem acesso à única ferramenta que o profissional de mídia paga precisa.</p>
+        <p>Com o MasterPlan, você pode:</p>
+        <p>✅ Criar planos de mídia completos em minutos<br/>
+           ✅ Usar IA para gerar keywords, copies e criativos<br/>
+           ✅ Exportar relatórios profissionais em PDF<br/>
+           ✅ Gerenciar múltiplos clientes</p>
+        <center><a href="https://app.masterplanai.com.br" class="button">Acessar MasterPlan</a></center>
+        <p>Qualquer dúvida, estamos à disposição!</p>
+        <div class="footer">
+            <p>© ${new Date().getFullYear()} MasterPlan - masterplanai.com.br</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+const getPaymentConfirmationHtml = (userName, planName, amount) => `
+<!DOCTYPE html>
+<html>
+<head><style>${emailStyles}</style></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://app.masterplanai.com.br/logo-dark.png" alt="MasterPlan" class="logo" />
+            <h1>Pagamento Confirmado! ✅</h1>
+        </div>
+        <p>Olá <span class="highlight">${userName || 'Profissional'}</span>,</p>
+        <p>Seu pagamento foi processado com sucesso!</p>
+        <p><strong>Detalhes:</strong></p>
+        <p>📦 Plano: <span class="highlight">${planName}</span><br/>
+           💰 Valor: <span class="highlight">R$ ${(amount / 100).toFixed(2)}</span><br/>
+           📅 Renovação: Mensal</p>
+        <p>Agora você tem acesso completo a todas as funcionalidades do seu plano!</p>
+        <center><a href="https://app.masterplanai.com.br" class="button">Acessar MasterPlan</a></center>
+        <div class="footer">
+            <p>© ${new Date().getFullYear()} MasterPlan - masterplanai.com.br</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+const getPasswordResetHtml = (resetLink) => `
+<!DOCTYPE html>
+<html>
+<head><style>${emailStyles}</style></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://app.masterplanai.com.br/logo-dark.png" alt="MasterPlan" class="logo" />
+            <h1>Recuperação de Senha 🔐</h1>
+        </div>
+        <p>Você solicitou a recuperação de senha da sua conta MasterPlan.</p>
+        <p>Clique no botão abaixo para criar uma nova senha:</p>
+        <center><a href="${resetLink}" class="button">Redefinir Senha</a></center>
+        <p>Se você não solicitou esta alteração, ignore este email.</p>
+        <p style="color: #666; font-size: 12px;">Este link expira em 1 hora.</p>
+        <div class="footer">
+            <p>© ${new Date().getFullYear()} MasterPlan - masterplanai.com.br</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+// ============================================
+// CLOUD FUNCTIONS - EMAIL TRIGGERS
+// ============================================
+
+/**
+ * Send welcome email when a new user is created (using v1 auth trigger)
+ */
+exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
+    const { email, displayName } = user;
+
+    if (!email) return;
+
+    try {
+        await resend.emails.send({
+            from: "MasterPlan <noreply@masterplanai.com.br>",
+            to: email,
+            subject: "Bem-vindo ao MasterPlan! 🎉",
+            html: getWelcomeEmailHtml(displayName),
+        });
+        console.log(`Welcome email sent to ${email}`);
+    } catch (error) {
+        console.error("Error sending welcome email:", error);
+    }
+});
+
+/**
+ * Send password reset email (HTTP Callable)
+ */
+exports.sendPasswordResetEmail = functions.https.onCall(async (data, context) => {
+    const { email } = data;
+
+    if (!email) {
+        throw new functions.https.HttpsError("invalid-argument", "Email is required");
+    }
+
+    try {
+        // Generate Firebase password reset link
+        const resetLink = await admin.auth().generatePasswordResetLink(email, {
+            url: "https://app.masterplanai.com.br",
+        });
+
+        await resend.emails.send({
+            from: "MasterPlan <noreply@masterplanai.com.br>",
+            to: email,
+            subject: "Recuperação de Senha - MasterPlan",
+            html: getPasswordResetHtml(resetLink),
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error sending password reset email:", error);
+        throw new functions.https.HttpsError("internal", "Failed to send email");
+    }
+});
+
+// ============================================
+// STRIPE FUNCTIONS
+// ============================================
 
 /**
  * Creates a Stripe Checkout Session for subscription upgrade.
- * HTTP endpoint that accepts POST requests with { plan: 'pro' | 'ai' }
  */
 exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res) => {
-    // Set CORS headers - allow all origins for now
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.set('Access-Control-Max-Age', '3600');
 
-    // Handle preflight
     if (req.method === 'OPTIONS') {
         res.status(204).send('');
         return;
     }
 
-    // Only allow POST
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed' });
         return;
     }
 
     try {
-        // Get the Firebase ID token from the Authorization header
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             res.status(401).json({ error: 'Unauthorized - Missing token' });
@@ -39,13 +190,10 @@ exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res)
         }
 
         const idToken = authHeader.split('Bearer ')[1];
-
-        // Verify the ID token
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
         const userEmail = decodedToken.email;
 
-        // Get plan type from request body
         const { plan: planType } = req.body;
 
         if (!['pro', 'ai'].includes(planType)) {
@@ -53,7 +201,6 @@ exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res)
             return;
         }
 
-        // Define product details
         const priceData = {
             currency: 'brl',
             product_data: {
@@ -61,31 +208,17 @@ exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res)
                 description: planType === 'pro'
                     ? 'Acesso ilimitado a planos e exportação sem marca d\'água.'
                     : 'Tudo do PRO + Geração ilimitada com IA.',
-                metadata: {
-                    firebaseWaitlistRole: planType
-                }
             },
             unit_amount: planType === 'pro' ? 4900 : 9900,
-            recurring: {
-                interval: 'month',
-            },
+            recurring: { interval: 'month' },
         };
 
-        // Create the Checkout Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             mode: "subscription",
-            line_items: [
-                {
-                    price_data: priceData,
-                    quantity: 1,
-                },
-            ],
+            line_items: [{ price_data: priceData, quantity: 1 }],
             customer_email: userEmail,
-            metadata: {
-                firebaseUID: uid,
-                targetPlan: planType
-            },
+            metadata: { firebaseUID: uid, targetPlan: planType },
             success_url: `https://app.masterplanai.com.br/?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://app.masterplanai.com.br/?payment_cancelled=true`,
         });
@@ -98,42 +231,58 @@ exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res)
 });
 
 /**
- * Webhook to handle Stripe events (like successful payment).
- * This updates the user's Firestore document.
+ * Webhook to handle Stripe events and send payment confirmation email
  */
 exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     const signature = req.headers["stripe-signature"];
-
-    // Webhook Signing Secret from Stripe Dashboard (TEST mode)
     const endpointSecret = "whsec_yha72OxH3AfWwYQruP9FSI46DBPot1rk";
 
     let event;
 
     try {
-        // Verify the webhook signature for security
         event = stripe.webhooks.constructEvent(req.rawBody, signature, endpointSecret);
     } catch (err) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle the event
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
         const uid = session.metadata.firebaseUID;
         const targetPlan = session.metadata.targetPlan;
+        const customerEmail = session.customer_email;
+        const amountTotal = session.amount_total;
 
         if (uid && targetPlan) {
             try {
+                // Update Firestore
                 await db.collection("users").doc(uid).set({
                     subscription: targetPlan,
                     subscriptionStatus: 'active',
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                console.log(`User ${uid} upgraded to ${targetPlan}`);
+                // Get user name from Firebase Auth
+                let userName = null;
+                try {
+                    const userRecord = await admin.auth().getUser(uid);
+                    userName = userRecord.displayName;
+                } catch (e) {
+                    console.log("Could not get user name");
+                }
+
+                // Send payment confirmation email
+                const planName = targetPlan === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium';
+                await resend.emails.send({
+                    from: "MasterPlan <noreply@masterplanai.com.br>",
+                    to: customerEmail,
+                    subject: `Pagamento Confirmado - ${planName} ✅`,
+                    html: getPaymentConfirmationHtml(userName, planName, amountTotal),
+                });
+
+                console.log(`User ${uid} upgraded to ${targetPlan}, confirmation email sent`);
             } catch (error) {
-                console.error("Error updating Firestore:", error);
+                console.error("Error processing webhook:", error);
                 return res.status(500).send("Internal Server Error");
             }
         }
