@@ -887,6 +887,7 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
 };
 
 const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string): string => {
+    const currentYear = new Date().getFullYear();
     const styles = `
         <style>
             body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #333; }
@@ -895,6 +896,17 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
             table { width: 100%; border-collapse: collapse; margin-top: 10px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; font-weight: bold; }
+            .pdf-footer { 
+                position: fixed; 
+                bottom: 10px; 
+                left: 0; 
+                right: 0; 
+                text-align: center; 
+                font-size: 8px; 
+                color: #666; 
+                border-top: 1px solid #ddd; 
+                padding-top: 5px; 
+            }
         </style>
     `;
 
@@ -939,7 +951,9 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
         }
     });
 
-    return `<div id="pdf-keywords-content" style="padding: 20px;">${styles}${content}</div>`;
+    const footer = `<div class="pdf-footer">© ${currentYear} MasterPlan - masterplanai.com.br</div>`;
+
+    return `<div id="pdf-keywords-content" style="padding: 20px; padding-bottom: 40px;">${styles}${content}${footer}</div>`;
 };
 
 
@@ -977,14 +991,30 @@ export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string
 
         let heightLeft = imgHeight;
         let position = 0;
+        let pageNumber = 1;
+        const currentYear = new Date().getFullYear();
 
+        // Add first page
         pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset, finalWidth, finalHeight);
+
+        // Add footer to first page
+        pdf.setFontSize(8);
+        pdf.setTextColor(102, 102, 102);
+        pdf.text(`© ${currentYear} MasterPlan - masterplanai.com.br`, pdfWidth / 2, pdfHeight - 5, { align: 'center' });
+
         heightLeft -= pageHeightInCanvas;
 
         while (heightLeft > 0) {
             position += pageHeightInCanvas;
+            pageNumber++;
             pdf.addPage();
             pdf.addImage(canvas.toDataURL('image/png', 0.9), 'PNG', xOffset, yOffset - position, finalWidth, finalHeight);
+
+            // Add footer to each page
+            pdf.setFontSize(8);
+            pdf.setTextColor(102, 102, 102);
+            pdf.text(`© ${currentYear} MasterPlan - masterplanai.com.br`, pdfWidth / 2, pdfHeight - 5, { align: 'center' });
+
             heightLeft -= pageHeightInCanvas;
         }
 
