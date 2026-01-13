@@ -109,23 +109,32 @@ const getPasswordResetHtml = (resetLink) => `
 // ============================================
 
 /**
- * Send welcome email when a new user is created (using v1 auth trigger)
+ * Send welcome email (HTTP Callable - called from frontend after signup)
  */
-exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
-    const { email, displayName } = user;
+exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
+    // Verify the user is authenticated
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+    }
 
-    if (!email) return;
+    const { email, displayName } = data;
+
+    if (!email) {
+        throw new functions.https.HttpsError("invalid-argument", "Email is required");
+    }
 
     try {
-        await resend.emails.send({
+        const result = await resend.emails.send({
             from: "MasterPlan <noreply@masterplanai.com.br>",
             to: email,
             subject: "Bem-vindo ao MasterPlan! 🎉",
-            html: getWelcomeEmailHtml(displayName),
+            html: getWelcomeEmailHtml(displayName || "Profissional"),
         });
-        console.log(`Welcome email sent to ${email}`);
+        console.log(`Welcome email sent to ${email}`, result);
+        return { success: true, messageId: result.id };
     } catch (error) {
         console.error("Error sending welcome email:", error);
+        throw new functions.https.HttpsError("internal", "Failed to send welcome email");
     }
 });
 

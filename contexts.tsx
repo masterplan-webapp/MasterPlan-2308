@@ -162,19 +162,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, []);
 
-    const signUpWithEmail = useCallback(async (email: string, password: string) => {
-        if (!auth) {
+    const signUpWithEmail = useCallback(async (email: string, password: string, displayName?: string) => {
+        if (!auth || !functions) {
             throw new Error("Authentication service is not available.");
         }
         setLoading(true);
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+            // Update display name if provided
+            if (displayName && userCredential.user) {
+                await updateProfile(userCredential.user, { displayName });
+            }
+
+            // Send welcome email via callable function
+            try {
+                const sendWelcomeEmail = httpsCallable(functions, 'sendWelcomeEmail');
+                await sendWelcomeEmail({ email, displayName: displayName || 'Profissional' });
+                console.log("Welcome email sent successfully");
+            } catch (emailError) {
+                console.error("Error sending welcome email:", emailError);
+                // Don't throw - signup was successful, email is secondary
+            }
         } catch (error) {
             console.error("Error signing up with email:", error);
             setLoading(false);
             throw error;
         }
-    }, []);
+    }, [functions]);
 
     const signOut = useCallback(async () => {
         if (!auth) return;

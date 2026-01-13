@@ -1047,9 +1047,8 @@ export const LoginPage: React.FC = () => {
 
         try {
             if (isSignUp) {
-                await signUpWithEmail(email, password);
-                // Update profile with display name after signup
-                updateUser({ displayName: displayName.trim() });
+                await signUpWithEmail(email, password, displayName.trim());
+                // displayName is now set in signUpWithEmail, no need for separate updateUser call
             } else {
                 await signInWithEmail(email, password);
             }
