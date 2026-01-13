@@ -36,6 +36,148 @@ const ChannelDisplay: React.FC<{ channel: string, className?: string }> = ({ cha
     );
 };
 
+// --- Custom Modal Components (to replace native browser modals) ---
+interface CustomPromptModalProps {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    placeholder?: string;
+    onConfirm: (value: string) => void;
+    onCancel: () => void;
+}
+
+export const CustomPromptModal: React.FC<CustomPromptModalProps> = ({ isOpen, title, message, placeholder, onConfirm, onCancel }) => {
+    const [inputValue, setInputValue] = useState('');
+    const { t } = useLanguage();
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setInputValue('');
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleConfirm = () => {
+        onConfirm(inputValue);
+        setInputValue('');
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleConfirm();
+        }
+        if (e.key === 'Escape') {
+            onCancel();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg animate-modalFadeIn">
+                <div className="p-5 border-b border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-200 flex items-center gap-2">
+                        <Wand2 className="text-purple-500" size={24} />
+                        {title}
+                    </h2>
+                </div>
+                <div className="p-6">
+                    <p className="text-gray-300 mb-4">{message}</p>
+                    <textarea
+                        ref={inputRef}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder}
+                        rows={3}
+                        className="w-full border-gray-600 rounded-md shadow-sm py-3 px-4 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                </div>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                    <button
+                        onClick={onCancel}
+                        className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                    >
+                        {t('Cancelar')}
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        disabled={!inputValue.trim()}
+                        className="px-6 py-2 bg-purple-600 text-white font-semibold rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {t('Gerar')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface CustomAlertModalProps {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'success' | 'error' | 'info';
+    onClose: () => void;
+}
+
+export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({ isOpen, title, message, type = 'info', onClose }) => {
+    const { t } = useLanguage();
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                onClose();
+            }
+        };
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    const iconColors = {
+        success: 'text-green-500',
+        error: 'text-red-500',
+        info: 'text-blue-500'
+    };
+
+    const bgColors = {
+        success: 'bg-green-600',
+        error: 'bg-red-600',
+        info: 'bg-blue-600'
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
+                <div className="p-6 text-center">
+                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${bgColors[type]} bg-opacity-20 flex items-center justify-center`}>
+                        {type === 'success' && <Check className={iconColors[type]} size={32} />}
+                        {type === 'error' && <X className={iconColors[type]} size={32} />}
+                        {type === 'info' && <Sparkles className={iconColors[type]} size={32} />}
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-200 mb-2">{title}</h2>
+                    <p className="text-gray-400">{message}</p>
+                </div>
+                <div className="p-4 bg-gray-700/50 border-t border-gray-700 flex justify-center">
+                    <button
+                        onClick={onClose}
+                        className={`px-8 py-2 ${bgColors[type]} text-white font-semibold rounded-md hover:opacity-90 transition-opacity`}
+                    >
+                        {t('OK')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 // --- Reusable UI Components ---
 export const Card: React.FC<CardProps> = ({ children, className, onClick }) => {
@@ -1906,6 +2048,9 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
     const [isGeneratingAllChannels, setIsGeneratingAllChannels] = useState(false);
     const [generationProgress, setGenerationProgress] = useState<string>('');
+    const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+    const [alertModalConfig, setAlertModalConfig] = useState<{ title: string; message: string; type: 'success' | 'error' | 'info' }>({ title: '', message: '', type: 'info' });
     const exportMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -1931,8 +2076,11 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     // Generate copies for all channels at once
     const handleGenerateForAllChannels = async () => {
         if (channels.length === 0) return;
+        setIsPromptModalOpen(true);
+    };
 
-        const context = window.prompt(t('Digite o contexto/descrição do negócio para gerar copies:'));
+    const executeGenerationForAllChannels = async (context: string) => {
+        setIsPromptModalOpen(false);
         if (!context?.trim()) return;
 
         setIsGeneratingAllChannels(true);
@@ -1987,10 +2135,20 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 
             setPlanData({ ...planData, creatives: updatedCreatives });
             setGenerationProgress('');
-            alert(t('Copies geradas para todos os canais com sucesso!'));
+            setAlertModalConfig({
+                title: t('Sucesso!'),
+                message: t('Copies geradas para todos os canais com sucesso!'),
+                type: 'success'
+            });
+            setIsAlertModalOpen(true);
         } catch (error) {
             console.error(error);
-            alert(t('Erro ao gerar copies. Tente novamente.'));
+            setAlertModalConfig({
+                title: t('Erro'),
+                message: t('Erro ao gerar copies. Tente novamente.'),
+                type: 'error'
+            });
+            setIsAlertModalOpen(true);
         } finally {
             setIsGeneratingAllChannels(false);
             setGenerationProgress('');
@@ -2115,6 +2273,25 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                     <p className="mt-2 text-gray-400">{t('Comece adicionando um novo grupo.')}</p>
                 </Card>
             )}
+
+            {/* Custom Modal for Context Input */}
+            <CustomPromptModal
+                isOpen={isPromptModalOpen}
+                title={t('Gerar Copies com IA')}
+                message={t('Digite o contexto/descrição do negócio para gerar copies para todos os canais:')}
+                placeholder={t('Ex: Agência de marketing digital especializada em e-commerce...')}
+                onConfirm={executeGenerationForAllChannels}
+                onCancel={() => setIsPromptModalOpen(false)}
+            />
+
+            {/* Custom Alert Modal for Success/Error */}
+            <CustomAlertModal
+                isOpen={isAlertModalOpen}
+                title={alertModalConfig.title}
+                message={alertModalConfig.message}
+                type={alertModalConfig.type}
+                onClose={() => setIsAlertModalOpen(false)}
+            />
         </div>
     );
 };
