@@ -761,6 +761,11 @@ export default function App() {
         }
 
         if (type === 'ai') {
+            const aiPlanLimit = getPlanCapability(userSubscription, 'aiPlanCreation') as number;
+            if (aiPlanLimit === 0) {
+                showAlert(t('Acesso Negado'), t('Seu plano atual não permite criação de planos com IA. Faça Upgrade para desbloquear esta funcionalidade.'), 'warning');
+                return;
+            }
             setAIPlanCreationModalOpen(true);
             return;
         }
