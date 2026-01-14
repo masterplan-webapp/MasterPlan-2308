@@ -249,6 +249,8 @@ export const AIResponseModal: React.FC<AIResponseModalProps> = ({ isOpen, onClos
 
 export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, onSave, campaignData, month, planObjective, customFormats, onAddFormat }) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
+    const { showAlert } = useGlobalAlert();
     const [campaign, setCampaign] = useState<Campaign | null>(null);
     const [newFormat, setNewFormat] = useState('');
     const [isAddingFormat, setIsAddingFormat] = useState(false);
@@ -341,8 +343,15 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ isOpen, onClose, o
     };
 
     const handleSuggestAudience = async () => {
+        // Block AI for Free users
+        const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+        if (!canGenText) {
+            showAlert(t('Acesso Negado'), t('Sugestão de público com IA não está disponível no plano gratuito. Faça upgrade para desbloquear.'), 'warning');
+            return;
+        }
+
         if (!campaign?.tipoCampanha || !campaign.canal || !campaign.objetivo) {
-            alert(t('aiSuggestionPrereqAlert'));
+            showAlert(t('Campos necessários'), t('Preencha Tipo de Campanha, Canal e Objetivo antes de sugerir público.'), 'info');
             return;
         }
         setIsAISuggestionLoading(true);
