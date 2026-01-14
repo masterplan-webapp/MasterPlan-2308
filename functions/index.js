@@ -150,15 +150,22 @@ exports.sendPasswordResetEmail = functions.https.onCall(async (data, context) =>
 
     try {
         // Generate Firebase password reset link
-        const resetLink = await admin.auth().generatePasswordResetLink(email, {
+        const firebaseResetLink = await admin.auth().generatePasswordResetLink(email, {
             url: "https://app.masterplanai.com.br",
         });
+
+        // Extract oobCode from Firebase link and create our custom URL
+        const url = new URL(firebaseResetLink);
+        const oobCode = url.searchParams.get('oobCode');
+
+        // Create custom reset link pointing to our app
+        const customResetLink = `https://app.masterplanai.com.br?mode=resetPassword&oobCode=${oobCode}&email=${encodeURIComponent(email)}`;
 
         await resend.emails.send({
             from: "MasterPlan <noreply@masterplanai.com.br>",
             to: email,
             subject: "Recuperação de Senha - MasterPlan",
-            html: getPasswordResetHtml(resetLink),
+            html: getPasswordResetHtml(customResetLink),
         });
 
         return { success: true };

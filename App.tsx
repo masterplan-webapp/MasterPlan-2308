@@ -19,6 +19,7 @@ import {
     CopyBuilderPage,
     AIPlanCreationModal,
     ShareLinkModal, ShareablePlanViewer, PricingModal,
+    ResetPasswordPage,
     LOGO_DARK,
     ICON_LOGO
 } from './components';
@@ -696,9 +697,15 @@ export default function App() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const encodedPlanData = urlParams.get('plan_data');
+    const authMode = urlParams.get('mode');
 
     if (encodedPlanData) {
         return <ShareablePlanViewer encodedPlanData={encodedPlanData} />;
+    }
+
+    // Handle Firebase Auth action URLs (password reset, email verification, etc.)
+    if (authMode === 'resetPassword') {
+        return <ResetPasswordPage />;
     }
 
     if (!user) {

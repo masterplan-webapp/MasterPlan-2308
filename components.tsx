@@ -1294,6 +1294,152 @@ export const LoginPage: React.FC = () => {
     );
 };
 
+// --- Reset Password Page (Custom branded page) ---
+export const ResetPasswordPage: React.FC = () => {
+    const { t } = useLanguage();
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
+    const [oobCode, setOobCode] = useState<string | null>(null);
+    const [email, setEmail] = useState<string | null>(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('oobCode');
+        const emailParam = params.get('email');
+        setOobCode(code);
+        setEmail(emailParam);
+    }, []);
+
+    const handleResetPassword = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            setError('A senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setError('As senhas não coincidem.');
+            return;
+        }
+        if (!oobCode) {
+            setError('Link inválido ou expirado.');
+            return;
+        }
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const { confirmPasswordReset, getAuth } = await import('firebase/auth');
+            const auth = getAuth();
+            await confirmPasswordReset(auth, oobCode, newPassword);
+            setSuccess(true);
+        } catch (err: any) {
+            console.error('Password reset error:', err);
+            if (err.code === 'auth/expired-action-code') {
+                setError('Este link expirou. Solicite um novo.');
+            } else if (err.code === 'auth/invalid-action-code') {
+                setError('Link inválido. Solicite um novo.');
+            } else if (err.code === 'auth/weak-password') {
+                setError('Senha muito fraca. Use pelo menos 6 caracteres.');
+            } else {
+                setError('Erro ao redefinir senha. Tente novamente.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoToLogin = () => {
+        window.location.href = window.location.origin;
+    };
+
+    return (
+        <div className="h-screen w-full flex items-center justify-center bg-gray-900 p-4">
+            <Card className="max-w-md w-full text-center shadow-2xl">
+                <img
+                    src={LOGO_DARK}
+                    alt="MasterPlan Logo"
+                    className="mx-auto h-16 mb-4"
+                />
+
+                {success ? (
+                    <div className="text-center">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-100 mb-2">Senha Alterada!</h1>
+                        <p className="text-gray-400 mb-6">Sua nova senha foi definida com sucesso.</p>
+                        <button
+                            onClick={handleGoToLogin}
+                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                        >
+                            Ir para o Login
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        <h1 className="text-2xl font-bold text-gray-100 mb-2">Redefinir Senha</h1>
+                        {email && (
+                            <p className="text-gray-400 mb-6">para <span className="text-blue-400">{email}</span></p>
+                        )}
+
+                        <div className="space-y-4 text-left">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Nova Senha</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Mínimo 6 caracteres"
+                                    className="w-full border-gray-600 rounded-md shadow-sm py-3 px-4 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Confirmar Senha</label>
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Digite novamente"
+                                    className={`w-full border-gray-600 rounded-md shadow-sm py-3 px-4 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 ${confirmPassword && newPassword !== confirmPassword ? 'ring-2 ring-red-500' : 'focus:ring-blue-500'}`}
+                                />
+                                {confirmPassword && newPassword !== confirmPassword && (
+                                    <p className="text-red-400 text-xs mt-1">As senhas não coincidem</p>
+                                )}
+                            </div>
+
+                            {error && (
+                                <div className="p-3 bg-red-900/30 border border-red-700 rounded-md">
+                                    <p className="text-red-400 text-sm">{error}</p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleResetPassword}
+                                disabled={isLoading || !newPassword || newPassword !== confirmPassword}
+                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? <LoaderIcon className="animate-spin" size={20} /> : 'Salvar Nova Senha'}
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={handleGoToLogin}
+                            className="mt-4 text-sm text-gray-400 hover:text-gray-300 transition-colors"
+                        >
+                            Voltar ao Login
+                        </button>
+                    </>
+                )}
+            </Card>
+        </div>
+    );
+};
+
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated }) => {
     const { t } = useLanguage();
 
