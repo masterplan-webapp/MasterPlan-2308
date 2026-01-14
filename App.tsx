@@ -1067,6 +1067,13 @@ export default function App() {
                     onGenerate={handleAIPlanGenerated}
                     isLoading={isRegeneratingPlan}
                 />
+                <CustomAlertModal
+                    isOpen={alertState.isOpen}
+                    title={alertState.title}
+                    message={alertState.message}
+                    type={alertState.type}
+                    onClose={hideAlert}
+                />
             </>
         );
     }
@@ -1099,6 +1106,13 @@ export default function App() {
                     />
                 )}
                 <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+                <CustomAlertModal
+                    isOpen={alertState.isOpen}
+                    title={alertState.title}
+                    message={alertState.message}
+                    type={alertState.type}
+                    onClose={hideAlert}
+                />
             </>
         );
     }
