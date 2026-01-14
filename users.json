@@ -1,0 +1,134 @@
+{"users": [
+{
+  "localId": "0nxKL1Z3PBRFa8VG5F8Pspnfngp2",
+  "email": "fabio@zacari.com.br",
+  "emailVerified": false,
+  "passwordHash": "9xa+uDB5230wJf4mKZcNsUHxqBKbci44XmVtNTBKONamHkmHX86aAosGMc333XKo2TOcPfYaM3F24osFVoxI2A==",
+  "salt": "BHMG5n2RnOoTYQ==",
+  "displayName": "Fábio",
+  "lastSignedInAt": "1766079931353",
+  "createdAt": "1766077973672",
+  "providerUserInfo": []
+},
+{
+  "localId": "D7CWWQs9vhPmqMRGM6roBLVBSwW2",
+  "email": "fabio@manarydigital.com",
+  "emailVerified": false,
+  "passwordHash": "1kXaGZpx0kvcU43kZu4ZaGUGOIwtrR/E8mcQq5wo5ibRv3G16OLtt05t+4dhLAn6QBDIp2kpT/xa0XK5dCgt3w==",
+  "salt": "30ubbjsXxzdfhw==",
+  "displayName": "Fabio Sousa",
+  "lastSignedInAt": "1758160294207",
+  "createdAt": "1758160294207",
+  "providerUserInfo": []
+},
+{
+  "localId": "F1ebaASwLvS4D6vrt7fgHUn1gF03",
+  "email": "fabio@dueto.com",
+  "emailVerified": true,
+  "displayName": "Fabio Zacari",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJWTUyd5hILpRP56gyCdvxZL3LIzLOnzp-p9Z8RUMG45S9utxI=s96-c",
+  "lastSignedInAt": "1758195555488",
+  "createdAt": "1758159425895",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "111787322015084520540",
+      "email": "fabio@dueto.com",
+      "displayName": "Fabio Zacari",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJWTUyd5hILpRP56gyCdvxZL3LIzLOnzp-p9Z8RUMG45S9utxI=s96-c"
+    }
+  ]
+},
+{
+  "localId": "Fwk9iwviGQWDFkgV68dq2xMCGym2",
+  "email": "fabio.zacari@hotmail.com",
+  "emailVerified": false,
+  "passwordHash": "qHqBmIoDtYdFJo2CTpFNJBYq1Iy2iNeicvdzgLZPx1tSDnKE4v2+TTTUBJRfCJe+/NhivHgK+Qx0o8D4Moh+KA==",
+  "salt": "49FEJW9srIihcQ==",
+  "displayName": "fabiozacari",
+  "lastSignedInAt": "1758162860149",
+  "createdAt": "1758162860149",
+  "providerUserInfo": []
+},
+{
+  "localId": "grwXydZurOQeX6mt366cuUHiMc62",
+  "email": "fabioszs33@gmail.com",
+  "emailVerified": false,
+  "passwordHash": "+galGkrKP1Z9q6Geu5bvfdHFNVSx0xzljwXlQ8oEzRBDxIkA4YMfyMnmiBUq2aBuaSbocKXLDHveQV8KPGGyQg==",
+  "salt": "1LJAlc4RRa+eIw==",
+  "lastSignedInAt": "1768339185819",
+  "createdAt": "1768339185819",
+  "providerUserInfo": []
+},
+{
+  "localId": "jdrTgUatK1XlnJlL3d1U46KGGug1",
+  "email": "midiaszacari@gmail.com",
+  "emailVerified": true,
+  "displayName": "Zacari Digital Performance",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIbZ2wTJA3lTRBhAJsqTXslPqhlkQmchDzwe_PXezbJ4jcEr7A=s96-c",
+  "lastSignedInAt": "1766117607021",
+  "createdAt": "1766117607021",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "109461212274229879195",
+      "email": "midiaszacari@gmail.com",
+      "displayName": "Zacari Digital Performance",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIbZ2wTJA3lTRBhAJsqTXslPqhlkQmchDzwe_PXezbJ4jcEr7A=s96-c"
+    }
+  ]
+},
+{
+  "localId": "k2CdiL4N01Zq6kPRrYMBq1MW1eY2",
+  "email": "fabiozacari@gmail.com",
+  "emailVerified": true,
+  "displayName": "Fábio Zacari",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocL90siuCBbfn7PA4ZvZsTXIFgKV-EQmRLNgk0Q4CSzFqykDG-59jA=s96-c",
+  "lastSignedInAt": "1768245274652",
+  "createdAt": "1758052706511",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "105349974926122168972",
+      "email": "fabiozacari@gmail.com",
+      "displayName": "Fábio Zacari",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocL90siuCBbfn7PA4ZvZsTXIFgKV-EQmRLNgk0Q4CSzFqykDG-59jA=s96-c"
+    }
+  ]
+},
+{
+  "localId": "xmJG09g67yZ7SAlPUpTy0AmtlMf2",
+  "email": "masterplan.webapp@gmail.com",
+  "emailVerified": true,
+  "displayName": "MasterPlan",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIWPwcDHEx_R6ks9OTLc7B7QSCykKtx8L8G9fcF2DTRjJdufDA=s96-c",
+  "lastSignedInAt": "1767039562133",
+  "createdAt": "1758159362683",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "112666419169931286760",
+      "email": "masterplan.webapp@gmail.com",
+      "displayName": "MasterPlan",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIWPwcDHEx_R6ks9OTLc7B7QSCykKtx8L8G9fcF2DTRjJdufDA=s96-c"
+    }
+  ]
+},
+{
+  "localId": "zAezKoWDF4Rwf9jQKEqSschGKFj2",
+  "email": "felipe284@gmail.com",
+  "emailVerified": true,
+  "displayName": "Felipe Moura",
+  "photoUrl": "https://lh3.googleusercontent.com/a-/ALV-UjXj4M8ZfACI3mry7TZwTQsQOXxpFVPtMAoCQy-V0qF-lBEeEReppedTrJn5ugvM06ul1G8EEK37tgbHVIT8rsOiekrqfto4wfOEcdB0KwWDcHL9xjHTZ4HCI6mda8RsErpcIngzby0NI-77hLG7UhdfG__hXrt2srp2i5HfxiMqPtVb1uGsA5yeXugd474-WmXdTYXm57NDybmtZ87gm6_wPstKnSDuuaxy3O6lU4CmJ8zFkurOIpp2KUgH5uVTL523-AV1gR9JrX7KcHTx-W0r5Q3f3gk9Ftq8AMUdnIdzyC4QSeXn3Ol3iB9XhbEA5k3EV0avCImWlaxI5JmxzacOkwuWiKOnUV_A18GqodDRT90sKYUE-7us69YY9wsqpLfLcG6gtyWsaGxo5QiSKGfFKFh1AShQ_RyQ6LmcW4lOXXY2o2W-Nxk8nV4_2KCG7L17__hbv225R_Kd9JhqHk0K4ZcD5aGcQyNCCPtk8V86lPVnwfgthAhBYRdfAlIi8_6wQTwnpFM8BSGexYR1VvnO_1qOuq2HP1SZpGaB8sqDWf1llP57DnKQEFxaS6-IcJjtbR_jUvSqG2WLoNW_F5UWZhxnhkXP105Rq2qZoyqow_u-h358j-Q7LHzZ2HNIgm-kAlGmNAdpMpNDm_IkdzrghVoPJCbQ3Cn9zojfYSfzv242T66zkWPNjZvdYf-fiv67LY_Wpaa0KWFO8Le7u5FziLmrQSxBDVvZJdXEmtjcNrX4VHJE6YMYLonkLtoSDzUKMzb1i6fFwaQ1ydh5JepSIRRM-SC1xT15A4uPUEP95efXqS74e6VifwvicV0wFlYQuPn-SB2zx1wqIaV2euIuW9qRq3n6g57CjFIkUx_uwvwEozg6D04fNqshcmniUBDfhVzeMuLlu77u8U6wRYG97Wwd41lTR1CoNlm03WeXEU4cm3YllEhlaPa2T8uJL4Tiw_L7pzb04tfBYLzLne0igjD56r1DD06DzUGLrBr7qCCWrki0J7uCW8worA5QMu9wEVrEE3Qtv_BApyitYhs4tAsGrpGapRaLMbpVpxVPcIPJ0KQq3hJV9g=s96-c",
+  "lastSignedInAt": "1767814501843",
+  "createdAt": "1767814501843",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "112712160093990142058",
+      "email": "felipe284@gmail.com",
+      "displayName": "Felipe Moura",
+      "photoUrl": "https://lh3.googleusercontent.com/a-/ALV-UjXj4M8ZfACI3mry7TZwTQsQOXxpFVPtMAoCQy-V0qF-lBEeEReppedTrJn5ugvM06ul1G8EEK37tgbHVIT8rsOiekrqfto4wfOEcdB0KwWDcHL9xjHTZ4HCI6mda8RsErpcIngzby0NI-77hLG7UhdfG__hXrt2srp2i5HfxiMqPtVb1uGsA5yeXugd474-WmXdTYXm57NDybmtZ87gm6_wPstKnSDuuaxy3O6lU4CmJ8zFkurOIpp2KUgH5uVTL523-AV1gR9JrX7KcHTx-W0r5Q3f3gk9Ftq8AMUdnIdzyC4QSeXn3Ol3iB9XhbEA5k3EV0avCImWlaxI5JmxzacOkwuWiKOnUV_A18GqodDRT90sKYUE-7us69YY9wsqpLfLcG6gtyWsaGxo5QiSKGfFKFh1AShQ_RyQ6LmcW4lOXXY2o2W-Nxk8nV4_2KCG7L17__hbv225R_Kd9JhqHk0K4ZcD5aGcQyNCCPtk8V86lPVnwfgthAhBYRdfAlIi8_6wQTwnpFM8BSGexYR1VvnO_1qOuq2HP1SZpGaB8sqDWf1llP57DnKQEFxaS6-IcJjtbR_jUvSqG2WLoNW_F5UWZhxnhkXP105Rq2qZoyqow_u-h358j-Q7LHzZ2HNIgm-kAlGmNAdpMpNDm_IkdzrghVoPJCbQ3Cn9zojfYSfzv242T66zkWPNjZvdYf-fiv67LY_Wpaa0KWFO8Le7u5FziLmrQSxBDVvZJdXEmtjcNrX4VHJE6YMYLonkLtoSDzUKMzb1i6fFwaQ1ydh5JepSIRRM-SC1xT15A4uPUEP95efXqS74e6VifwvicV0wFlYQuPn-SB2zx1wqIaV2euIuW9qRq3n6g57CjFIkUx_uwvwEozg6D04fNqshcmniUBDfhVzeMuLlu77u8U6wRYG97Wwd41lTR1CoNlm03WeXEU4cm3YllEhlaPa2T8uJL4Tiw_L7pzb04tfBYLzLne0igjD56r1DD06DzUGLrBr7qCCWrki0J7uCW8worA5QMu9wEVrEE3Qtv_BApyitYhs4tAsGrpGapRaLMbpVpxVPcIPJ0KQq3hJV9g=s96-c"
+    }
+  ]
+}]}

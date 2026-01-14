@@ -1016,6 +1016,8 @@ export const LoginPage: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [resetEmailSent, setResetEmailSent] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -1072,9 +1074,36 @@ export const LoginPage: React.FC = () => {
 
     const switchMode = () => {
         setIsSignUp(!isSignUp);
+        setIsForgotPassword(false);
+        setResetEmailSent(false);
         setError('');
         setPassword('');
         setConfirmPassword('');
+    };
+
+    const handleForgotPassword = async () => {
+        if (!email.trim()) {
+            setError('Por favor, digite seu email.');
+            return;
+        }
+        setIsLoading(true);
+        setError('');
+        try {
+            const { functions } = await import('./contexts');
+            const { httpsCallable } = await import('firebase/functions');
+            if (functions) {
+                const sendPasswordResetEmail = httpsCallable(functions, 'sendPasswordResetEmail');
+                await sendPasswordResetEmail({ email: email.trim() });
+                setResetEmailSent(true);
+            } else {
+                setError('Serviço indisponível. Tente novamente.');
+            }
+        } catch (err: any) {
+            console.error('Password reset error:', err);
+            setError('Erro ao enviar email. Verifique se o email está correto.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -1141,6 +1170,15 @@ export const LoginPage: React.FC = () => {
                             placeholder={isSignUp ? "Mínimo 6 caracteres" : "••••••••"}
                             className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        {!isSignUp && (
+                            <button
+                                type="button"
+                                onClick={() => { setIsForgotPassword(true); setError(''); setResetEmailSent(false); }}
+                                className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                            >
+                                Esqueci minha senha
+                            </button>
+                        )}
                     </div>
                     {isSignUp && (
                         <div>
@@ -1196,6 +1234,62 @@ export const LoginPage: React.FC = () => {
                     {t('Entrar com Google')}
                 </button>
             </Card >
+
+            {/* Forgot Password Modal */}
+            {isForgotPassword && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+                        <h2 className="text-xl font-bold text-white mb-4">Recuperar Senha</h2>
+
+                        {resetEmailSent ? (
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <p className="text-gray-300 mb-4">Email enviado para <span className="text-blue-400">{email}</span></p>
+                                <p className="text-gray-400 text-sm mb-6">Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.</p>
+                                <button
+                                    onClick={() => { setIsForgotPassword(false); setResetEmailSent(false); }}
+                                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                                >
+                                    Voltar ao Login
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-gray-400 mb-4">Digite seu email e enviaremos um link para você redefinir sua senha.</p>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="seu@email.com"
+                                    className="w-full border-gray-600 rounded-md shadow-sm py-3 px-4 bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                />
+                                {error && (
+                                    <p className="text-red-400 text-sm mb-4">{error}</p>
+                                )}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setIsForgotPassword(false); setError(''); }}
+                                        className="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-lg transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleForgotPassword}
+                                        disabled={isLoading}
+                                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                    >
+                                        {isLoading ? <LoaderIcon className="animate-spin" size={18} /> : 'Enviar Email'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div >
     );
 };
