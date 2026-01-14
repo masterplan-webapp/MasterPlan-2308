@@ -1,6 +1,12 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
+const { defineSecret } = require("firebase-functions/params");
+
+// Define secrets (configured via: firebase functions:secrets:set SECRET_NAME)
+const resendApiKey = defineSecret("RESEND_API_KEY");
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 admin.initializeApp({
     storageBucket: "masterplan-52e06.firebasestorage.app"
@@ -29,15 +35,12 @@ exports.setupStorageCORS = functions.https.onRequest(async (req, res) => {
         res.send(`CORS configured successfully for bucket: ${bucket.name}`);
     } catch (error) {
         console.error("Error setting CORS:", error);
-        res.status(500).send("Error: " + error.message);
+        res.status(500).send(`Error: ${error.message}`);
     }
 });
 
-// Initialize Resend with API Key
-const resend = new Resend("re_aWrKWyjG_4KWcFcwnsT89FvEStSbwTZw7");
-
-// Initialize Stripe with the TEST Secret Key
-const stripe = require("stripe")("sk_test_51S4MFQGr4FxMIDKzj2RRsrmrW3sfMxhkbSLunJHy3HejWokhIEN5TZyGDzUakHbTDpRTVfFx95X9hEAzVG3zMmHs002Rc0elWS");
+// Initialize Resend and Stripe lazily (inside functions that need them)
+// This allows secrets to be available at runtime
 
 // ============================================
 // EMAIL TEMPLATES
@@ -166,94 +169,103 @@ const getGoodbyeEmailHtml = (userName) => `
 /**
  * Send goodbye email on account deletion (Auth Trigger)
  */
-exports.sendGoodbyeEmail = functions.auth.user().onDelete(async (user) => {
-    const email = user.email;
-    const displayName = user.displayName;
+exports.sendGoodbyeEmail = functions
+    .runWith({ secrets: [resendApiKey] })
+    .auth.user().onDelete(async (user) => {
+        const email = user.email;
+        const displayName = user.displayName;
 
-    if (!email) {
-        console.log("No email for deleted user, skipping goodbye email.");
-        return;
-    }
+        if (!email) {
+            console.log("No email for deleted user, skipping goodbye email.");
+            return;
+        }
 
-    try {
-        await resend.emails.send({
-            from: "MasterPlan <noreply@masterplanai.com.br>",
-            to: email,
-            subject: "Sua conta foi excluída - MasterPlan",
-            html: getGoodbyeEmailHtml(displayName),
-        });
-        console.log(`Goodbye email sent to ${email}`);
-    } catch (error) {
-        console.error("Error sending goodbye email:", error);
-    }
-});
+        try {
+            const resend = new Resend(resendApiKey.value());
+            await resend.emails.send({
+                from: "MasterPlan <noreply@masterplanai.com.br>",
+                to: email,
+                subject: "Sua conta foi excluída - MasterPlan",
+                html: getGoodbyeEmailHtml(displayName),
+            });
+            console.log(`Goodbye email sent to ${email}`);
+        } catch (error) {
+            console.error("Error sending goodbye email:", error);
+        }
+    });
 
 /**
  * Send welcome email (HTTP Callable - called from frontend after signup)
  */
-exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
-    // Verify the user is authenticated
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
-    }
+exports.sendWelcomeEmail = functions
+    .runWith({ secrets: [resendApiKey] })
+    .https.onCall(async (data, context) => {
+        // Verify the user is authenticated
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+        }
 
-    const { email, displayName } = data;
+        const { email, displayName } = data;
 
-    if (!email) {
-        throw new functions.https.HttpsError("invalid-argument", "Email is required");
-    }
+        if (!email) {
+            throw new functions.https.HttpsError("invalid-argument", "Email is required");
+        }
 
-    try {
-        const result = await resend.emails.send({
-            from: "MasterPlan <noreply@masterplanai.com.br>",
-            to: email,
-            subject: "Bem-vindo ao MasterPlan! 🎉",
-            html: getWelcomeEmailHtml(displayName || "Profissional"),
-        });
-        console.log(`Welcome email sent to ${email}`, result);
-        return { success: true, messageId: result.id };
-    } catch (error) {
-        console.error("Error sending welcome email:", error);
-        throw new functions.https.HttpsError("internal", "Failed to send welcome email");
-    }
-});
+        try {
+            const resend = new Resend(resendApiKey.value());
+            const result = await resend.emails.send({
+                from: "MasterPlan <noreply@masterplanai.com.br>",
+                to: email,
+                subject: "Bem-vindo ao MasterPlan! 🎉",
+                html: getWelcomeEmailHtml(displayName || "Profissional"),
+            });
+            console.log(`Welcome email sent to ${email}`, result);
+            return { success: true, messageId: result.id };
+        } catch (error) {
+            console.error("Error sending welcome email:", error);
+            throw new functions.https.HttpsError("internal", "Failed to send welcome email");
+        }
+    });
 
 /**
  * Send password reset email (HTTP Callable)
  */
-exports.sendPasswordResetEmail = functions.https.onCall(async (data, context) => {
-    const { email } = data;
+exports.sendPasswordResetEmail = functions
+    .runWith({ secrets: [resendApiKey] })
+    .https.onCall(async (data, context) => {
+        const { email } = data;
 
-    if (!email) {
-        throw new functions.https.HttpsError("invalid-argument", "Email is required");
-    }
+        if (!email) {
+            throw new functions.https.HttpsError("invalid-argument", "Email is required");
+        }
 
-    try {
-        // Generate Firebase password reset link
-        const firebaseResetLink = await admin.auth().generatePasswordResetLink(email, {
-            url: "https://app.masterplanai.com.br",
-        });
+        try {
+            // Generate Firebase password reset link
+            const firebaseResetLink = await admin.auth().generatePasswordResetLink(email, {
+                url: "https://app.masterplanai.com.br",
+            });
 
-        // Extract oobCode from Firebase link and create our custom URL
-        const url = new URL(firebaseResetLink);
-        const oobCode = url.searchParams.get('oobCode');
+            // Extract oobCode from Firebase link and create our custom URL
+            const url = new URL(firebaseResetLink);
+            const oobCode = url.searchParams.get('oobCode');
 
-        // Create custom reset link pointing to our app
-        const customResetLink = `https://app.masterplanai.com.br?mode=resetPassword&oobCode=${oobCode}&email=${encodeURIComponent(email)}`;
+            // Create custom reset link pointing to our app
+            const customResetLink = `https://app.masterplanai.com.br?mode=resetPassword&oobCode=${oobCode}&email=${encodeURIComponent(email)}`;
 
-        await resend.emails.send({
-            from: "MasterPlan <noreply@masterplanai.com.br>",
-            to: email,
-            subject: "Recuperação de Senha - MasterPlan",
-            html: getPasswordResetHtml(customResetLink),
-        });
+            const resend = new Resend(resendApiKey.value());
+            await resend.emails.send({
+                from: "MasterPlan <noreply@masterplanai.com.br>",
+                to: email,
+                subject: "Recuperação de Senha - MasterPlan",
+                html: getPasswordResetHtml(customResetLink),
+            });
 
-        return { success: true };
-    } catch (error) {
-        console.error("Error sending password reset email:", error);
-        throw new functions.https.HttpsError("internal", "Failed to send email");
-    }
-});
+            return { success: true };
+        } catch (error) {
+            console.error("Error sending password reset email:", error);
+            throw new functions.https.HttpsError("internal", "Failed to send email");
+        }
+    });
 
 // ============================================
 // STRIPE FUNCTIONS
@@ -262,127 +274,133 @@ exports.sendPasswordResetEmail = functions.https.onCall(async (data, context) =>
 /**
  * Creates a Stripe Checkout Session for subscription upgrade.
  */
-exports.createStripeCheckoutSession = functions.https.onRequest(async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.set('Access-Control-Max-Age', '3600');
+exports.createStripeCheckoutSession = functions
+    .runWith({ secrets: [stripeSecretKey] })
+    .https.onRequest(async (req, res) => {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.set('Access-Control-Max-Age', '3600');
 
-    if (req.method === 'OPTIONS') {
-        res.status(204).send('');
-        return;
-    }
-
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method Not Allowed' });
-        return;
-    }
-
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).json({ error: 'Unauthorized - Missing token' });
+        if (req.method === 'OPTIONS') {
+            res.status(204).send('');
             return;
         }
 
-        const idToken = authHeader.split('Bearer ')[1];
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const uid = decodedToken.uid;
-        const userEmail = decodedToken.email;
-
-        const { plan: planType } = req.body;
-
-        if (!['pro', 'ai'].includes(planType)) {
-            res.status(400).json({ error: 'Invalid plan type' });
+        if (req.method !== 'POST') {
+            res.status(405).json({ error: 'Method Not Allowed' });
             return;
         }
 
-        const priceData = {
-            currency: 'brl',
-            product_data: {
-                name: planType === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium',
-                description: planType === 'pro'
-                    ? 'Acesso ilimitado a planos e exportação sem marca d\'água.'
-                    : 'Tudo do PRO + Geração ilimitada com IA.',
-            },
-            unit_amount: planType === 'pro' ? 4900 : 9900,
-            recurring: { interval: 'month' },
-        };
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).json({ error: 'Unauthorized - Missing token' });
+                return;
+            }
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ["card"],
-            mode: "subscription",
-            line_items: [{ price_data: priceData, quantity: 1 }],
-            customer_email: userEmail,
-            metadata: { firebaseUID: uid, targetPlan: planType },
-            success_url: `https://app.masterplanai.com.br/?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://app.masterplanai.com.br/?payment_cancelled=true`,
-        });
+            const idToken = authHeader.split('Bearer ')[1];
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const uid = decodedToken.uid;
+            const userEmail = decodedToken.email;
 
-        res.status(200).json({ sessionId: session.id, url: session.url });
-    } catch (error) {
-        console.error("Stripe Error:", error);
-        res.status(500).json({ error: 'Unable to create checkout session', details: error.message });
-    }
-});
+            const { plan: planType } = req.body;
+
+            if (!['pro', 'ai'].includes(planType)) {
+                res.status(400).json({ error: 'Invalid plan type' });
+                return;
+            }
+
+            const priceData = {
+                currency: 'brl',
+                product_data: {
+                    name: planType === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium',
+                    description: planType === 'pro'
+                        ? 'Acesso ilimitado a planos e exportação sem marca d\'agua.'
+                        : 'Tudo do PRO + Geração ilimitada com IA.',
+                },
+                unit_amount: planType === 'pro' ? 4900 : 9900,
+                recurring: { interval: 'month' },
+            };
+
+            const stripe = require("stripe")(stripeSecretKey.value());
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ["card"],
+                mode: "subscription",
+                line_items: [{ price_data: priceData, quantity: 1 }],
+                customer_email: userEmail,
+                metadata: { firebaseUID: uid, targetPlan: planType },
+                success_url: `https://app.masterplanai.com.br/?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `https://app.masterplanai.com.br/?payment_cancelled=true`,
+            });
+
+            res.status(200).json({ sessionId: session.id, url: session.url });
+        } catch (error) {
+            console.error("Stripe Error:", error);
+            res.status(500).json({ error: 'Unable to create checkout session', details: error.message });
+        }
+    });
 
 /**
  * Webhook to handle Stripe events and send payment confirmation email
  */
-exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
-    const signature = req.headers["stripe-signature"];
-    const endpointSecret = "whsec_yha72OxH3AfWwYQruP9FSI46DBPot1rk";
+exports.stripeWebhook = functions
+    .runWith({ secrets: [stripeSecretKey, stripeWebhookSecret, resendApiKey] })
+    .https.onRequest(async (req, res) => {
+        const signature = req.headers["stripe-signature"];
 
-    let event;
+        let event;
 
-    try {
-        event = stripe.webhooks.constructEvent(req.rawBody, signature, endpointSecret);
-    } catch (err) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+        try {
+            const stripe = require("stripe")(stripeSecretKey.value());
+            event = stripe.webhooks.constructEvent(req.rawBody, signature, stripeWebhookSecret.value());
+        } catch (err) {
+            console.error(`Webhook signature verification failed: ${err.message}`);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
 
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        const uid = session.metadata.firebaseUID;
-        const targetPlan = session.metadata.targetPlan;
-        const customerEmail = session.customer_email;
-        const amountTotal = session.amount_total;
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object;
+            const uid = session.metadata.firebaseUID;
+            const targetPlan = session.metadata.targetPlan;
+            const customerEmail = session.customer_email;
+            const amountTotal = session.amount_total;
 
-        if (uid && targetPlan) {
-            try {
-                // Update Firestore
-                await db.collection("users").doc(uid).set({
-                    subscription: targetPlan,
-                    subscriptionStatus: 'active',
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                // Get user name from Firebase Auth
-                let userName = null;
+            if (uid && targetPlan) {
                 try {
-                    const userRecord = await admin.auth().getUser(uid);
-                    userName = userRecord.displayName;
-                } catch (e) {
-                    console.log("Could not get user name");
+                    // Update Firestore
+                    await db.collection("users").doc(uid).set({
+                        subscription: targetPlan,
+                        subscriptionStatus: 'active',
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+
+                    // Get user name from Firebase Auth
+                    let userName = null;
+                    try {
+                        const userRecord = await admin.auth().getUser(uid);
+                        userName = userRecord.displayName;
+                    } catch (e) {
+                        console.log("Could not get user name");
+                    }
+
+                    // Send payment confirmation email
+                    const planName = targetPlan === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium';
+                    const resend = new Resend(resendApiKey.value());
+                    await resend.emails.send({
+                        from: "MasterPlan <noreply@masterplanai.com.br>",
+                        to: customerEmail,
+                        subject: `Pagamento Confirmado - ${planName} ✅`,
+                        html: getPaymentConfirmationHtml(userName, planName, amountTotal),
+                    });
+
+                    console.log(`User ${uid} upgraded to ${targetPlan}, confirmation email sent`);
+                } catch (error) {
+                    console.error("Error processing webhook:", error);
+                    return res.status(500).send("Internal Server Error");
                 }
-
-                // Send payment confirmation email
-                const planName = targetPlan === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium';
-                await resend.emails.send({
-                    from: "MasterPlan <noreply@masterplanai.com.br>",
-                    to: customerEmail,
-                    subject: `Pagamento Confirmado - ${planName} ✅`,
-                    html: getPaymentConfirmationHtml(userName, planName, amountTotal),
-                });
-
-                console.log(`User ${uid} upgraded to ${targetPlan}, confirmation email sent`);
-            } catch (error) {
-                console.error("Error processing webhook:", error);
-                return res.status(500).send("Internal Server Error");
             }
         }
-    }
 
-    res.json({ received: true });
-});
+        res.json({ received: true });
+    });

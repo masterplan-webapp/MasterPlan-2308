@@ -854,7 +854,7 @@ export const AISuggestionsModal: React.FC<AISuggestionsModalProps> = ({ isOpen, 
                         </div>
                     ) : suggestions ? (
                         <div className="space-y-6">
-                            {Object.entries(suggestions).map(([key, items]) => (
+                            {(Object.entries(suggestions) as [string, string[]][]).map(([key, items]) => (
                                 <div key={key}>
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="text-lg font-medium text-gray-100 capitalize">{key}</h3>
@@ -3259,7 +3259,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
-            const filePromises = Array.from(files).map(file => {
+            const filePromises = Array.from(files).map((file: File) => {
                 return new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
