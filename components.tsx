@@ -2261,6 +2261,8 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                     <th scope="col" className="px-4 py-3">{t('Impressões')}</th>
                                     <th scope="col" className="px-4 py-3">{t('Alcance')}</th>
                                     <th scope="col" className="px-4 py-3">{t('Cliques')}</th>
+                                    <th scope="col" className="px-4 py-3">CPC (R$)</th>
+                                    <th scope="col" className="px-4 py-3">CPM (R$)</th>
                                     <th scope="col" className="px-4 py-3">CTR (%)</th>
                                     <th scope="col" className="px-4 py-3">Connect Rate (%)</th>
                                     <th scope="col" className="px-4 py-3">{t('Visitas')}</th>
@@ -2290,6 +2292,8 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                             <td className="px-4 py-4">{formatNumber(campaign.impressoes)}</td>
                                             <td className="px-4 py-4">{formatNumber(alcance)}</td>
                                             <td className="px-4 py-4">{formatNumber(campaign.cliques)}</td>
+                                            <td className="px-4 py-4">{formatCurrency(campaign.cpc)}</td>
+                                            <td className="px-4 py-4">{formatCurrency(campaign.cpm)}</td>
                                             <td className="px-4 py-4">{campaign.ctr?.toFixed(2)}%</td>
                                             <td className="px-4 py-4">{campaign.connectRate?.toFixed(1)}%</td>
                                             <td className="px-4 py-4">{formatNumber(campaign.visitas)}</td>
@@ -2317,6 +2321,8 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
                                     <td className="px-4 py-3">{formatNumber(totals.impressoes)}</td>
                                     <td className="px-4 py-3">-</td>
                                     <td className="px-4 py-3">{formatNumber(totals.cliques)}</td>
+                                    <td className="px-4 py-3">-</td>
+                                    <td className="px-4 py-3">-</td>
                                     <td className="px-4 py-3">-</td>
                                     <td className="px-4 py-3">-</td>
                                     <td className="px-4 py-3">-</td>
