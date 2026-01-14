@@ -1257,8 +1257,10 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
         } else {
             throw new Error("Image generation returned no images.");
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error calling Gemini Image API:", error);
-        throw new Error("Image generation failed.");
+        // Preserve the original error message for quota detection in UI
+        const errorMessage = error?.message || error?.toString() || 'Image generation failed.';
+        throw new Error(errorMessage);
     }
 };

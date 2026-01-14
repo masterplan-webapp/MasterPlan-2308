@@ -3248,8 +3248,14 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                     setEditingImages([`data:image/png;base64,${results[0].base64}`]);
                 }
             }
-        } catch (e) {
-            setError(t('error_generating_images'));
+        } catch (e: any) {
+            // Check for quota/rate limit errors
+            const errorMessage = e?.message || e?.toString() || '';
+            if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('429') || errorMessage.includes('quota')) {
+                setError(t('Limite de uso da IA atingido. A cota é renovada diariamente às 21h (horário de Brasília). Por favor, tente novamente mais tarde.'));
+            } else {
+                setError(t('error_generating_images'));
+            }
             console.error(e);
         } finally {
             setIsLoading(false);
