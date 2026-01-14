@@ -779,6 +779,8 @@ export default function App() {
         }
 
         const newPlan = type === 'blank' ? await createNewEmptyPlan(user.uid) : await createNewPlanFromTemplate(user.uid);
+        // Save plan to Firestore immediately
+        await dbService.savePlan(user.uid, newPlan);
         setAllPlans(prev => [...prev, newPlan]);
         setActivePlan(newPlan);
         setActiveView('Overview');
