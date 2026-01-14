@@ -58,7 +58,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canUseCreativeBuilder: false,
             canUseAdvancedAI: false,
             maxUTMLinks: 10,
-            maxKeywords: 20,
+            maxKeywords: 50,
             maxCopyVersions: 5
         }
     },
