@@ -3167,11 +3167,13 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
 
 
     const handleGenerate = async () => {
-        // Limit Check: AI Text Generation
-        const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
-        if (!canGenText) {
-            showAlert(t('Acesso Negado'), t('Seu plano não permite geração de Keywords com IA.'), 'warning');
-            return;
+        // Limit Check: AI Text Generation (only for prompt mode)
+        if (mode === 'prompt') {
+            const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+            if (!canGenText) {
+                showAlert(t('Acesso Negado'), t('Seu plano não permite geração de Keywords com IA. Use o modo "A Partir de Palavras-Chave".'), 'warning');
+                return;
+            }
         }
 
         // Limit Check: Total Keywords
