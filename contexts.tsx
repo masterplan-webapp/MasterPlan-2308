@@ -209,7 +209,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProfile(auth.currentUser, {
             displayName: newDetails.displayName ?? undefined,
             photoURL: newDetails.photoURL ?? undefined
-        }).then(() => {
+        }).then(async () => {
+            // Also update Firestore to persist changes across reloads
+            if (db && auth.currentUser) {
+                try {
+                    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+                    // Use setDoc with merge: true to update specific fields
+                    await setDoc(userDocRef, newDetails, { merge: true });
+                    console.log("Synced user profile to Firestore");
+                } catch (error) {
+                    console.error("Error syncing profile to Firestore:", error);
+                }
+            }
             setUser(prevUser => prevUser ? { ...prevUser, ...newDetails } : null);
         }).catch(error => {
             console.error("Error updating profile", error);

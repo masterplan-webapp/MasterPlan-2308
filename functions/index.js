@@ -2,8 +2,36 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
 
-admin.initializeApp();
+admin.initializeApp({
+    storageBucket: "masterplan-52e06.firebasestorage.app"
+});
 const db = admin.firestore();
+
+// ... existing code ...
+
+/**
+ * Helper to setup CORS for Storage (Run once)
+ * Call this url: https://us-central1-masterplan-52e06.cloudfunctions.net/setupStorageCORS
+ */
+exports.setupStorageCORS = functions.https.onRequest(async (req, res) => {
+    try {
+        const bucket = admin.storage().bucket(); // Should use the configured default bucket
+        console.log(`Configuring CORS for bucket: ${bucket.name}`);
+
+        await bucket.setCorsConfiguration([
+            {
+                origin: ["*"],
+                method: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+                responseHeader: ["Content-Type", "Authorization", "x-goog-resumable"],
+                maxAgeSeconds: 3600
+            }
+        ]);
+        res.send(`CORS configured successfully for bucket: ${bucket.name}`);
+    } catch (error) {
+        console.error("Error setting CORS:", error);
+        res.status(500).send("Error: " + error.message);
+    }
+});
 
 // Initialize Resend with API Key
 const resend = new Resend("re_aWrKWyjG_4KWcFcwnsT89FvEStSbwTZw7");
@@ -107,6 +135,58 @@ const getPasswordResetHtml = (resetLink) => `
 // ============================================
 // CLOUD FUNCTIONS - EMAIL TRIGGERS
 // ============================================
+
+const getGoodbyeEmailHtml = (userName) => `
+<!DOCTYPE html>
+<html>
+<head><style>${emailStyles}</style></head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://app.masterplanai.com.br/logo-dark.png" alt="MasterPlan" class="logo" />
+            <h1>Até logo! 👋</h1>
+        </div>
+        <p>Olá <span class="highlight">${userName || 'Profissional'}</span>,</p>
+        <p>Confirmamos que sua conta no MasterPlan foi excluída com sucesso e todos os seus dados foram removidos dos nossos sistemas.</p>
+        <p>Sentimos muito em ver você partir. Se houver algo que poderíamos ter feito diferente, adoraríamos saber sua opinião.</p>
+        <p>As portas estarão sempre abertas caso decida voltar!</p>
+        <center><a href="https://masterplanai.com.br" class="button">Ir para a Home</a></center>
+        <div class="footer">
+            <p>© ${new Date().getFullYear()} MasterPlan - masterplanai.com.br</p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
+// ============================================
+// CLOUD FUNCTIONS - EMAIL TRIGGERS
+// ============================================
+
+/**
+ * Send goodbye email on account deletion (Auth Trigger)
+ */
+exports.sendGoodbyeEmail = functions.auth.user().onDelete(async (user) => {
+    const email = user.email;
+    const displayName = user.displayName;
+
+    if (!email) {
+        console.log("No email for deleted user, skipping goodbye email.");
+        return;
+    }
+
+    try {
+        await resend.emails.send({
+            from: "MasterPlan <noreply@masterplanai.com.br>",
+            to: email,
+            subject: "Sua conta foi excluída - MasterPlan",
+            html: getGoodbyeEmailHtml(displayName),
+        });
+        console.log(`Goodbye email sent to ${email}`);
+    } catch (error) {
+        console.error("Error sending goodbye email:", error);
+    }
+});
 
 /**
  * Send welcome email (HTTP Callable - called from frontend after signup)
