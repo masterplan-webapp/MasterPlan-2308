@@ -1025,6 +1025,26 @@ export default function App() {
     };
 
     const handleNavigate = (view: string) => {
+        const userSubscription = user?.subscription || 'free';
+
+        // Block Creative Builder for Free users
+        if (view === 'Creative_Builder') {
+            const canUseCreativeBuilder = getPlanCapability(userSubscription, 'canUseCreativeBuilder');
+            if (!canUseCreativeBuilder) {
+                showAlert(t('Acesso Negado'), t('O Creative Builder não está disponível no plano gratuito. Faça upgrade para desbloquear.'), 'warning');
+                return;
+            }
+        }
+
+        // Block Video Builder for Free users
+        if (view === 'Video_Builder') {
+            const canUseVideoBuilder = getPlanCapability(userSubscription, 'canUseVideoBuilder');
+            if (!canUseVideoBuilder) {
+                showAlert(t('Acesso Negado'), t('O Video Builder não está disponível no plano gratuito. Faça upgrade para desbloquear.'), 'warning');
+                return;
+            }
+        }
+
         setActiveView(view);
         if (window.innerWidth < 1024) {
             setIsMobileSidebarOpen(false);
