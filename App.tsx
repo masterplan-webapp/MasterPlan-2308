@@ -265,12 +265,18 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
 };
 
 const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
-    const { user, updateUser } = useAuth();
+    const { user, updateUser, signOut } = useAuth();
     const { t } = useLanguage();
     const [name, setName] = useState(user?.displayName || '');
     const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+    const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'account'>('profile');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showPasswordReset, setShowPasswordReset] = useState(false);
+    const [passwordResetSent, setPasswordResetSent] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
 
     useEffect(() => {
         if (user) {
@@ -278,6 +284,16 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
             setPhotoURL(user.photoURL || '');
         }
     }, [user, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setActiveTab('profile');
+            setShowDeleteConfirm(false);
+            setDeleteConfirmText('');
+            setShowPasswordReset(false);
+            setPasswordResetSent(false);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -297,48 +313,277 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
         }
     };
 
+    const handlePasswordReset = async () => {
+        if (!user?.email) return;
+        setIsResetting(true);
+        try {
+            const { functions } = await import('./contexts');
+            const { httpsCallable } = await import('firebase/functions');
+            if (functions) {
+                const sendPasswordResetEmail = httpsCallable(functions, 'sendPasswordResetEmail');
+                await sendPasswordResetEmail({ email: user.email });
+                setPasswordResetSent(true);
+            }
+        } catch (err) {
+            console.error('Password reset error:', err);
+            alert('Erro ao enviar email. Tente novamente.');
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmText !== 'EXCLUIR') return;
+        setIsDeleting(true);
+        try {
+            const { getAuth, deleteUser } = await import('firebase/auth');
+            const auth = getAuth();
+            if (auth.currentUser) {
+                await deleteUser(auth.currentUser);
+                onClose();
+            }
+        } catch (err: any) {
+            console.error('Delete account error:', err);
+            if (err.code === 'auth/requires-recent-login') {
+                alert('Por segurança, faça logout e login novamente antes de excluir sua conta.');
+            } else {
+                alert('Erro ao excluir conta. Tente novamente.');
+            }
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const getSubscriptionBadge = () => {
+        const sub = user?.subscription || 'free';
+        const badges: Record<string, { label: string; color: string }> = {
+            'free': { label: 'Gratuito', color: 'bg-gray-600' },
+            'pro': { label: 'PRO', color: 'bg-blue-600' },
+            'ai': { label: 'AI', color: 'bg-purple-600' }
+        };
+        return badges[sub] || badges['free'];
+    };
+
+    const badge = getSubscriptionBadge();
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg">
+                {/* Header */}
                 <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200">{t('Editar Perfil')}</h2>
+                    <h2 className="text-xl font-semibold text-gray-200">{t('Minha Conta')}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
-                <div className="p-6 space-y-6">
-                    <div className="flex flex-col items-center">
-                        <img
-                            src={photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=random&color=fff&size=128`}
-                            alt="Avatar"
-                            className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-700"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-sm text-blue-400 hover:underline"
-                        >
-                            {t('Alterar foto')}
-                        </button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handlePhotoUpload}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">{t('Nome')}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">{t('URL da Foto')}</label>
-                        <input type="text" value={photoURL} onChange={e => setPhotoURL(e.target.value)} placeholder={t('Ou cole a URL da imagem aqui')} className="mt-1 block w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-gray-700">
+                    <button
+                        onClick={() => setActiveTab('profile')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'profile' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                    >
+                        <UserIcon size={16} className="inline mr-2" />Perfil
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('security')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'security' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                    >
+                        <KeyRound size={16} className="inline mr-2" />Segurança
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('account')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'account' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
+                    >
+                        <Settings size={16} className="inline mr-2" />Conta
+                    </button>
                 </div>
-                <div className="p-6 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">{t('cancel')}</button>
-                    <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"><Save size={18} /> {t('save')}</button>
+
+                {/* Content */}
+                <div className="p-6">
+                    {/* Profile Tab */}
+                    {activeTab === 'profile' && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col items-center">
+                                <img
+                                    src={photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=random&color=fff&size=128`}
+                                    alt="Avatar"
+                                    className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-gray-700"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-sm text-blue-400 hover:underline"
+                                >
+                                    {t('Alterar foto')}
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handlePhotoUpload}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">{t('Nome')}</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">{t('Email')}</label>
+                                <input
+                                    type="email"
+                                    value={user?.email || ''}
+                                    disabled
+                                    className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-600 text-gray-400 cursor-not-allowed"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">{t('URL da Foto')}</label>
+                                <input
+                                    type="text"
+                                    value={photoURL}
+                                    onChange={e => setPhotoURL(e.target.value)}
+                                    placeholder={t('Ou cole a URL da imagem aqui')}
+                                    className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Security Tab */}
+                    {activeTab === 'security' && (
+                        <div className="space-y-6">
+                            <div className="p-4 bg-gray-700/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-200 mb-2">Alterar Senha</h3>
+                                <p className="text-xs text-gray-400 mb-4">
+                                    Enviaremos um link para seu email para redefinir sua senha.
+                                </p>
+                                {passwordResetSent ? (
+                                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                                        <Check size={18} />
+                                        Email enviado! Verifique sua caixa de entrada.
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={handlePasswordReset}
+                                        disabled={isResetting}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {isResetting ? <LoaderIcon className="animate-spin" size={16} /> : <KeyRound size={16} />}
+                                        Enviar Link de Alteração
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-gray-700/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-200 mb-2">Sessão Atual</h3>
+                                <p className="text-xs text-gray-400 mb-4">
+                                    Encerre sua sessão atual em todos os dispositivos.
+                                </p>
+                                <button
+                                    onClick={() => { signOut(); onClose(); }}
+                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-md transition-colors flex items-center gap-2"
+                                >
+                                    <LogOut size={16} />
+                                    Sair da Conta
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Account Tab */}
+                    {activeTab === 'account' && (
+                        <div className="space-y-6">
+                            {/* Subscription Info */}
+                            <div className="p-4 bg-gray-700/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-200 mb-3">Plano Atual</h3>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`px-3 py-1 ${badge.color} text-white text-sm font-medium rounded-full`}>
+                                            {badge.label}
+                                        </span>
+                                        <span className="text-gray-400 text-sm">
+                                            {user?.subscription === 'free' ? 'Limite de 1 plano' : 'Planos ilimitados'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Account Info */}
+                            <div className="p-4 bg-gray-700/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-200 mb-3">Informações da Conta</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">ID da Conta</span>
+                                        <span className="text-gray-300 font-mono text-xs">{user?.uid?.slice(0, 12)}...</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Email</span>
+                                        <span className="text-gray-300">{user?.email}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Danger Zone */}
+                            <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-lg">
+                                <h3 className="text-sm font-medium text-red-400 mb-2">Zona de Perigo</h3>
+                                <p className="text-xs text-gray-400 mb-4">
+                                    Excluir sua conta é uma ação permanente e não pode ser desfeita.
+                                </p>
+                                {showDeleteConfirm ? (
+                                    <div className="space-y-3">
+                                        <p className="text-xs text-gray-300">
+                                            Digite <span className="font-bold text-red-400">EXCLUIR</span> para confirmar:
+                                        </p>
+                                        <input
+                                            type="text"
+                                            value={deleteConfirmText}
+                                            onChange={e => setDeleteConfirmText(e.target.value)}
+                                            className="w-full border-red-700 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+                                            placeholder="Digite EXCLUIR"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                                                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-md"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={handleDeleteAccount}
+                                                disabled={deleteConfirmText !== 'EXCLUIR' || isDeleting}
+                                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {isDeleting ? <LoaderIcon className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm rounded-md transition-colors border border-red-600/50 flex items-center gap-2"
+                                    >
+                                        <Trash2 size={16} />
+                                        Excluir Minha Conta
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
+
+                {/* Footer - only show on profile tab */}
+                {activeTab === 'profile' && (
+                    <div className="p-6 bg-gray-700/50 border-t border-gray-700 flex justify-end gap-3">
+                        <button onClick={onClose} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">{t('cancel')}</button>
+                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"><Save size={18} /> {t('save')}</button>
+                    </div>
+                )}
             </div>
         </div>
     );
