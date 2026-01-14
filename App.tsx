@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon, Video } from 'lucide-react';
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF } from './services';
 import { httpsCallable } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
+import { PlanConfig, PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
 import {
     PlanData, Campaign, User, UserProfileModalProps
 } from './types';
@@ -12,7 +13,7 @@ import {
     useLanguage, useTheme, useAuth
 } from './contexts';
 import {
-    LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage,
+    LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage, VideoBuilderPage,
     PlanDetailsModal, RenamePlanModal,
     Card,
     AddMonthModal,
@@ -117,6 +118,7 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Keyword_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Keyword_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('keyword_builder') : undefined}><KeyRound size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('keyword_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Copy_builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Copy_builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('copy_builder') : undefined}><PencilRuler size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('copy_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Creative_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Creative_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('creative_builder') : undefined}><ImageIcon size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('creative_builder')}</span></a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Video_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Video_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('video_builder') : undefined}><Video size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('video_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('UTM_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'UTM_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('utm_builder') : undefined}><Link2 size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('utm_builder')}</span></a></li>
                     </ul>
                 </nav>
@@ -749,7 +751,9 @@ export default function App() {
         if (!user) return;
 
         // --- PLAN LIMIT CHECK ---
-        if (user.subscription === 'free' && allPlans.length >= 1) {
+        const userSubscription = user.subscription || 'free';
+        // Free users can only create 1 plan
+        if (userSubscription === 'free' && allPlans.length >= 1) {
             alert(t('Limite do Plano Gratuito atingido!\nFaça Upgrade para criar planos ilimitados.'));
             return;
         }
@@ -758,6 +762,15 @@ export default function App() {
             setAIPlanCreationModalOpen(true);
             return;
         }
+        // Limit Check: Templates
+        if (type === 'template') {
+            const canUseTemplates = getPlanCapability(userSubscription, 'canUseTemplates');
+            if (!canUseTemplates) {
+                alert(t('Seu plano atual não permite o uso de modelos.\nFaça Upgrade para desbloquear esta funcionalidade.'));
+                return;
+            }
+        }
+
         const newPlan = type === 'blank' ? await createNewEmptyPlan(user.uid) : await createNewPlanFromTemplate(user.uid);
         setAllPlans(prev => [...prev, newPlan]);
         setActivePlan(newPlan);
@@ -777,6 +790,17 @@ export default function App() {
 
     const handleAIPlanGenerated = async (prompt: string) => {
         if (!user) return;
+
+        // Check Limit
+        if (user) {
+            const userSubscription = user.subscription || 'free';
+            const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'createdPlans');
+            if (!hasLimit) {
+                alert(t('Limite de criação com IA atingido para seu plano. Faça upgrade para continuar.'));
+                return;
+            }
+        }
+
         setIsRegeneratingPlan(true);
         try {
             const partialPlan = await generateAIPlan(prompt, language);
@@ -800,6 +824,10 @@ export default function App() {
                 aiImagePrompt: partialPlan.aiImagePrompt,
             };
             await dbService.savePlan(user.uid, newPlan);
+
+            // Increment Usage
+            await dbService.incrementUsage(user.uid, 'createdPlans');
+
             setAllPlans(prev => [...prev, newPlan]);
             setActivePlan(newPlan);
             setActiveView('Overview');
@@ -944,8 +972,8 @@ export default function App() {
     const handleExportPDF = async () => {
         if (!activePlan || !user) return;
         setIsExporting(true);
-        const isPro = user.subscription === 'pro' || user.subscription === 'ai';
-        await exportPlanAsPDF(activePlan, t, isPro);
+        const canRemoveWatermark = getPlanCapability(user.subscription, 'canRemoveWatermark') as boolean;
+        await exportPlanAsPDF(activePlan, t, canRemoveWatermark);
         setIsExporting(false);
     };
 
@@ -1117,6 +1145,7 @@ export default function App() {
                     {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
                     {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
                     {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
+                    {activeView === 'Video_Builder' && <VideoBuilderPage planData={activePlan} />}
                 </main>
             </div>
             {isPlanDetailsModalOpen && (

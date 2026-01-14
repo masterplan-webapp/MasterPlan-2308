@@ -2,11 +2,13 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
 const { defineSecret } = require("firebase-functions/params");
+const Replicate = require("replicate");
 
 // Define secrets (configured via: firebase functions:secrets:set SECRET_NAME)
 const resendApiKey = defineSecret("RESEND_API_KEY");
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
+const replicateApiToken = defineSecret("REPLICATE_API_TOKEN");
 
 admin.initializeApp({
     storageBucket: "masterplan-52e06.firebasestorage.app"
@@ -304,23 +306,43 @@ exports.createStripeCheckoutSession = functions
             const uid = decodedToken.uid;
             const userEmail = decodedToken.email;
 
-            const { plan: planType } = req.body;
+            const { plan: planType, interval = 'month' } = req.body; // interval: 'month' | 'year'
 
-            if (!['pro', 'ai'].includes(planType)) {
+            const allowedPlans = ['pro', 'ai', 'ai_plus'];
+            if (!allowedPlans.includes(planType)) {
                 res.status(400).json({ error: 'Invalid plan type' });
+                return;
+            }
+
+            // Price Configuration (in cents)
+            const pricing = {
+                pro: { month: 4900, year: 49000, name: 'MasterPlan PRO' },
+                ai: { month: 9900, year: 99000, name: 'MasterPlan AI' },
+                ai_plus: { month: 34900, year: 349000, name: 'MasterPlan AI+' }
+            };
+
+            const selectedPlan = pricing[planType];
+            const unitAmount = selectedPlan[interval];
+
+            if (!unitAmount) {
+                res.status(400).json({ error: 'Invalid interval' });
                 return;
             }
 
             const priceData = {
                 currency: 'brl',
                 product_data: {
-                    name: planType === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium',
-                    description: planType === 'pro'
-                        ? 'Acesso ilimitado a planos e exportação sem marca d\'agua.'
-                        : 'Tudo do PRO + Geração ilimitada com IA.',
+                    name: `${selectedPlan.name} (${interval === 'year' ? 'Anual' : 'Mensal'})`,
+                    description: interval === 'year'
+                        ? 'Cobrança anual com desconto (equivalente a 2 meses grátis)'
+                        : 'Cobrança mensal recorrente',
+                    metadata: {
+                        planType: planType,
+                        interval: interval
+                    }
                 },
-                unit_amount: planType === 'pro' ? 4900 : 9900,
-                recurring: { interval: 'month' },
+                unit_amount: unitAmount,
+                recurring: { interval: interval === 'year' ? 'year' : 'month' },
             };
 
             const stripe = require("stripe")(stripeSecretKey.value());
@@ -329,7 +351,7 @@ exports.createStripeCheckoutSession = functions
                 mode: "subscription",
                 line_items: [{ price_data: priceData, quantity: 1 }],
                 customer_email: userEmail,
-                metadata: { firebaseUID: uid, targetPlan: planType },
+                metadata: { firebaseUID: uid, targetPlan: planType, interval: interval },
                 success_url: `https://app.masterplanai.com.br/?payment_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `https://app.masterplanai.com.br/?payment_cancelled=true`,
             });
@@ -363,6 +385,7 @@ exports.stripeWebhook = functions
             const session = event.data.object;
             const uid = session.metadata.firebaseUID;
             const targetPlan = session.metadata.targetPlan;
+            const interval = session.metadata.interval || 'month';
             const customerEmail = session.customer_email;
             const amountTotal = session.amount_total;
 
@@ -371,6 +394,7 @@ exports.stripeWebhook = functions
                     // Update Firestore
                     await db.collection("users").doc(uid).set({
                         subscription: targetPlan,
+                        subscriptionInterval: interval,
                         subscriptionStatus: 'active',
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
@@ -385,7 +409,9 @@ exports.stripeWebhook = functions
                     }
 
                     // Send payment confirmation email
-                    const planName = targetPlan === 'pro' ? 'MasterPlan PRO' : 'MasterPlan AI Premium';
+                    const planNames = { 'pro': 'MasterPlan PRO', 'ai': 'MasterPlan AI', 'ai_plus': 'MasterPlan AI+' };
+                    const planName = planNames[targetPlan] || targetPlan;
+
                     const resend = new Resend(resendApiKey.value());
                     await resend.emails.send({
                         from: "MasterPlan <noreply@masterplanai.com.br>",
@@ -394,7 +420,7 @@ exports.stripeWebhook = functions
                         html: getPaymentConfirmationHtml(userName, planName, amountTotal),
                     });
 
-                    console.log(`User ${uid} upgraded to ${targetPlan}, confirmation email sent`);
+                    console.log(`User ${uid} upgraded to ${targetPlan} (${interval}), confirmation email sent`);
                 } catch (error) {
                     console.error("Error processing webhook:", error);
                     return res.status(500).send("Internal Server Error");
@@ -403,4 +429,53 @@ exports.stripeWebhook = functions
         }
 
         res.json({ received: true });
+    });
+
+/**
+ * Generate AI Video using Replicate (Stable Video Diffusion)
+ */
+exports.generateAIVideo = functions
+    .runWith({
+        secrets: [replicateApiToken],
+        timeoutSeconds: 300, // 5 minutes timeout for video generation
+        memory: '512MB'
+    })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+        }
+
+        const { image, prompt } = data; // image should be a public URL or base64
+
+        if (!image) {
+            throw new functions.https.HttpsError("invalid-argument", "Image is required for SVD.");
+        }
+
+        try {
+            const replicate = new Replicate({
+                auth: replicateApiToken.value(),
+            });
+
+            // Using Stable Video Diffusion (SVD)
+            // Model: stability-ai/stable-video-diffusion
+            const output = await replicate.run(
+                "stability-ai/stable-video-diffusion:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+                {
+                    input: {
+                        input_image: image,
+                        video_length: "25_frames_with_svd_xt", // Generates ~4 seconds
+                        sizing_strategy: "maintain_aspect_ratio",
+                        frames_per_second: 6,
+                        motion_bucket_id: 127,
+                        cond_aug: 0.02
+                    }
+                }
+            );
+
+            console.log("Video generated:", output);
+            return { success: true, videoUrl: output };
+        } catch (error) {
+            console.error("Error generating video:", error);
+            throw new functions.https.HttpsError("internal", "Failed to generate video: " + error.message);
+        }
     });

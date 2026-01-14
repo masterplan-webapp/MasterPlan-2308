@@ -93,7 +93,8 @@ export interface User {
     email: string | null;
     displayName: string | null;
     photoURL: string | null;
-    subscription: 'free' | 'pro' | 'ai';
+    subscription?: 'free' | 'pro' | 'ai' | 'ai_plus';
+    subscriptionInterval?: 'month' | 'year';
     subscriptionStatus: 'active' | 'canceled' | 'past_due';
 }
 
@@ -339,6 +340,6 @@ export interface ChartsSectionProps {
 export interface PricingModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onUpgrade: (plan: 'pro' | 'ai') => void;
-    currentPlan: 'free' | 'pro' | 'ai';
+    onUpgrade: (plan: 'pro' | 'ai' | 'ai_plus', interval: 'month' | 'year') => void;
+    currentPlan: 'free' | 'pro' | 'ai' | 'ai_plus';
 }

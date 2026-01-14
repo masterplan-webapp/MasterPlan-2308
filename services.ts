@@ -4,6 +4,8 @@ import { GoogleGenAI, GenerateContentResponse, Type, Modality } from "@google/ge
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeTextData, AdGroup, UTMLink, GeneratedImage, AspectRatio, SummaryData, MonthlySummary } from './types';
+import { getAuth as firebaseGetAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, updateProfile as firebaseUpdateProfile } from "firebase/auth";
+import { PLANS, SubscriptionTier, getPlanCapability, PlanConfig } from './planConfig';
 import { MONTHS_LIST, OPTIONS, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from "./constants";
 
 // --- Gemini API Helper ---
@@ -38,8 +40,17 @@ export const sortMonthKeys = (a: string, b: string): number => {
     return monthIndexA - monthIndexB;
 };
 
+// --- AUTH SERVICES ---
+export const getAuth = () => firebaseGetAuth();
+export const signInWithEmail = signInWithEmailAndPassword;
+export const signUpWithEmail = createUserWithEmailAndPassword;
+export const logout = firebaseSignOut;
+export const updateProfile = firebaseUpdateProfile;
+
 // --- DATABASE (Firestore) ---
-import { db } from './contexts';
+// --- DATABASE (Firestore) ---
+import { db, functions } from './contexts';
+import { httpsCallable } from 'firebase/functions';
 import { collection, doc, setDoc, getDocs, deleteDoc, getDoc, query } from 'firebase/firestore';
 
 export const dbService = {
@@ -91,6 +102,75 @@ export const dbService = {
             return null;
         }
     },
+    // Usage Tracking
+    getUsage: async (userId: string, month: string) => {
+        if (!db) return null;
+        try {
+            const usageRef = doc(db, 'users', userId, 'usage', month);
+            const docSnap = await getDoc(usageRef);
+            if (docSnap.exists()) {
+                return docSnap.data();
+            }
+            return { aiAnalysis: 0, aiVideos: 0, aiImages: 0, createdPlans: 0 };
+        } catch (error) {
+            console.error("Failed to get usage", error);
+            return null;
+        }
+    },
+    incrementUsage: async (userId: string, metric: 'aiAnalysis' | 'aiVideos' | 'aiImages' | 'createdPlans') => {
+        if (!db) return;
+        const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+        try {
+            const usageRef = doc(db, 'users', userId, 'usage', month);
+            // We need to use set with merge or update. Since it might not exist, set with merge is safer for increment if we read first, but atomic increment is better.
+            // However, for simplicity without importing FieldValue, we can read-modify-write or use set with merge if we knew the field exists.
+            // Better to use import { increment } from firebase/firestore
+            // But I need to add that import. For now, I'll do read-modify-write as I don't want to mess up imports too much if I can avoid it. 
+            // Wait, I can add imports in the first chunk.
+            // Let's assume I will add `increment` to imports in chunk 1? 
+            // No, chunk 1 only successfully matched lines 6.
+            // I'll stick to read-modify-write for this step or add increment to imports in a separate Edit if needed. 
+            // Actually, I can add `increment` to the imports line 45.
+            // I will simply use set({ [metric]: count + 1 }, { merge: true })
+            const docSnap = await getDoc(usageRef);
+            let current = 0;
+            if (docSnap.exists()) {
+                current = docSnap.data()[metric] || 0;
+            }
+            await setDoc(usageRef, { [metric]: current + 1 }, { merge: true });
+        } catch (error) {
+            console.error("Failed to increment usage", error);
+        }
+    },
+    checkLimit: async (userId: string, plan: SubscriptionTier, metric: 'aiAnalysis' | 'aiVideos' | 'aiImages' | 'createdPlans', currentUsageValue?: number): Promise<boolean> => {
+        // limit logic
+        // If currentUsageValue is provided, use it, else fetch it.
+        // For video builder check, we need to know the limit from PLANS.
+        const limit = PLANS[plan || 'free'].limits[metric === 'aiAnalysis' ? 'aiAnalysisCurrentPlan' : metric === 'aiVideos' ? 'aiVideos' : metric === 'createdPlans' ? 'aiPlanCreation' : 'aiImages'];
+        // Mapping metric name to PlanConfig limit key is tricky.
+        // PlanConfig has: aiAnalysisCurrentPlan, aiVideos, aiImages, aiPlanCreation.
+        // Metric: aiAnalysis, aiVideos, aiImages, createdPlans.
+        // Let's map them.
+        let limitKey: keyof PlanConfig['limits'] | undefined;
+        if (metric === 'aiAnalysis') limitKey = 'aiAnalysisCurrentPlan';
+        else if (metric === 'aiVideos') limitKey = 'aiVideos';
+        else if (metric === 'aiImages') limitKey = 'aiImages';
+        else if (metric === 'createdPlans') limitKey = 'aiPlanCreation';
+
+        if (!limitKey) return true; // Unknown metric
+
+        const limitVal = PLANS[plan || 'free'].limits[limitKey];
+        if (typeof limitVal === 'boolean') return limitVal;
+
+        let usage = currentUsageValue;
+        if (usage === undefined) {
+            const month = new Date().toISOString().slice(0, 7);
+            const u = await dbService.getUsage(userId, month);
+            usage = u ? u[metric] || 0 : 0;
+        }
+
+        return (usage as number) < (limitVal as number);
+    }
 };
 
 
@@ -886,7 +966,7 @@ export const exportGroupedKeywordsAsCSV = (plan: PlanData, t: (key: string, subs
     document.body.removeChild(link);
 };
 
-const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string): string => {
+const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string, canRemoveWatermark: boolean = false): string => {
     const currentYear = new Date().getFullYear();
     const styles = `
         <style>
@@ -911,6 +991,10 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
     `;
 
     let content = `<h1>${t('export_all_keywords')} - ${plan.campaignName}</h1>`;
+
+    if (!canRemoveWatermark) {
+        content += `<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-45deg);font-size:80px;color:rgba(200,200,200,0.3);z-index:9999;pointer-events:none;white-space:nowrap;">MasterPlan Free</div>`;
+    }
 
     const allGroups = plan.adGroups || [];
     const assignedGroups = allGroups.filter(g => g.id !== 'unassigned');
@@ -957,8 +1041,8 @@ const buildGroupedKeywordsPdfHtml = (plan: PlanData, t: (key: string) => string)
 };
 
 
-export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string) => string) => {
-    const reportHTML = buildGroupedKeywordsPdfHtml(plan, t);
+export const exportGroupedKeywordsToPDF = async (plan: PlanData, t: (key: string) => string, canRemoveWatermark: boolean = false) => {
+    const reportHTML = buildGroupedKeywordsPdfHtml(plan, t, canRemoveWatermark);
 
     const container = document.createElement('div');
     container.style.position = 'absolute';
@@ -1263,4 +1347,35 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
         const errorMessage = error?.message || error?.toString() || 'Image generation failed.';
         throw new Error(errorMessage);
     }
+};
+
+/**
+ * Generates a video using Replicate (Stable Video Diffusion) via Cloud Functions
+ * @param prompt Text prompt (not used by SVD currently but good for future)
+ * @param image Base64 image string (required for SVD)
+ */
+export const generateAIVideo = async (prompt: string, image: string): Promise<{ success: boolean; videoUrl: any }> => {
+    if (!functions) throw new Error("Firebase Functions not initialized");
+
+    try {
+        const generateVideoFn = httpsCallable(functions, 'generateAIVideo');
+        const result = await generateVideoFn({ prompt, image });
+        const data = result.data as any;
+
+        if (data.success) {
+            return data;
+        } else {
+            throw new Error("Failed to generate video response.");
+        }
+    } catch (error: any) {
+        console.error("Error calling generateAIVideo:", error);
+        throw new Error(error.message || "Video generation failed.");
+    }
+};
+
+export const createCheckoutSession = async (planType: string, interval: 'month' | 'year') => {
+    if (!functions) throw new Error("Firebase Functions not initialized");
+    const createSession = httpsCallable(functions, 'createStripeCheckoutSession');
+    const { data } = await createSession({ planType, interval });
+    return data as { url: string };
 };

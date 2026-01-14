@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, ExternalLink, HelpCircle } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download } from 'lucide-react';
 import { useLanguage, useTheme, useAuth } from './contexts';
-import { callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
+import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateAIVideo, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
-import {
-    PlanData, Campaign, CreativeTextData, UTMLink, MonthlySummary, SummaryData, KeywordSuggestion, AdGroup,
-    CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps,
-    DashboardPageProps, MonthlyPlanPageProps, CreativeGroupProps, CopyBuilderPageProps, UTMBuilderPageProps, KeywordBuilderPageProps, CreativeBuilderPageProps,
-    AddMonthModalProps, OnboardingPageProps, PlanSelectorPageProps, AISuggestionsModalProps,
-    ChartCardProps, ChartsSectionProps, DashboardHeaderProps, RenamePlanModalProps, PlanCreationChoiceModalProps, AIPlanCreationModalProps,
-    GeneratedImage,
-    AspectRatio,
-    UserProfileModalProps
-} from './types';
+import { PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
+
+import { PlanData, PlanSelectorPageProps, CreativeBuilderPageProps, OnboardingPageProps, PricingModalProps, ChartCardProps, ChartsSectionProps, CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps, RenamePlanModalProps, AddMonthModalProps, AIPlanCreationModalProps, AISuggestionsModalProps, SidebarProps, HeaderProps, UserProfileModalProps, DashboardHeaderProps, DashboardPageProps, MonthlyPlanPageProps, CopyBuilderPageProps, CreativeGroupProps, UTMBuilderPageProps, KeywordBuilderPageProps, Campaign, CreativeTextData, UTMLink, AdGroup, KeywordSuggestion, GeneratedImage } from './types';
 
 // MasterPlan Logo URLs
 export const LOGO_LIGHT = '/logo-light.png';
@@ -1440,70 +1433,92 @@ export const ResetPasswordPage: React.FC = () => {
     );
 };
 
-export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated }) => {
+interface PlanCardProps {
+    plan: PlanData;
+    onClick: () => void;
+    onDelete: () => void;
+    onRename: () => void;
+    isMenuOpen: boolean;
+    setIsMenuOpen: (isOpen: boolean) => void;
+}
+
+const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, isMenuOpen, setIsMenuOpen }) => {
     const { t } = useLanguage();
+    const menuRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen, setIsMenuOpen]);
+
+    const handleMenuContentClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    }
 
     return (
-        <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 p-4 gap-8">
-            <img
-                src={LOGO_DARK}
-                alt="MasterPlan Logo"
-                className="h-16"
-            />
-            <Card className="max-w-4xl w-full text-center">
-                <h1 className="text-3xl font-bold text-gray-100">{t('welcome_to_masterplan')}</h1>
-                <p className="mt-2 mb-8 text-lg text-gray-400">{t('create_first_plan')}</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button onClick={() => onPlanCreated('ai')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sparkles className="text-blue-500" /> {t('create_with_ai')}</h2>
-                        <p className="mt-2 text-gray-400">{t('ai_description')}</p>
-                    </button>
-                    <button onClick={() => onPlanCreated('template')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sheet className="text-green-500" /> {t('create_from_template')}</h2>
-                        <p className="mt-2 text-gray-400">{t('template_description')}</p>
-                    </button>
-                    <button onClick={() => onPlanCreated('blank')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all">
-                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><FilePlus2 className="text-gray-500" /> {t('start_blank')}</h2>
-                        <p className="mt-2 text-gray-400">{t('blank_description')}</p>
-                    </button>
+        <div
+            onClick={onClick}
+            className="group relative bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer flex flex-col h-[200px]"
+        >
+            <div className="flex justify-between items-start mb-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                    {plan.campaignName.charAt(0).toUpperCase()}
                 </div>
-            </Card>
-        </div>
-    );
-};
+                <div className="relative" ref={menuRef}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-md transition-colors opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                        data-state={isMenuOpen ? 'open' : 'closed'}
+                    >
+                        <MoreVertical size={18} />
+                    </button>
 
-export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = ({ isOpen, onClose, onPlanCreated }) => {
-    const { t } = useLanguage();
-    if (!isOpen) return null;
-
-    const handleChoice = (type: 'ai' | 'blank' | 'template') => {
-        onPlanCreated(type);
-        onClose();
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl animate-modalFadeIn">
-                <div className="p-5 border-b border-gray-700 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-gray-200">{t('create_new_plan')}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                    {isMenuOpen && (
+                        <div
+                            className="absolute right-0 mt-1 w-48 bg-gray-900 rounded-md shadow-xl border border-gray-700 z-20 py-1"
+                            onClick={handleMenuContentClick}
+                        >
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRename(); }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white flex items-center gap-2 transition-colors"
+                            >
+                                <Edit size={16} className="text-blue-400" />
+                                {t('rename')}
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+                            >
+                                <Trash2 size={16} />
+                                {t('delete')}
+                            </button>
+                        </div>
+                    )}
                 </div>
-                <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <button onClick={() => handleChoice('ai')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sparkles className="text-blue-500" /> {t('create_with_ai')}</h2>
-                            <p className="mt-2 text-gray-400">{t('ai_description')}</p>
-                        </button>
-                        <button onClick={() => handleChoice('template')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sheet className="text-green-500" /> {t('create_from_template')}</h2>
-                            <p className="mt-2 text-gray-400">{t('template_description')}</p>
-                        </button>
-                        <button onClick={() => handleChoice('blank')} className="text-left p-6 border rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all border-gray-700">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><FilePlus2 className="text-gray-500" /> {t('start_blank')}</h2>
-                            <p className="mt-2 text-gray-400">{t('blank_description')}</p>
-                        </button>
-                    </div>
-                </div>
+            </div>
+
+            <h3 className="text-lg font-semibold text-gray-100 mb-1 line-clamp-1 group-hover:text-blue-400 transition-colors">{plan.campaignName}</h3>
+            <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">{plan.objective || t('no_objective')}</p>
+
+            <div className="mt-auto pt-4 border-t border-gray-700/50 flex items-center justify-between text-xs text-gray-400">
+                <span className="flex items-center gap-1.5 has-tooltip" title={t('last_modified')}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+                    {new Date().toLocaleDateString()}
+                </span>
+                <span className="flex items-center gap-1 bg-gray-700/50 px-2 py-0.5 rounded text-gray-300">
+                    R$ {formatNumber(plan.totalInvestment)}
+                </span>
             </div>
         </div>
     );
@@ -1511,139 +1526,224 @@ export const PlanCreationChoiceModal: React.FC<PlanCreationChoiceModalProps> = (
 
 export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan, onRenamePlan, onRenameRequest }) => {
     const { t } = useLanguage();
-    const { signOut } = useAuth();
-    const [isChoiceModalOpen, setChoiceModalOpen] = useState(false);
-    const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; planId: string | null; planName: string }>({ isOpen: false, planId: null, planName: '' });
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [menuOpenId, setMenuOpenId] = React.useState<string | null>(null);
+    const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{ isOpen: boolean; planId: string | null; planName: string }>({ isOpen: false, planId: null, planName: '' });
+    const [renameModal, setRenameModal] = React.useState<{ isOpen: boolean; plan: PlanData | null }>({ isOpen: false, plan: null });
+    const [newName, setNewName] = React.useState('');
 
-    const handleDuplicate = (planToDuplicate: PlanData) => {
-        const newPlan: PlanData = {
-            ...JSON.parse(JSON.stringify(planToDuplicate)), // Deep copy
-            id: `plan_${new Date().getTime()} `,
-            campaignName: `${planToDuplicate.campaignName} ${t('Copy')} `,
-        };
-        onPlanCreated(newPlan);
-    }
+    // Pricing Modal State
+    const [isPricingModalOpen, setIsPricingModalOpen] = React.useState(false);
 
-    const openDeleteConfirm = (planId: string, planName: string) => {
-        setDeleteConfirmModal({ isOpen: true, planId, planName });
+    const handleCreateClick = (type: 'ai' | 'blank' | 'template') => {
+        const isFree = !user.subscription || user.subscription === 'free';
+        // Free plan limit: 1 plan
+        if (isFree && plans.length >= 1) {
+            alert(t('Limite de 1 plano atingido no plano Gratuito. Faça upgrade para criar mais.'));
+            setIsPricingModalOpen(true);
+            return;
+        }
+
+        // AI creation checks could be added here if needed, but limites are also checked in AI modals
+        onPlanCreated(type);
+    };
+
+    const handleRenameClick = (plan: PlanData) => {
+        setRenameModal({ isOpen: true, plan: plan });
+        setNewName(plan.campaignName);
+        setMenuOpenId(null);
+    };
+
+    const handleRenameSubmit = () => {
+        if (newName.trim()) {
+            onRenamePlan(renameModal.plan!.id, newName.trim());
+            setRenameModal({ ...renameModal, isOpen: false });
+        }
+    };
+
+    const handleDeleteClick = (plan: PlanData) => {
+        setDeleteConfirmModal({ isOpen: true, planId: plan.id, planName: plan.campaignName });
+        setMenuOpenId(null);
     };
 
     const confirmDelete = () => {
-        if (deleteConfirmModal.planId) {
-            onDeletePlan(deleteConfirmModal.planId);
-        }
-        setDeleteConfirmModal({ isOpen: false, planId: null, planName: '' });
+        onDeletePlan(deleteConfirmModal.planId!);
+        setDeleteConfirmModal({ ...deleteConfirmModal, isOpen: false });
     };
 
     const cancelDelete = () => {
-        setDeleteConfirmModal({ isOpen: false, planId: null, planName: '' });
+        setDeleteConfirmModal({ ...deleteConfirmModal, isOpen: false });
     };
 
-    const PlanCard: React.FC<{ plan: PlanData }> = ({ plan }) => {
-        const [isMenuOpen, setIsMenuOpen] = useState(false);
-        const menuRef = useRef<HTMLDivElement>(null);
+    const filteredPlans = plans.filter(plan =>
+        plan.campaignName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        plan.objective.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-        useEffect(() => {
-            const handleClickOutside = (event: MouseEvent) => {
-                if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                    setIsMenuOpen(false);
-                }
-            };
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => document.removeEventListener("mousedown", handleClickOutside);
-        }, []);
-
-        return (
-            <div className="bg-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col">
-                <div className="p-5 flex-grow">
-                    <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-4">
-                            <img src={plan.logoUrl || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=P'} alt="Logo" className="w-12 h-12 rounded-md object-cover bg-gray-200" />
-                            <div>
-                                <h3 className="font-bold text-lg text-gray-100">{plan.campaignName}</h3>
-                                <p className="text-sm text-gray-400">{plan.objective}</p>
-                            </div>
-                        </div>
-                        <div className="relative" ref={menuRef}>
-                            <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-full">
-                                <MoreVertical size={20} />
-                            </button>
-                            {isMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-10">
-                                    <button onClick={() => { onRenameRequest(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('Rename')}</button>
-                                    <button onClick={() => { handleDuplicate(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('duplicate')}</button>
-                                    <div className="border-t border-gray-700 my-1"></div>
-                                    <button onClick={() => { setIsMenuOpen(false); openDeleteConfirm(plan.id, plan.campaignName); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20">{t('delete')}</button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <div className="px-5 py-3 bg-gray-800/50">
-                    <button onClick={() => onSelectPlan(plan)} className="w-full text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">{t('Abrir Plano')}</button>
-                </div>
-            </div>
-        );
-    }
+    // Upgrade Handler
+    const handleUpgrade = async (plan: 'pro' | 'ai' | 'ai_plus', interval: 'month' | 'year') => {
+        try {
+            const result = await createCheckoutSession(plan, interval);
+            if (result.url) {
+                window.location.href = result.url;
+            } else {
+                alert('Erro ao iniciar checkout. Tente novamente.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao iniciar checkout.');
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-gray-900">
-            <header className="bg-gray-800 shadow-sm sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-8" />
-                        <div className="flex items-center gap-4">
-                            <button onClick={onProfileClick} className="flex items-center gap-2">
-                                <img src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=0D8ABC&color=fff`} alt="User avatar" className="w-8 h-8 rounded-full" />
-                                <span className="hidden sm:inline font-medium text-gray-200">{user.displayName}</span>
-                            </button >
-                            <button onClick={signOut} className="p-2 text-gray-400 hover:bg-gray-700 rounded-full" title={t('sign_out')}>
-                                <LogOut size={20} />
-                            </button>
-                        </div >
-                    </div >
-                </div >
-            </header >
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-100">{t('my_plans')}</h1>
-                    <button onClick={() => setChoiceModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition-colors">
-                        <PlusCircle size={20} /> {t('create_new_plan')}
-                    </button>
+        <div className="h-screen w-full bg-[#111827] flex flex-col overflow-hidden relative">
+            {/* Header */}
+            <div className="flex-none p-8 border-b border-gray-800 flex justify-between items-center bg-[#111827] z-10 relative">
+                <div className="flex items-center gap-4">
+                    <img src={LOGO_DARK} alt="MasterPlan" className="h-10" />
+                    <div className="h-6 w-px bg-gray-700"></div>
+                    <span className="text-gray-400 text-sm font-medium tracking-wide">DASHBOARD</span>
                 </div>
 
-                {plans.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {plans.map(plan => <PlanCard key={plan.id} plan={plan} />)}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-gray-800/50 rounded-full border border-gray-700/50 hover:bg-gray-800 transition-colors cursor-pointer group" onClick={() => setIsPricingModalOpen(true)}>
+                        <div className={`w-2 h-2 rounded-full ${user.subscription === 'ai' || user.subscription === 'ai_plus' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]' : user.subscription === 'pro' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-green-500'}`}></div>
+                        <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                            {user.subscription === 'ai_plus' ? 'Plano AI+' : user.subscription === 'ai' ? 'Plano AI' : user.subscription === 'pro' ? 'Plano PRO' : 'Plano Gratuito'}
+                        </span>
+                        <span className="text-xs text-blue-400 font-semibold group-hover:text-blue-300">Upgrade</span>
                     </div>
-                ) : (
-                    <div className="text-center py-20">
-                        <h2 className="text-2xl font-semibold text-gray-300">{t('Nenhum plano encontrado')}</h2>
-                        <p className="mt-2 text-gray-400">{t('Crie seu primeiro plano de mídia para começar.')}</p>
-                    </div>
-                )}
-            </main>
-            <PlanCreationChoiceModal isOpen={isChoiceModalOpen} onClose={() => setChoiceModalOpen(false)} onPlanCreated={onPlanCreated} />
 
-            {/* Custom Delete Confirmation Modal */}
-            {deleteConfirmModal.isOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
-                        <div className="p-6">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="p-3 bg-red-900/30 rounded-full">
-                                    <Trash2 className="w-6 h-6 text-red-400" />
-                                </div>
-                                <h3 className="text-xl font-semibold text-gray-100">{t('Apagar Plano')}</h3>
+                    <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-800">
+                        <Bell size={20} />
+                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#111827]"></span>
+                    </button>
+
+                    <div className="flex items-center gap-3 pl-4 border-l border-gray-700 cursor-pointer" onClick={onProfileClick}>
+                        <div className="text-right hidden sm:block">
+                            <p className="text-sm font-semibold text-white">{user.displayName || 'Usuário'}</p>
+                            <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-[2px]">
+                            <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center overflow-hidden">
+                                {user.photoURL ? (
+                                    <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                                ) : (
+                                    <UserIcon size={16} className="text-gray-300" />
+                                )}
                             </div>
-                            <p className="text-gray-300 mb-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-auto p-8 relative">
+                {/* Background Decorations */}
+                <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
+
+                <div className="max-w-7xl mx-auto relative z-0">
+                    {/* Welcome Section */}
+                    <div className="mb-10 flex flex-col md:flex-row justify-between items-end gap-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">{t('welcome_to_masterplan')}</h1>
+                            <p className="text-gray-400 max-w-xl">Gerencie suas campanhas, crie novos planos com IA e acompanhe seus resultados em um só lugar.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="relative group">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar planos..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="bg-gray-800/50 border border-gray-700 text-gray-200 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all w-64"
+                                />
+                            </div>
+                            <button
+                                onClick={() => handleCreateClick('blank')}
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+                            >
+                                <Plus size={18} />
+                                {t('create_new_plan')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Plans Grid */}
+                    {filteredPlans.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredPlans.map((plan) => (
+                                <PlanCard
+                                    key={plan.id}
+                                    plan={plan}
+                                    onClick={() => onSelectPlan(plan)}
+                                    onDelete={() => handleDeleteClick(plan)}
+                                    onRename={() => handleRenameClick(plan)}
+                                    isMenuOpen={menuOpenId === plan.id}
+                                    setIsMenuOpen={(isOpen) => setMenuOpenId(isOpen ? plan.id : null)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-gray-800 rounded-xl bg-gray-900/50">
+                            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                <Layout size={24} className="text-gray-600" />
+                            </div>
+                            <h3 className="text-xl font-medium text-gray-300 mb-2">{t('Nenhum plano encontrado')}</h3>
+                            <button onClick={() => handleCreateClick('blank')} className="text-blue-500 hover:text-blue-400 font-medium">{t('Crie seu primeiro plano de mídia para começar.')}</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Rename Modal */}
+            {renameModal.isOpen && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700 shadow-xl">
+                        <h3 className="text-xl font-bold text-white mb-4">{t('Rename Plan')}</h3>
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            className="w-full bg-gray-900 border border-gray-700 rounded-md p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none mb-6"
+                            autoFocus
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setRenameModal({ ...renameModal, isOpen: false })}
+                                className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={handleRenameSubmit}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md transition-colors font-medium"
+                            >
+                                {t('save')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmModal.isOpen && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-md overflow-hidden border border-gray-700">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-900/30 flex items-center justify-center mb-4 text-red-500 mx-auto">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-center text-white mb-2">{t('Apagar Plano')}</h3>
+                            <p className="text-center text-gray-300 mb-6">
                                 {t('Tem certeza que deseja apagar o plano')}
                                 <span className="font-semibold text-white"> "{deleteConfirmModal.planName}"</span>?
                             </p>
-                            <p className="text-sm text-gray-400">{t('Esta ação não pode ser desfeita.')}</p>
+                            <p className="text-center text-xs text-gray-500 mb-2">{t('Esta ação não pode ser desfeita.')}</p>
                         </div>
-                        <div className="px-6 py-4 bg-gray-700/30 flex justify-end gap-3 rounded-b-lg">
-                            <button onClick={cancelDelete} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">
+                        <div className="px-6 py-4 bg-gray-750 flex justify-end gap-3 rounded-b-lg border-t border-gray-700">
+                            <button onClick={cancelDelete} className="px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition-colors">
                                 {t('cancel')}
                             </button>
                             <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2">
@@ -1654,9 +1754,49 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                     </div>
                 </div>
             )}
+
+            <PricingModal
+                isOpen={isPricingModalOpen}
+                onClose={() => setIsPricingModalOpen(false)}
+                onUpgrade={handleUpgrade}
+                currentPlan={user.subscription || 'free'}
+            />
         </div >
     );
 };
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onPlanCreated }) => {
+    const { t } = useLanguage();
+
+    const handleCreateClick = (type: 'ai' | 'blank' | 'template') => {
+        onPlanCreated(type);
+    };
+
+    return (
+        <div className="h-screen w-full flex flex-col items-center justify-center bg-gray-900 p-4 gap-8">
+            <img src={LOGO_DARK} alt="MasterPlan Logo" className="h-16" />
+            <Card className="max-w-4xl w-full text-center">
+                <h1 className="text-3xl font-bold text-gray-100">{t('welcome_to_masterplan')}</h1>
+                <p className="mt-2 mb-8 text-lg text-gray-400">{t('create_first_plan')}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button onClick={() => handleCreateClick('ai')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sparkles className="text-blue-500" /> {t('create_with_ai')}</h2>
+                        <p className="mt-2 text-gray-400">{t('ai_description')}</p>
+                    </button>
+                    <button onClick={() => handleCreateClick('template')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><Sheet className="text-green-500" /> {t('create_from_template')}</h2>
+                        <p className="mt-2 text-gray-400">{t('template_description')}</p>
+                    </button>
+                    <button onClick={() => handleCreateClick('blank')} className="text-left p-6 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-100"><FilePlus2 className="text-gray-500" /> {t('start_blank')}</h2>
+                        <p className="mt-2 text-gray-400">{t('blank_description')}</p>
+                    </button>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+
 
 const MetricCard: React.FC<{ title: string; value: string | number; icon: React.ElementType, isCurrency?: boolean, isPercentage?: boolean, isReadOnly?: boolean }> = ({ title, value, icon: Icon, isReadOnly = false }) => {
     return (
@@ -1671,6 +1811,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
         </Card>
     );
 };
+
 
 const ChartCard: React.FC<ChartCardProps> = ({ title, data, dataKey, nameKey, className, customLegend }) => {
     const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
@@ -2330,7 +2471,7 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
                         onBlur={() => onUpdate(localGroup)}
                         rows={3}
                         placeholder={t('Descreva o produto, público, oferta e palavras-chave para guiar a IA...')}
-                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-ring-blue-500"
                     />
                     <button onClick={() => handleGenerateSuggestions()} disabled={isGenerating} className="mt-2 flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 disabled:opacity-50">
                         {isGenerating && !suggestionType ? <LoaderIcon size={16} className="animate-spin" /> : <Sparkles size={16} />}
@@ -2474,6 +2615,18 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
                     }
                 `;
 
+                // Limit Check: AI Text Generation
+                const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+                if (!canGenText) {
+                    setAlertModalConfig({
+                        title: t('Acesso Negado'),
+                        message: t('Seu plano não permite geração de Copy com IA.'),
+                        type: 'error'
+                    });
+                    setIsAlertModalOpen(true);
+                    return;
+                }
+
                 const result = await callGeminiAPI(prompt, true);
 
                 const newGroup: CreativeTextData = {
@@ -2523,6 +2676,13 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
     const creativeGroups = (planData.creatives?.[activeChannel] || []).filter(Boolean);
 
     const handleAddGroup = () => {
+        // Limit Check: Copy Versions
+        const maxCopies = getPlanCapability(user?.subscription, 'maxCopyVersions') as number;
+        if (creativeGroups.length >= maxCopies) {
+            alert(t('Limite de versões de Copy atingido para seu plano. Faça upgrade.'));
+            return;
+        }
+
         const newGroup: CreativeTextData = {
             id: new Date().getTime(),
             name: `${t('Novo Grupo')} ${creativeGroups.length + 1}`,
@@ -2654,6 +2814,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 
 export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [utm, setUtm] = useState<Omit<UTMLink, 'id' | 'createdAt' | 'fullUrl'>>({
         url: '',
         source: '',
@@ -2676,25 +2837,34 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
     };
 
     const generateUrl = () => {
-        if (!utm.url || !utm.source || !utm.medium || !utm.campaign) {
+        if (utm.url && utm.source && utm.medium && utm.campaign) {
+            // Check Limit
+            const maxLinks = getPlanCapability(user?.subscription, 'maxUTMLinks') as number;
+            const currentLinks = planData.utmLinks?.length || 0;
+            if (currentLinks >= maxLinks) {
+                alert(t('Limite de links UTM atingido para seu plano. Faça upgrade para criar mais.'));
+                return;
+            }
+
+            const params = new URLSearchParams();
+            params.append('utm_source', utm.source);
+            params.append('utm_medium', utm.medium);
+            params.append('utm_campaign', utm.campaign);
+            if (utm.term) params.append('utm_term', utm.term);
+            if (utm.content) params.append('utm_content', utm.content);
+
+            let baseUrl = utm.url;
+            if (!baseUrl.startsWith('http')) {
+                baseUrl = `https://${baseUrl}`;
+            }
+
+            const finalUrl = `${baseUrl}?${params.toString()}`;
+            setFullUrl(finalUrl);
+            setError('');
+        } else {
             setError(t('Por favor, preencha todos os campos obrigatórios (*) e gere a URL.'));
             return;
         }
-        const params = new URLSearchParams();
-        params.append('utm_source', utm.source);
-        params.append('utm_medium', utm.medium);
-        params.append('utm_campaign', utm.campaign);
-        if (utm.term) params.append('utm_term', utm.term);
-        if (utm.content) params.append('utm_content', utm.content);
-
-        let baseUrl = utm.url;
-        if (!baseUrl.startsWith('http')) {
-            baseUrl = `https://${baseUrl}`;
-        }
-
-        const finalUrl = `${baseUrl}?${params.toString()}`;
-        setFullUrl(finalUrl);
-        setError('');
     };
 
     const saveLink = () => {
@@ -2886,7 +3056,10 @@ const ExportDropdown: React.FC<{
                             <Sheet size={16} /> {t('export_as_csv')}
                         </button>
                         <button
-                            onClick={() => { onExport('pdf'); setIsOpen(false); }}
+                            onClick={() => {
+                                onExport('pdf');
+                                setIsOpen(false);
+                            }}
                             className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
                         >
                             <FileText size={16} /> {t('export_to_pdf')}
@@ -2966,6 +3139,7 @@ const AdGroupComponent: React.FC<{
 
 export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t, language } = useLanguage();
+    const { user } = useAuth();
     const [mode, setMode] = useState<'seed' | 'prompt'>('seed');
     const [seedKeywords, setSeedKeywords] = useState('');
     const [aiPrompt, setAIPrompt] = useState(planData.aiPrompt || '');
@@ -2985,6 +3159,20 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
 
 
     const handleGenerate = async () => {
+        // Limit Check: AI Text Generation
+        const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+        if (!canGenText) {
+            alert(t('Seu plano não permite geração de Keywords com IA.'));
+            return;
+        }
+
+        // Limit Check: Total Keywords
+        const maxKeywords = getPlanCapability(user?.subscription, 'maxKeywords') as number;
+        if (allKeywords.length >= maxKeywords) {
+            alert(t('Limite de keywords atingido para seu plano. Faça upgrade.'));
+            return;
+        }
+
         const input = mode === 'seed' ? seedKeywords : aiPrompt;
         if (!input) return;
 
@@ -3063,7 +3251,8 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
         if (format === 'csv') {
             exportGroupedKeywordsAsCSV(planData, t);
         } else if (format === 'pdf') {
-            exportGroupedKeywordsToPDF(planData, t);
+            const canRemoveWatermark = getPlanCapability(user?.subscription, 'canRemoveWatermark') as boolean;
+            exportGroupedKeywordsToPDF(planData, t, canRemoveWatermark);
         }
     };
 
@@ -3248,6 +3437,7 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editingImages, setEditingImages] = useState<string[]>([]);
+    const { user } = useAuth();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -3279,6 +3469,16 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
             }
         }
 
+        if (user) {
+            const userSubscription = user.subscription || 'free';
+            const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'aiImages');
+            if (!hasLimit) {
+                setError("Limite de imagens atingido para seu plano. Faça upgrade para continuar.");
+                setIsLoading(false);
+                return;
+            }
+        }
+
         try {
             const results = await generateAIImages(prompt, imagesForApi);
             setSourceImages(results);
@@ -3286,6 +3486,10 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
                 setSelectedSource(results[0]);
                 if (imagesForApi) { // if it was an editing operation, replace the inputs with the single output
                     setEditingImages([`data:image/png;base64,${results[0].base64}`]);
+                }
+
+                if (user) {
+                    await dbService.incrementUsage(user.uid, 'aiImages');
                 }
             }
         } catch (e: any) {
@@ -3451,106 +3655,288 @@ export const CreativeBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planDa
     );
 };
 // --- Pricing Modal ---
+
 export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onUpgrade, currentPlan }) => {
+    const [billingInterval, setBillingInterval] = React.useState<'month' | 'year'>('month');
+
     if (!isOpen) return null;
 
-    const plans = [
-        {
-            id: 'free',
-            name: 'Free',
-            price: 'R$ 0',
-            period: '/mês',
-            features: ['1 Plano de Mídia', 'Exportação com Marca d\'água', 'Acesso limitado à IA'],
-            buttonText: 'Atual',
-            current: currentPlan === 'free',
-            disabled: true
-        },
-        {
-            id: 'pro',
-            name: 'Pro',
-            price: 'R$ 49',
-            period: '/mês',
-            features: ['Planos Ilimitados', 'Exportação sem Marca d\'água', 'Badge PRO', 'Suporte Prioritário'],
-            buttonText: currentPlan === 'pro' ? 'Atual' : 'Fazer Upgrade',
-            current: currentPlan === 'pro',
-            recommended: true
-        },
-        {
-            id: 'ai',
-            name: 'AI Premium',
-            price: 'R$ 99',
-            period: '/mês',
-            features: ['Tudo do Pro', 'Geração de Planos com IA Ilimitada', 'Sugestões Avançadas de Copy/Imagens', 'Análise de Concorrentes'],
-            buttonText: currentPlan === 'ai' ? 'Atual' : 'Fazer Upgrade',
-            current: currentPlan === 'ai'
-        }
-    ];
+    const tiers: SubscriptionTier[] = ['pro', 'ai', 'ai_plus'];
 
     return (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-700">
+            <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto border border-gray-700 flex flex-col">
                 <div className="p-6 border-b border-gray-700 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
                     <div>
                         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                             <Sparkles className="text-yellow-400" />
                             Escolha seu Plano
                         </h2>
-                        <p className="text-gray-400 text-sm mt-1">Desbloqueie todo o potencial do MasterPlan</p>
+                        <p className="text-gray-400 text-sm mt-1">Potencialize seus resultados com IA.</p>
                     </div>
+
+                    {/* Billing Toggle */}
+                    <div className="flex items-center bg-gray-800 rounded-lg p-1 border border-gray-700">
+                        <button
+                            onClick={() => setBillingInterval('month')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${billingInterval === 'month' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Mensal
+                        </button>
+                        <button
+                            onClick={() => setBillingInterval('year')}
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${billingInterval === 'year' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Anual
+                            <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">-17%</span>
+                        </button>
+                    </div>
+
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
                         <X size={24} />
                     </button>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {plans.map((plan) => (
-                        <div
-                            key={plan.id}
-                            className={`relative rounded-xl p-6 flex flex-col border transition-all duration-300 ${plan.recommended ? 'bg-gray-800/80 border-blue-500 shadow-lg shadow-blue-500/10 transform scale-105 z-10' : 'bg-gray-800/40 border-gray-700 hover:border-gray-600'}`}
-                        >
-                            {plan.recommended && (
-                                <div className="absolute -top-3 inset-x-0 flex justify-center">
-                                    <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Recomendado</span>
+                    {tiers.map((tierId) => {
+                        const plan = PLANS[tierId];
+                        const isCurrent = currentPlan === tierId;
+                        const price = billingInterval === 'month' ? plan.price.monthly : Math.round(plan.price.annual / 12);
+
+                        return (
+                            <div
+                                key={plan.id}
+                                className={`relative rounded-xl p-6 flex flex-col border transition-all duration-300 ${tierId === 'ai' ? 'bg-gray-800/80 border-purple-500 shadow-lg shadow-purple-500/10 transform md:scale-105 z-10' : 'bg-gray-800/40 border-gray-700 hover:border-gray-600'}`}
+                            >
+                                {tierId === 'ai' && (
+                                    <div className="absolute -top-3 inset-x-0 flex justify-center">
+                                        <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-lg">Recomendado</span>
+                                    </div>
+                                )}
+                                <div className="mb-4">
+                                    <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
+                                    <p className="text-sm text-gray-400 mb-4 min-h-[40px]">{plan.description}</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-gray-400 text-xs">R$</span>
+                                        <span className="text-4xl font-extrabold text-white">{price}</span>
+                                        <span className="text-gray-400 text-sm">/mês</span>
+                                    </div>
+                                    {billingInterval === 'year' && (
+                                        <p className="text-xs text-green-400 mt-1">Faturado R$ {plan.price.annual}/ano</p>
+                                    )}
                                 </div>
-                            )}
-                            <div className="mb-4">
-                                <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-extrabold text-white">{plan.price}</span>
-                                    {plan.period && <span className="text-gray-400 text-sm">{plan.period}</span>}
+
+                                <div className="border-t border-gray-700 my-4 pt-4">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">O que está incluído:</p>
+                                    <ul className="space-y-3 mb-6">
+                                        {plan.features.map((feature, idx) => (
+                                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
+                                                <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isCurrent ? 'text-gray-500' : 'text-green-400'}`} />
+                                                <span>{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div className="mt-auto">
+                                    <button
+                                        onClick={() => !isCurrent && onUpgrade(plan.id, billingInterval)}
+                                        disabled={isCurrent}
+                                        className={`w-full py-3 rounded-lg font-bold transition-all duration-200 ${isCurrent
+                                            ? 'bg-gray-700 text-gray-400 cursor-default border border-gray-600'
+                                            : tierId === 'ai' || tierId === 'ai_plus'
+                                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg'
+                                                : 'bg-white text-gray-900 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        {isCurrent ? 'Plano Atual' : 'Assinar Agora'}
+                                    </button>
                                 </div>
                             </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
 
-                            <ul className="flex-1 space-y-3 mb-6">
-                                {plan.features.map((feature, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-300">
-                                        <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${plan.current ? 'text-gray-500' : 'text-green-400'}`} />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
 
+// --- Video Builder Page ---
+export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData }) => {
+    const { t } = useLanguage();
+    const { user } = useAuth();
+    const [sourceImage, setSourceImage] = useState<string | null>(null);
+    const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    setSourceImage(reader.result);
+                    setGeneratedVideoUrl(null); // Reset previous video
+                    setError(null);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleGenerateVideo = async () => {
+        if (!sourceImage) {
+            setError("Por favor, selecione uma imagem primeiro.");
+            return;
+        }
+
+        if (user) {
+            const userSubscription = user.subscription || 'free';
+            const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'aiVideos');
+            if (!hasLimit) {
+                setError("Limite de vídeos atingido para seu plano. Faça upgrade para continuar.");
+                return;
+            }
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // SVD Replicate model uses 'input_image' and ignores prompt mostly, but we pass blank prompt
+            const result = await generateAIVideo("animation", sourceImage);
+
+            // Replicate might return the output URL directly or a prediction object
+            // Our service returns { success: true, videoUrl: output }
+            // The output from SVD on Replicate is usually an array of URLs or a single URL
+            let videoUrl = '';
+            if (Array.isArray(result.videoUrl)) {
+                videoUrl = result.videoUrl[0];
+            } else {
+                videoUrl = result.videoUrl;
+            }
+
+            setGeneratedVideoUrl(videoUrl);
+
+            if (user) {
+                await dbService.incrementUsage(user.uid, 'aiVideos');
+            }
+        } catch (e: any) {
+            console.error("Video Generation Error:", e);
+            setError(e.message || "Erro ao gerar vídeo. Verifique se configurou a API Key.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+                    <Video className="text-blue-400" />
+                    Video Builder (Beta)
+                </h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Input Section */}
+                <Card className="h-full">
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">1. Imagem de Referência</h3>
+                    <p className="text-gray-400 text-sm mb-4">Faça upload de uma imagem para animar com Inteligência Artificial.</p>
+
+                    <div
+                        className={`aspect - video border - 2 border - dashed rounded - lg flex flex - col items - center justify - center cursor - pointer transition - colors ${sourceImage ? 'border-blue-500 bg-gray-800' : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700/30'} `}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {sourceImage ? (
+                            <img src={sourceImage} alt="Source" className="max-h-full max-w-full object-contain rounded-md" />
+                        ) : (
+                            <div className="text-center p-6">
+                                <Upload size={48} className="mx-auto text-gray-500 mb-2" />
+                                <p className="text-gray-300 font-medium">Clique para fazer upload</p>
+                                <p className="text-gray-500 text-xs mt-1">PNG, JPG (Max 5MB)</p>
+                            </div>
+                        )}
+                    </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+
+                    {sourceImage && (
+                        <div className="mt-4 flex justify-end">
                             <button
-                                onClick={() => !plan.current && onUpgrade(plan.id as 'pro' | 'ai')}
-                                disabled={plan.current || plan.disabled}
-                                className={`w-full py-2.5 rounded-lg font-semibold transition-all duration-200 ${plan.current
-                                    ? 'bg-gray-700 text-gray-400 cursor-default'
-                                    : plan.recommended
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-blue-600/20'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-white'
-                                    }`}
+                                onClick={() => { setSourceImage(null); setGeneratedVideoUrl(null); }}
+                                className="text-sm text-red-400 hover:text-red-300"
                             >
-                                {plan.buttonText}
+                                Remover Imagem
                             </button>
                         </div>
-                    ))}
-                </div>
+                    )}
 
-                <div className="p-6 bg-gray-900 border-t border-gray-800 text-center">
-                    <p className="text-xs text-gray-500">
-                        Pagamento seguro via Stripe. Cancele a qualquer momento.
-                    </p>
-                </div>
+                    <div className="mt-6">
+                        <button
+                            onClick={handleGenerateVideo}
+                            disabled={isLoading || !sourceImage}
+                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? (
+                                <><LoaderIcon className="animate-spin" /> Gerando Animação...</>
+                            ) : (
+                                <><Video size={20} /> Gerar Vídeo AI</>
+                            )}
+                        </button>
+                        {error && (
+                            <div className="mt-3 p-3 bg-red-900/30 border border-red-800 rounded-md text-red-200 text-sm flex items-center gap-2">
+                                <AlertCircle size={16} />
+                                {error}
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* Output Section */}
+                <Card className="h-full flex flex-col">
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">2. Resultado</h3>
+                    <div className="flex-grow flex items-center justify-center bg-gray-900/50 rounded-lg min-h-[300px] border border-gray-700">
+                        {isLoading ? (
+                            <div className="text-center">
+                                <div className="relative w-20 h-20 mx-auto mb-4">
+                                    <div className="absolute inset-0 border-4 border-blue-500/30 rounded-full"></div>
+                                    <div className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+                                </div>
+                                <p className="text-gray-300 font-medium">Criando magia...</p>
+                                <p className="text-gray-500 text-sm mt-1">Isso pode levar de 1 a 3 minutos.</p>
+                            </div>
+                        ) : generatedVideoUrl ? (
+                            <div className="w-full h-full flex flex-col">
+                                <video
+                                    src={generatedVideoUrl}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    className="w-full h-auto max-h-[400px] rounded-md shadow-lg"
+                                />
+                                <div className="mt-4 flex justify-center">
+                                    <a
+                                        href={generatedVideoUrl}
+                                        download="masterplan-video.mp4"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md flex items-center gap-2 transition-colors"
+                                    >
+                                        <Download size={16} /> Salvar Vídeo
+                                    </a>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center text-gray-500">
+                                <Video size={48} className="mx-auto mb-2 opacity-20" />
+                                <p>O vídeo gerado aparecerá aqui</p>
+                            </div>
+                        )}
+                    </div>
+                </Card>
             </div>
         </div>
     );

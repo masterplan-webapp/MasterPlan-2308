@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 users.json
+.vercel
+.env*.local
