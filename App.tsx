@@ -10,7 +10,7 @@ import {
     PlanData, Campaign, User, UserProfileModalProps
 } from './types';
 import {
-    useLanguage, useTheme, useAuth
+    useLanguage, useTheme, useAuth, useGlobalAlert
 } from './contexts';
 import {
     LoginPage, PlanSelectorPage as PlanSelectorPageComponent, OnboardingPage, DashboardPage, MonthlyPlanPage, UTMBuilderPage, KeywordBuilderPage, CreativeBuilderPage, VideoBuilderPage,
@@ -22,7 +22,8 @@ import {
     ShareLinkModal, ShareablePlanViewer, PricingModal,
     ResetPasswordPage,
     LOGO_DARK,
-    ICON_LOGO
+    ICON_LOGO,
+    CustomAlertModal
 } from './components';
 
 
@@ -657,6 +658,7 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
 export default function App() {
     const { user, loading, signOut, updateUser, functions } = useAuth();
     const { t, language } = useLanguage();
+    const { alertState, showAlert, hideAlert } = useGlobalAlert();
 
     const [allPlans, setAllPlans] = useState<PlanData[]>([]);
     const [activePlan, setActivePlan] = useState<PlanData | null>(null);
@@ -754,7 +756,7 @@ export default function App() {
         const userSubscription = user.subscription || 'free';
         // Free users can only create 1 plan
         if (userSubscription === 'free' && allPlans.length >= 1) {
-            alert(t('Limite do Plano Gratuito atingido!\nFaça Upgrade para criar planos ilimitados.'));
+            showAlert(t('Limite Atingido'), t('Limite do Plano Gratuito atingido! Faça Upgrade para criar planos ilimitados.'), 'warning');
             return;
         }
 
@@ -766,7 +768,7 @@ export default function App() {
         if (type === 'template') {
             const canUseTemplates = getPlanCapability(userSubscription, 'canUseTemplates');
             if (!canUseTemplates) {
-                alert(t('Seu plano atual não permite o uso de modelos.\nFaça Upgrade para desbloquear esta funcionalidade.'));
+                showAlert(t('Acesso Negado'), t('Seu plano atual não permite o uso de modelos. Faça Upgrade para desbloquear esta funcionalidade.'), 'warning');
                 return;
             }
         }
@@ -796,7 +798,7 @@ export default function App() {
             const userSubscription = user.subscription || 'free';
             const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'createdPlans');
             if (!hasLimit) {
-                alert(t('Limite de criação com IA atingido para seu plano. Faça upgrade para continuar.'));
+                showAlert(t('Limite Atingido'), t('Limite de criação com IA atingido para seu plano. Faça upgrade para continuar.'), 'warning');
                 return;
             }
         }
@@ -1180,6 +1182,15 @@ export default function App() {
                 currentPlan={user?.subscription || 'free'}
             />
             <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
+
+            {/* Global Alert Modal */}
+            <CustomAlertModal
+                isOpen={alertState.isOpen}
+                title={alertState.title}
+                message={alertState.message}
+                type={alertState.type}
+                onClose={hideAlert}
+            />
 
         </div>
     );

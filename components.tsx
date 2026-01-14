@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download } from 'lucide-react';
-import { useLanguage, useTheme, useAuth } from './contexts';
+import { useLanguage, useTheme, useAuth, useGlobalAlert } from './contexts';
 import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateAIVideo, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
 import { PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
@@ -113,7 +113,7 @@ interface CustomAlertModalProps {
     isOpen: boolean;
     title: string;
     message: string;
-    type?: 'success' | 'error' | 'info';
+    type?: 'success' | 'error' | 'info' | 'warning';
     onClose: () => void;
 }
 
@@ -137,13 +137,15 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({ isOpen, titl
     const iconColors = {
         success: 'text-green-500',
         error: 'text-red-500',
-        info: 'text-blue-500'
+        info: 'text-blue-500',
+        warning: 'text-amber-500'
     };
 
     const bgColors = {
         success: 'bg-green-600',
         error: 'bg-red-600',
-        info: 'bg-blue-600'
+        info: 'bg-blue-600',
+        warning: 'bg-amber-600'
     };
 
     return (
@@ -154,6 +156,7 @@ export const CustomAlertModal: React.FC<CustomAlertModalProps> = ({ isOpen, titl
                         {type === 'success' && <Check className={iconColors[type]} size={32} />}
                         {type === 'error' && <X className={iconColors[type]} size={32} />}
                         {type === 'info' && <Sparkles className={iconColors[type]} size={32} />}
+                        {type === 'warning' && <AlertTriangle className={iconColors[type]} size={32} />}
                     </div>
                     <h2 className="text-xl font-semibold text-gray-200 mb-2">{title}</h2>
                     <p className="text-gray-400">{message}</p>
@@ -1526,6 +1529,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, 
 
 export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSelectPlan, onPlanCreated, user, onProfileClick, onDeletePlan, onRenamePlan, onRenameRequest }) => {
     const { t } = useLanguage();
+    const { showAlert } = useGlobalAlert();
     const [searchTerm, setSearchTerm] = React.useState('');
     const [menuOpenId, setMenuOpenId] = React.useState<string | null>(null);
     const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{ isOpen: boolean; planId: string | null; planName: string }>({ isOpen: false, planId: null, planName: '' });
@@ -1539,7 +1543,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
         const isFree = !user.subscription || user.subscription === 'free';
         // Free plan limit: 1 plan
         if (isFree && plans.length >= 1) {
-            alert(t('Limite de 1 plano atingido no plano Gratuito. Faça upgrade para criar mais.'));
+            showAlert(t('Limite Atingido'), t('Limite de 1 plano atingido no plano Gratuito. Faça upgrade para criar mais.'), 'warning');
             setIsPricingModalOpen(true);
             return;
         }
@@ -2529,6 +2533,8 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
 
 export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t, language } = useLanguage();
+    const { user } = useAuth();
+    const { showAlert } = useGlobalAlert();
 
     const channels = useMemo(() => {
         const allChannels = new Set<string>();
@@ -2679,7 +2685,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
         // Limit Check: Copy Versions
         const maxCopies = getPlanCapability(user?.subscription, 'maxCopyVersions') as number;
         if (creativeGroups.length >= maxCopies) {
-            alert(t('Limite de versões de Copy atingido para seu plano. Faça upgrade.'));
+            showAlert(t('Limite Atingido'), t('Limite de versões de Copy atingido para seu plano. Faça upgrade.'), 'warning');
             return;
         }
 
@@ -2815,6 +2821,7 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t } = useLanguage();
     const { user } = useAuth();
+    const { showAlert } = useGlobalAlert();
     const [utm, setUtm] = useState<Omit<UTMLink, 'id' | 'createdAt' | 'fullUrl'>>({
         url: '',
         source: '',
@@ -2842,7 +2849,7 @@ export const UTMBuilderPage: React.FC<UTMBuilderPageProps> = ({ planData, setPla
             const maxLinks = getPlanCapability(user?.subscription, 'maxUTMLinks') as number;
             const currentLinks = planData.utmLinks?.length || 0;
             if (currentLinks >= maxLinks) {
-                alert(t('Limite de links UTM atingido para seu plano. Faça upgrade para criar mais.'));
+                showAlert(t('Limite Atingido'), t('Limite de links UTM atingido para seu plano. Faça upgrade para criar mais.'), 'warning');
                 return;
             }
 
@@ -3140,6 +3147,7 @@ const AdGroupComponent: React.FC<{
 export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData, setPlanData }) => {
     const { t, language } = useLanguage();
     const { user } = useAuth();
+    const { showAlert } = useGlobalAlert();
     const [mode, setMode] = useState<'seed' | 'prompt'>('seed');
     const [seedKeywords, setSeedKeywords] = useState('');
     const [aiPrompt, setAIPrompt] = useState(planData.aiPrompt || '');
@@ -3162,14 +3170,14 @@ export const KeywordBuilderPage: React.FC<KeywordBuilderPageProps> = ({ planData
         // Limit Check: AI Text Generation
         const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
         if (!canGenText) {
-            alert(t('Seu plano não permite geração de Keywords com IA.'));
+            showAlert(t('Acesso Negado'), t('Seu plano não permite geração de Keywords com IA.'), 'warning');
             return;
         }
 
         // Limit Check: Total Keywords
         const maxKeywords = getPlanCapability(user?.subscription, 'maxKeywords') as number;
         if (allKeywords.length >= maxKeywords) {
-            alert(t('Limite de keywords atingido para seu plano. Faça upgrade.'));
+            showAlert(t('Limite Atingido'), t('Limite de keywords atingido para seu plano. Faça upgrade.'), 'warning');
             return;
         }
 

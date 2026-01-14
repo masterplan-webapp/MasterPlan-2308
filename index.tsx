@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { AuthProvider, ThemeProvider, LanguageProvider } from './contexts';
+import { AuthProvider, ThemeProvider, LanguageProvider, GlobalAlertProvider } from './contexts';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,7 +14,9 @@ root.render(
     <AuthProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <App />
+          <GlobalAlertProvider>
+            <App />
+          </GlobalAlertProvider>
         </LanguageProvider>
       </ThemeProvider>
     </AuthProvider>

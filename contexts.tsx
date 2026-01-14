@@ -294,3 +294,52 @@ export const useAuth = (): AuthContextType => {
     }
     return context;
 };
+
+// --- Global Alert Context ---
+export type AlertType = 'success' | 'error' | 'info' | 'warning';
+
+interface AlertState {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: AlertType;
+}
+
+interface GlobalAlertContextType {
+    alertState: AlertState;
+    showAlert: (title: string, message: string, type?: AlertType) => void;
+    hideAlert: () => void;
+}
+
+const GlobalAlertContext = createContext<GlobalAlertContextType | undefined>(undefined);
+
+export const GlobalAlertProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [alertState, setAlertState] = useState<AlertState>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    });
+
+    const showAlert = useCallback((title: string, message: string, type: AlertType = 'info') => {
+        setAlertState({ isOpen: true, title, message, type });
+    }, []);
+
+    const hideAlert = useCallback(() => {
+        setAlertState(prev => ({ ...prev, isOpen: false }));
+    }, []);
+
+    return (
+        <GlobalAlertContext.Provider value={{ alertState, showAlert, hideAlert }}>
+            {children}
+        </GlobalAlertContext.Provider>
+    );
+};
+
+export const useGlobalAlert = (): GlobalAlertContextType => {
+    const context = useContext(GlobalAlertContext);
+    if (context === undefined) {
+        throw new Error('useGlobalAlert must be used within a GlobalAlertProvider');
+    }
+    return context;
+};
