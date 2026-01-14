@@ -12,6 +12,7 @@ import {
     Auth
 } from "firebase/auth";
 import { getFirestore, Firestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getStorage, FirebaseStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFunctions, Functions, httpsCallable } from "firebase/functions";
 import { TRANSLATIONS } from './constants';
 import { LanguageCode, LanguageContextType, Theme, ThemeContextType, AuthContextType, User } from './types';
@@ -32,6 +33,7 @@ let app: FirebaseApp;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
 let functions: Functions | undefined; // Firebase Functions
+let storage: FirebaseStorage | undefined; // Firebase Storage
 
 try {
     // Check if any firebase apps have been initialized
@@ -46,6 +48,7 @@ try {
         auth = getAuth(app);
         db = getFirestore(app);
         functions = getFunctions(app, 'us-central1'); // Specify region
+        storage = getStorage(app);
     }
 } catch (error) {
     console.error("Critical Firebase Initialization Error:", error);
@@ -53,7 +56,7 @@ try {
     // but the AuthProvider will handle the missing 'auth' object.
 }
 
-export { auth, db, functions };
+export { auth, db, functions, storage, ref, uploadBytes, getDownloadURL };
 
 // --- Language Context ---
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

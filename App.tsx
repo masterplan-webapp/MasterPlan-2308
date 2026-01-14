@@ -302,45 +302,75 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
         onClose();
     };
 
-    const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            // Compress image to reduce base64 size (Firebase Auth has URL length limit)
-            const img = new Image();
-            const reader = new FileReader();
+        if (file && user) {
+            try {
+                // Compress image before upload
+                const img = new Image();
+                const reader = new FileReader();
 
-            reader.onloadend = () => {
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const maxSize = 128; // Resize to 128x128 for avatar
-                    let width = img.width;
-                    let height = img.height;
+                reader.onloadend = () => {
+                    img.onload = async () => {
+                        const canvas = document.createElement('canvas');
+                        const maxSize = 256; // Resize to 256x256 for better quality but small size
+                        let width = img.width;
+                        let height = img.height;
 
-                    // Calculate new dimensions
-                    if (width > height) {
-                        if (width > maxSize) {
-                            height = Math.round((height * maxSize) / width);
-                            width = maxSize;
+                        // Calculate new dimensions
+                        if (width > height) {
+                            if (width > maxSize) {
+                                height = Math.round((height * maxSize) / width);
+                                width = maxSize;
+                            }
+                        } else {
+                            if (height > maxSize) {
+                                width = Math.round((width * maxSize) / height);
+                                height = maxSize;
+                            }
                         }
-                    } else {
-                        if (height > maxSize) {
-                            width = Math.round((width * maxSize) / height);
-                            height = maxSize;
-                        }
-                    }
 
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx?.drawImage(img, 0, 0, width, height);
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx?.drawImage(img, 0, 0, width, height);
 
-                    // Convert to compressed JPEG with lower quality
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    setPhotoURL(compressedDataUrl);
+                        // Convert to blob for upload
+                        canvas.toBlob(async (blob) => {
+                            if (blob) {
+                                try {
+                                    // Import storage functions dynamically
+                                    const { storage, ref, uploadBytes, getDownloadURL } = await import('./contexts');
+
+                                    if (storage) {
+                                        // Upload to Firebase Storage: users/{uid}/profile.jpg
+                                        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
+                                        await uploadBytes(storageRef, blob);
+                                        const downloadURL = await getDownloadURL(storageRef);
+
+                                        // Update state with new URL
+                                        setPhotoURL(downloadURL);
+                                        // Auto-save to profile immediately
+                                        updateUser({ photoURL: downloadURL });
+                                    } else {
+                                        console.error("Storage not initialized");
+                                        // Fallback to base64 if storage fails (try smaller)
+                                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                                        setPhotoURL(compressedDataUrl);
+                                    }
+                                } catch (uploadError) {
+                                    console.error("Upload failed:", uploadError);
+                                    alert("Erro ao fazer upload da imagem. Tente novamente.");
+                                }
+                            }
+                        }, 'image/jpeg', 0.8);
+                    };
+                    img.src = reader.result as string;
                 };
-                img.src = reader.result as string;
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            } catch (error) {
+                console.error("Error processing image:", error);
+            }
         }
     };
 
