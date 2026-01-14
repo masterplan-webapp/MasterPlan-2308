@@ -1513,6 +1513,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
     const { t } = useLanguage();
     const { signOut } = useAuth();
     const [isChoiceModalOpen, setChoiceModalOpen] = useState(false);
+    const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; planId: string | null; planName: string }>({ isOpen: false, planId: null, planName: '' });
 
     const handleDuplicate = (planToDuplicate: PlanData) => {
         const newPlan: PlanData = {
@@ -1523,11 +1524,20 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
         onPlanCreated(newPlan);
     }
 
-    const handleDelete = (planId: string) => {
-        if (window.confirm(t('Confirm Delete This Plan'))) {
-            onDeletePlan(planId);
+    const openDeleteConfirm = (planId: string, planName: string) => {
+        setDeleteConfirmModal({ isOpen: true, planId, planName });
+    };
+
+    const confirmDelete = () => {
+        if (deleteConfirmModal.planId) {
+            onDeletePlan(deleteConfirmModal.planId);
         }
-    }
+        setDeleteConfirmModal({ isOpen: false, planId: null, planName: '' });
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModal({ isOpen: false, planId: null, planName: '' });
+    };
 
     const PlanCard: React.FC<{ plan: PlanData }> = ({ plan }) => {
         const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1563,7 +1573,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                                     <button onClick={() => { onRenameRequest(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('Rename')}</button>
                                     <button onClick={() => { handleDuplicate(plan); setIsMenuOpen(false); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">{t('duplicate')}</button>
                                     <div className="border-t border-gray-700 my-1"></div>
-                                    <button onClick={() => { setIsMenuOpen(false); setTimeout(() => handleDelete(plan.id), 100); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20">{t('delete')}</button>
+                                    <button onClick={() => { setIsMenuOpen(false); openDeleteConfirm(plan.id, plan.campaignName); }} className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-900/20">{t('delete')}</button>
                                 </div>
                             )}
                         </div>
@@ -1614,6 +1624,36 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                 )}
             </main>
             <PlanCreationChoiceModal isOpen={isChoiceModalOpen} onClose={() => setChoiceModalOpen(false)} onPlanCreated={onPlanCreated} />
+
+            {/* Custom Delete Confirmation Modal */}
+            {deleteConfirmModal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md animate-modalFadeIn">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="p-3 bg-red-900/30 rounded-full">
+                                    <Trash2 className="w-6 h-6 text-red-400" />
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-100">{t('Apagar Plano')}</h3>
+                            </div>
+                            <p className="text-gray-300 mb-2">
+                                {t('Tem certeza que deseja apagar o plano')}
+                                <span className="font-semibold text-white"> "{deleteConfirmModal.planName}"</span>?
+                            </p>
+                            <p className="text-sm text-gray-400">{t('Esta ação não pode ser desfeita.')}</p>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-700/30 flex justify-end gap-3 rounded-b-lg">
+                            <button onClick={cancelDelete} className="px-4 py-2 bg-gray-600 text-gray-200 rounded-md hover:bg-gray-500 transition-colors">
+                                {t('cancel')}
+                            </button>
+                            <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2">
+                                <Trash2 size={16} />
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };
