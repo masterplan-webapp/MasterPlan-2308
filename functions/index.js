@@ -329,6 +329,7 @@ exports.createStripeCheckoutSession = functions
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ["card"],
                 mode: "subscription",
+                allow_promotion_codes: true,
                 line_items: [{ price_data: priceData, quantity: 1 }],
                 customer_email: userEmail,
                 metadata: { firebaseUID: uid, targetPlan: planType, interval: interval },
