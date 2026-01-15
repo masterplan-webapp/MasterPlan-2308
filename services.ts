@@ -411,7 +411,7 @@ export const createNewPlanFromTemplate = async (userId: string): Promise<PlanDat
         targetAudience: 'Mulheres de 25-45 anos interessadas em beleza, bem-estar e produtos sustentáveis.',
         location: 'Brasil',
         totalInvestment: 50000,
-        logoUrl: `https://image.pollinations.ai/prompt/logo%20for%20skincare%20brand%20minimalist%20elegant%20soft%20colors`,
+        logoUrl: `https://loremflickr.com/400/400/beauty,skincare/all?lock=${Date.now()}`,
         customFormats: [],
         utmLinks: [],
         creatives: {},
@@ -1308,7 +1308,7 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
           "targetAudience": "A detailed description of the main target audience from the prompt",
           "location": "The main location for the campaigns (e.g., Brazil, São Paulo), extracted from the prompt",
           ${totalInvestmentInstruction}
-          "logoUrl": "Use this format: https://image.pollinations.ai/prompt/logo%20for%20{BUSINESS_TYPE}%20minimalist%20style%20white%20background (replace {BUSINESS_TYPE} with the actual business type from prompt, URL encoded)",
+          "logoUrl": "Use this format: https://loremflickr.com/400/400/{keyword1},{keyword2}/all?lock={random_number} (replace {keyword} with relevant business terms like 'business', 'tech', 'fashion' and {random_number} with a random integer)",
           "aiImagePrompt": "A detailed, vivid DALL-E or Midjourney style prompt to generate a hero image for this campaign.",
           "months": {
             ${monthsJsonStructure}
