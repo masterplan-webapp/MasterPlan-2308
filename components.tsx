@@ -974,7 +974,7 @@ export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ enc
                     <div className="h-6 w-px bg-gray-600 mx-2"></div>
                     <span className="text-gray-400 text-sm">{t('shared_by')} MasterPlan AI</span>
                 </div>
-                {planData.logoUrl && <img src={planData.logoUrl} alt="Logo" className="h-8 object-contain" />}
+                {planData.logoUrl && <img src={planData.logoUrl} alt="Logo" className="h-12 object-contain" />}
             </header>
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
@@ -1485,9 +1485,9 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, 
         >
             <div className="flex justify-between items-start mb-4">
                 {plan.logoUrl ? (
-                    <img src={plan.logoUrl} alt={plan.campaignName} className="w-10 h-10 rounded-lg object-cover" />
+                    <img src={plan.logoUrl} alt={plan.campaignName} className="w-16 h-16 rounded-lg object-cover" />
                 ) : (
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-inner">
                         {plan.campaignName.charAt(0).toUpperCase()}
                     </div>
                 )}
