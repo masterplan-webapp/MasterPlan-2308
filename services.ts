@@ -1320,10 +1320,17 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
         - "canal": Choose the most appropriate channel from: ${JSON.stringify(OPTIONS.canal)}.
         - "formato": Based on the channel, choose a suitable format from the list: ${JSON.stringify(CHANNEL_FORMATS)}.
         - "objetivo": A specific, short objective for this particular campaign.
-        - "kpi": The main Key Performance Indicator for this campaign (e.g., "CPM", "CPC", "CPA", "CTR").
+        - "kpi": The main Key Performance Indicator for this campaign. Use "CPM" for awareness campaigns, "CPC" for traffic/engagement campaigns, "CPL" for lead generation.
         - "publicoAlvo": A specific audience segment for this campaign (e.g., "Retargeting de visitantes do site", "Público de interesse em moda sustentável").
         - "budget": A numeric portion of the totalInvestment. Distribute it logically across all months and campaigns.
-        - "unidadeCompra": Choose from ${JSON.stringify(OPTIONS.unidadeCompra)} based on the campaign objective.
+        - "unidadeCompra": IMPORTANT - You MUST choose ONLY from these exact values: ${JSON.stringify(OPTIONS.unidadeCompra)}. Use "CPM" for awareness/reach campaigns, "CPC" for traffic/engagement/conversion campaigns, "CPV" for video view campaigns, "CPL" for lead generation campaigns. NEVER use "CPA" - it is not a valid option.
+
+        **Metric Guidelines for Brazilian Market (BRL):**
+        - Meta Ads: CPM R$10-25, CPC R$1.50-6.00
+        - Google Ads Search: CPC R$3.00-15.00
+        - Google Ads Display: CPM R$5-15, CPC R$0.50-2.00
+        - LinkedIn Ads: CPM R$30-80, CPC R$8.00-25.00
+        - TikTok Ads: CPM R$5-15, CPC R$0.80-3.00
 
         ${langInstruction}
     `;
