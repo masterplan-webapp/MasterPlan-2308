@@ -232,7 +232,20 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                     >
                         {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
                     </button>
-                    <button onClick={() => setPlanModalOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors"><Settings size={16} /> <span className="hidden sm:inline">{t('configure')}</span></button>
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 rounded-md">
+                        {planData.logoUrl ? (
+                            <img src={planData.logoUrl} alt="" className="h-5 w-5 rounded object-cover" />
+                        ) : null}
+                        <span className="text-sm text-gray-300 font-medium max-w-[150px] truncate">{planData.campaignName}</span>
+                    </div>
+                    <button
+                        onClick={() => setPlanModalOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors"
+                        title={t('Configurações do Plano')}
+                    >
+                        <Settings size={16} />
+                        <span className="hidden sm:inline">{t('Editar Plano')}</span>
+                    </button>
                     <div className="relative" ref={exportMenuRef}>
                         <button onClick={() => setIsExportMenuOpen(prev => !prev)} disabled={isExporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors disabled:opacity-70">
                             {isExporting ? <LoaderIcon size={16} className="animate-spin" /> : <FileDown size={16} />}
