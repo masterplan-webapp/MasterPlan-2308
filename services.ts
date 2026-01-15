@@ -257,10 +257,12 @@ export const recalculateCampaignMetrics = (campaign: Partial<Campaign>): Campaig
     let cliques = Number(newCampaign.cliques) || 0;
 
     // Intelligent derivation of CPC/CPM if one is missing.
+    // If we have CPC and CTR but no CPM, calculate CPM: CPM = (CPC / CTR) * 10
+    // Formula: For CTR of 2% (0.02), CPM = CPC * (1000/100) / CTR = CPC * 10 / CTR
     if (cpc > 0 && ctr > 0 && cpm === 0) {
-        cpm = cpc * ctr * 1000;
+        cpm = (cpc / ctr) * 10;  // Fixed: divide by CTR, not multiply
     } else if (cpm > 0 && ctr > 0 && cpc === 0) {
-        cpc = (cpm / 1000) / ctr;
+        cpc = (cpm * ctr) / 10;  // Fixed: reverse formula
     }
 
     // Main calculation logic
