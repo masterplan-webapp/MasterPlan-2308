@@ -37,37 +37,37 @@ export const DEFAULT_METRICS_BY_OBJECTIVE: Record<string, Partial<Campaign>> = {
         unidadeCompra: 'CPM'
     },
     "Tráfego": {
-        cpc: 2.50,  // Ajustado de 1.20 para 2.50
+        cpc: 0.80,  // Reduzido para gerar CPM ~R$16 com CTR 2%
         ctr: 2.00,
         taxaConversao: 0.50,
         connectRate: 80,
         unidadeCompra: 'CPC'
     },
     "Engajamento": {
-        cpc: 3.00,  // Ajustado de 1.40 para 3.00
+        cpc: 0.60,  // Reduzido para gerar CPM ~R$15 com CTR 2.5%
         ctr: 2.50,
         taxaConversao: 1.00,
         connectRate: 75,
         unidadeCompra: 'CPC'
     },
     "Geração de Leads": {
-        cpc: 5.00,  // Ajustado de 2.50 para 5.00
+        cpc: 1.20,  // Reduzido para gerar CPM ~R$18 com CTR 1.5%
         ctr: 1.50,
-        taxaConversao: 3.50,  // Ajustado de 5.00 para 3.50
+        taxaConversao: 3.50,
         connectRate: 85,
         unidadeCompra: 'CPC'
     },
     "Conversão": {
-        cpc: 8.00,  // Ajustado de 3.00 para 8.00
+        cpc: 1.00,  // Reduzido para gerar CPM ~R$22 com CTR 2.2%
         ctr: 2.20,
-        taxaConversao: 4.00,  // Ajustado de 8.00 para 4.00
+        taxaConversao: 4.00,
         connectRate: 90,
         unidadeCompra: 'CPC'
     },
     "Retargeting": {
-        cpc: 6.00,  // Ajustado de 2.80 para 6.00
+        cpc: 0.70,  // Reduzido para gerar CPM ~R$24 com CTR 3.5%
         ctr: 3.50,
-        taxaConversao: 6.00,  // Ajustado de 10.00 para 6.00
+        taxaConversao: 6.00,
         connectRate: 95,
         unidadeCompra: 'CPC'
     },
