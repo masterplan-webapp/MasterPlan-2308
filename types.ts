@@ -211,6 +211,7 @@ export interface AIPlanCreationModalProps {
     isLoading: boolean;
     initialPrompt?: string;
     title?: string;
+    description?: string;
     buttonText?: string;
     loadingText?: string;
 }
