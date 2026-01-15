@@ -1551,8 +1551,11 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
 
     // Pricing Modal State
     const [isPricingModalOpen, setIsPricingModalOpen] = React.useState(false);
+    // Creation Choice Modal State
+    const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
 
     const handleCreateClick = (type: 'ai' | 'blank' | 'template') => {
+        setIsCreationModalOpen(false); // Close modal if open
         const isFree = !user.subscription || user.subscription === 'free';
         // Free plan limit: 1 plan
         if (isFree && plans.length >= 1) {
@@ -1563,6 +1566,16 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
 
         // AI creation checks could be added here if needed, but limites are also checked in AI modals
         onPlanCreated(type);
+    };
+
+    const handleOpenCreationModal = () => {
+        const isFree = !user.subscription || user.subscription === 'free';
+        // Free users go directly to blank plan or are blocked by limit
+        if (isFree) {
+            handleCreateClick('blank');
+        } else {
+            setIsCreationModalOpen(true);
+        }
     };
 
     const handleRenameClick = (plan: PlanData) => {
@@ -1678,7 +1691,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                                 />
                             </div>
                             <button
-                                onClick={() => handleCreateClick('blank')}
+                                onClick={handleOpenCreationModal}
                                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-blue-900/20 active:scale-95"
                             >
                                 <Plus size={18} />
@@ -1766,6 +1779,46 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                             <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2">
                                 <Trash2 size={16} />
                                 {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Creation Choice Modal */}
+            {isCreationModalOpen && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-xl p-6 max-w-xl w-full border border-gray-700 animate-modalFadeIn">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-100">{t('Como deseja criar seu plano?')}</h2>
+                            <button onClick={() => setIsCreationModalOpen(false)} className="text-gray-400 hover:text-white">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button
+                                onClick={() => handleCreateClick('ai')}
+                                className="text-left p-5 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-blue-500 hover:shadow-lg transition-all"
+                            >
+                                <Sparkles className="h-8 w-8 text-blue-400 mb-3" />
+                                <h3 className="font-semibold text-gray-100">{t('Criar com IA')}</h3>
+                                <p className="text-sm text-gray-400 mt-1">{t('Deixe a IA criar um plano completo')}</p>
+                            </button>
+                            <button
+                                onClick={() => handleCreateClick('template')}
+                                className="text-left p-5 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-green-500 hover:shadow-lg transition-all"
+                            >
+                                <FileText className="h-8 w-8 text-green-400 mb-3" />
+                                <h3 className="font-semibold text-gray-100">{t('Usar Modelo')}</h3>
+                                <p className="text-sm text-gray-400 mt-1">{t('Comece com um template pronto')}</p>
+                            </button>
+                            <button
+                                onClick={() => handleCreateClick('blank')}
+                                className="text-left p-5 border-2 border-transparent rounded-lg bg-gray-700/50 hover:border-gray-500 hover:shadow-lg transition-all"
+                            >
+                                <PlusCircle className="h-8 w-8 text-gray-400 mb-3" />
+                                <h3 className="font-semibold text-gray-100">{t('Plano em Branco')}</h3>
+                                <p className="text-sm text-gray-400 mt-1">{t('Comece do zero')}</p>
                             </button>
                         </div>
                     </div>
