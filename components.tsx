@@ -2119,9 +2119,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
         }
     };
 
-    const handleAdjustAndRegenerate = async () => {
+    const handleAdjustAndRegenerate = async (newPrompt: string) => {
+        setCurrentAIPrompt(newPrompt);  // Update the state with new prompt
+        setIsRegenerating(true);
         setIsAIPlanAdjustModalOpen(false);
-        await onRegeneratePlan(currentAIPrompt);
+        try {
+            await onRegeneratePlan(newPrompt);
+        } finally {
+            setIsRegenerating(false);
+        }
     }
 
     return (
