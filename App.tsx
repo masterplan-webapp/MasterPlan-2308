@@ -969,6 +969,8 @@ export default function App() {
         setIsRegeneratingPlan(true);
         try {
             const partialPlan = await generateAIPlan(prompt, language);
+            // Preserve user's existing logo (don't replace with AI-generated placeholder)
+            const existingLogoUrl = activePlan.logoUrl;
             const updatedPlan = {
                 ...activePlan,
                 campaignName: partialPlan.campaignName || activePlan.campaignName,
@@ -976,7 +978,7 @@ export default function App() {
                 targetAudience: partialPlan.targetAudience || activePlan.targetAudience,
                 location: partialPlan.location || activePlan.location,
                 totalInvestment: partialPlan.totalInvestment || activePlan.totalInvestment,
-                logoUrl: partialPlan.logoUrl || activePlan.logoUrl,
+                logoUrl: existingLogoUrl || partialPlan.logoUrl,  // Prioritize user's logo
                 months: partialPlan.months ? Object.entries(partialPlan.months).reduce((acc, [month, campaigns]) => {
                     acc[month] = campaigns.map((c, i) => calculateKPIs({ ...c, id: `c_ai_${month}_${i}` }));
                     return acc;

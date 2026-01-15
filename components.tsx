@@ -2132,7 +2132,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+            {/* Loading overlay when regenerating */}
+            {isRegenerating && (
+                <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-40 rounded-lg">
+                    <div className="flex flex-col items-center gap-4">
+                        <LoaderIcon className="animate-spin text-blue-500" size={48} />
+                        <p className="text-lg font-medium text-gray-200">{t('Regerando plano...')}</p>
+                    </div>
+                </div>
+            )}
             {/* Resumo do Plano e Ações */}
             <Card>
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
