@@ -2361,6 +2361,8 @@ export const MonthlyPlanPage: React.FC<MonthlyPlanPageProps> = ({ month, campaig
 
 export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, onUpdate, onDelete, planData }) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
+    const { showAlert } = useGlobalAlert();
     const [localGroup, setLocalGroup] = useState<CreativeTextData>(group);
     const [isAISuggestionsModalOpen, setIsAISuggestionsModalOpen] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -2388,6 +2390,13 @@ export const CreativeGroup: React.FC<CreativeGroupProps> = ({ group, channel, on
     };
 
     const handleGenerateSuggestions = async (type: 'headlines' | 'descriptions' | 'longHeadlines' | null = null) => {
+        // Block AI for Free users
+        const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+        if (!canGenText) {
+            showAlert(t('Acesso Negado'), t('Geração de copies com IA não está disponível no plano gratuito. Faça upgrade para desbloquear.'), 'warning');
+            return;
+        }
+
         setSuggestionType(type);
         setIsGenerating(true);
         setIsAISuggestionsModalOpen(true);
@@ -2597,6 +2606,12 @@ export const CopyBuilderPage: React.FC<CopyBuilderPageProps> = ({ planData, setP
 
     // Generate copies for all channels at once
     const handleGenerateForAllChannels = async () => {
+        // Block AI for Free users
+        const canGenText = getPlanCapability(user?.subscription, 'aiTextGeneration');
+        if (!canGenText) {
+            showAlert(t('Acesso Negado'), t('Geração de copies com IA não está disponível no plano gratuito. Faça upgrade para desbloquear.'), 'warning');
+            return;
+        }
         if (channels.length === 0) return;
         setIsPromptModalOpen(true);
     };
