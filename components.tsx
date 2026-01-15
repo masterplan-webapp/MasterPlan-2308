@@ -1485,9 +1485,9 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, 
         >
             <div className="flex justify-between items-start mb-4">
                 {plan.logoUrl ? (
-                    <img src={plan.logoUrl} alt={plan.campaignName} className="w-16 h-16 rounded-lg object-cover" />
+                    <img src={plan.logoUrl} alt={plan.campaignName} className="w-24 h-24 rounded-lg object-cover" />
                 ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-inner">
+                    <div className="w-24 h-24 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-4xl shadow-inner">
                         {plan.campaignName.charAt(0).toUpperCase()}
                     </div>
                 )}
