@@ -71,10 +71,21 @@ export const dbService = {
         }
     },
     savePlan: async (userId: string, plan: PlanData) => {
-        if (!db) return;
+        if (!db) {
+            console.error("savePlan: db is not initialized");
+            return;
+        }
         try {
+            console.log("savePlan: Saving plan to Firestore", {
+                planId: plan.id,
+                campaignName: plan.campaignName,
+                monthsCount: Object.keys(plan.months || {}).length,
+                totalCampaigns: Object.values(plan.months || {}).flat().length,
+                months: plan.months
+            });
             const planRef = doc(db, 'users', userId, 'plans', plan.id);
             await setDoc(planRef, plan);
+            console.log("savePlan: Successfully saved plan to Firestore");
         } catch (error) {
             console.error("Failed to save plan to Firestore", error);
         }
