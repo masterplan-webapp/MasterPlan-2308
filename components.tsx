@@ -931,23 +931,42 @@ export const ShareLinkModal: React.FC<{ isOpen: boolean, onClose: () => void, li
     );
 };
 
-export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ encodedPlanData }) => {
+export const ShareablePlanViewer: React.FC<{ encodedPlanData?: string; shareId?: string }> = ({ encodedPlanData, shareId }) => {
     const { t } = useLanguage();
     const [planData, setPlanData] = useState<PlanData | null>(null);
     const [error, setError] = useState('');
     const [activeView, setActiveView] = useState('Overview');
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            // Restore special chars then decode
-            const decodedJson = decodeURIComponent(escape(atob(encodedPlanData.replace(/-/g, '+').replace(/_/g, '/'))));
-            const parsedPlan = JSON.parse(decodedJson);
-            setPlanData(parsedPlan);
-        } catch (e) {
-            console.error("Failed to parse shared plan data:", e);
-            setError(t('plan_not_found'));
-        }
-    }, [encodedPlanData, t]);
+        const loadPlan = async () => {
+            setIsLoading(true);
+            try {
+                if (shareId) {
+                    // Load from Firestore
+                    const sharedPlan = await dbService.getSharedPlan(shareId);
+                    if (sharedPlan) {
+                        setPlanData(sharedPlan);
+                    } else {
+                        setError(t('plan_not_found'));
+                    }
+                } else if (encodedPlanData) {
+                    // Legacy: decode from URL
+                    const decodedJson = decodeURIComponent(escape(atob(encodedPlanData.replace(/-/g, '+').replace(/_/g, '/'))));
+                    const parsedPlan = JSON.parse(decodedJson);
+                    setPlanData(parsedPlan);
+                } else {
+                    setError(t('plan_not_found'));
+                }
+            } catch (e) {
+                console.error("Failed to load shared plan:", e);
+                setError(t('plan_not_found'));
+            }
+            setIsLoading(false);
+        };
+
+        loadPlan();
+    }, [encodedPlanData, shareId, t]);
 
     if (error) {
         return (
@@ -962,7 +981,7 @@ export const ShareablePlanViewer: React.FC<{ encodedPlanData: string }> = ({ enc
         );
     }
 
-    if (!planData) {
+    if (isLoading || !planData) {
         return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
     }
 

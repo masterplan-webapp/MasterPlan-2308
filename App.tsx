@@ -986,7 +986,7 @@ export default function App() {
         setIsExporting(false);
     };
 
-    const handleGetShareLink = () => {
+    const handleGetShareLink = async () => {
         if (!activePlan) {
             setShareLink(t('link_generation_error'));
             setIsShareLinkModalOpen(true);
@@ -994,23 +994,17 @@ export default function App() {
         }
 
         try {
-            const planJson = JSON.stringify(activePlan);
-            // btoa doesn't handle Unicode characters well, so we need to encode them first.
-            const encodedData = btoa(unescape(encodeURIComponent(planJson)));
-            // Make the base64 string URL-safe
-            const urlSafeEncodedData = encodedData.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-            const baseUrl = `${window.location.origin}${window.location.pathname}?plan_data=`;
+            // Use Firestore-based sharing instead of URL encoding
+            const shareId = await dbService.sharePlan(activePlan);
 
-            // Check for URL length to avoid errors in some browsers
-            if ((baseUrl + urlSafeEncodedData).length > 4096) {
-                console.error("Plan is too large to share via URL");
-                setShareLink(t('link_generation_error_too_long'));
-            } else {
-                const url = baseUrl + urlSafeEncodedData;
+            if (shareId) {
+                const url = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
                 setShareLink(url);
+            } else {
+                setShareLink(t('link_generation_error'));
             }
         } catch (e) {
-            console.error("Error encoding plan data for sharing:", e);
+            console.error("Error creating share link:", e);
             setShareLink(t('link_generation_error'));
         }
 
@@ -1060,8 +1054,15 @@ export default function App() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const encodedPlanData = urlParams.get('plan_data');
+    const shareId = urlParams.get('share');
     const authMode = urlParams.get('mode');
 
+    // Handle shared plan via Firestore ID
+    if (shareId) {
+        return <ShareablePlanViewer shareId={shareId} />;
+    }
+
+    // Legacy: Handle shared plan via URL-encoded data
     if (encodedPlanData) {
         return <ShareablePlanViewer encodedPlanData={encodedPlanData} />;
     }

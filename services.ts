@@ -204,6 +204,41 @@ export const dbService = {
         }
 
         return (usage as number) < (limitVal as number);
+    },
+    // Sharing plans
+    sharePlan: async (plan: PlanData): Promise<string | null> => {
+        if (!db) return null;
+        try {
+            // Generate a short share ID
+            const shareId = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`;
+            const shareRef = doc(db, 'sharedPlans', shareId);
+
+            // Store the plan along with sharing metadata
+            await setDoc(shareRef, {
+                plan: plan,
+                createdAt: new Date().toISOString(),
+                views: 0
+            });
+
+            return shareId;
+        } catch (error) {
+            console.error("Failed to create share link", error);
+            return null;
+        }
+    },
+    getSharedPlan: async (shareId: string): Promise<PlanData | null> => {
+        if (!db) return null;
+        try {
+            const shareRef = doc(db, 'sharedPlans', shareId);
+            const docSnap = await getDoc(shareRef);
+            if (docSnap.exists()) {
+                return docSnap.data().plan as PlanData;
+            }
+            return null;
+        } catch (error) {
+            console.error("Failed to get shared plan", error);
+            return null;
+        }
     }
 };
 
