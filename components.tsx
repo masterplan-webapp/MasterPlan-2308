@@ -1484,9 +1484,13 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, 
             className="group relative bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer flex flex-col h-[200px]"
         >
             <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
-                    {plan.campaignName.charAt(0).toUpperCase()}
-                </div>
+                {plan.logoUrl ? (
+                    <img src={plan.logoUrl} alt={plan.campaignName} className="w-10 h-10 rounded-lg object-cover" />
+                ) : (
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                        {plan.campaignName.charAt(0).toUpperCase()}
+                    </div>
+                )}
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
