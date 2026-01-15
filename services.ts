@@ -48,8 +48,7 @@ export const logout = firebaseSignOut;
 export const updateProfile = firebaseUpdateProfile;
 
 // --- DATABASE (Firestore) ---
-// --- DATABASE (Firestore) ---
-import { db, functions } from './contexts';
+import { db, functions, storage, ref, uploadBytes, getDownloadURL } from './contexts';
 import { httpsCallable } from 'firebase/functions';
 import { collection, doc, setDoc, getDocs, deleteDoc, getDoc, query } from 'firebase/firestore';
 
@@ -76,15 +75,39 @@ export const dbService = {
             return;
         }
         try {
+            // Handle base64 logo - upload to Storage if it's a data URL
+            let planToSave = { ...plan };
+            if (planToSave.logoUrl && planToSave.logoUrl.startsWith('data:')) {
+                console.log("savePlan: Detected base64 logo, uploading to Storage...");
+                try {
+                    // Convert base64 to blob
+                    const response = await fetch(planToSave.logoUrl);
+                    const blob = await response.blob();
+
+                    // Upload to Storage
+                    const logoRef = ref(storage, `users/${userId}/plans/${plan.id}/logo`);
+                    await uploadBytes(logoRef, blob);
+
+                    // Get download URL
+                    const downloadUrl = await getDownloadURL(logoRef);
+                    planToSave.logoUrl = downloadUrl;
+                    console.log("savePlan: Logo uploaded to Storage successfully");
+                } catch (logoError) {
+                    console.error("savePlan: Failed to upload logo, clearing logoUrl", logoError);
+                    // Clear the logo to prevent Firestore save from failing
+                    planToSave.logoUrl = '';
+                }
+            }
+
             console.log("savePlan: Saving plan to Firestore", {
-                planId: plan.id,
-                campaignName: plan.campaignName,
-                monthsCount: Object.keys(plan.months || {}).length,
-                totalCampaigns: Object.values(plan.months || {}).flat().length,
-                months: plan.months
+                planId: planToSave.id,
+                campaignName: planToSave.campaignName,
+                monthsCount: Object.keys(planToSave.months || {}).length,
+                totalCampaigns: Object.values(planToSave.months || {}).flat().length,
+                logoUrlType: planToSave.logoUrl?.startsWith('http') ? 'URL' : (planToSave.logoUrl ? 'other' : 'empty')
             });
-            const planRef = doc(db, 'users', userId, 'plans', plan.id);
-            await setDoc(planRef, plan);
+            const planRef = doc(db, 'users', userId, 'plans', planToSave.id);
+            await setDoc(planRef, planToSave);
             console.log("savePlan: Successfully saved plan to Firestore");
         } catch (error) {
             console.error("Failed to save plan to Firestore", error);
