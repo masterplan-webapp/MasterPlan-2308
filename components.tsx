@@ -1481,7 +1481,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onClick, onDelete, onRename, 
     return (
         <div
             onClick={onClick}
-            className="group relative bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer flex flex-col h-[200px]"
+            className="group relative bg-gray-800 rounded-xl border border-gray-700 p-5 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer flex flex-col h-[280px]"
         >
             <div className="flex justify-between items-start mb-4">
                 {plan.logoUrl ? (
