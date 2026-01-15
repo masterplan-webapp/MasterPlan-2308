@@ -278,73 +278,53 @@ exports.sendPasswordResetEmail = functions
  */
 exports.createStripeCheckoutSession = functions
     .runWith({ secrets: [stripeSecretKey] })
-    .https.onRequest(async (req, res) => {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.set('Access-Control-Max-Age', '3600');
-
-        if (req.method === 'OPTIONS') {
-            res.status(204).send('');
-            return;
+    .https.onCall(async (data, context) => {
+        // Verify the user is authenticated
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
         }
 
-        if (req.method !== 'POST') {
-            res.status(405).json({ error: 'Method Not Allowed' });
-            return;
+        const uid = context.auth.uid;
+        const userEmail = context.auth.token.email;
+
+        const { planType, interval = 'month' } = data;
+
+        const allowedPlans = ['pro', 'ai', 'ai_plus'];
+        if (!allowedPlans.includes(planType)) {
+            throw new functions.https.HttpsError("invalid-argument", "Invalid plan type");
         }
+
+        if (!['month', 'year'].includes(interval)) {
+            throw new functions.https.HttpsError("invalid-argument", "Invalid interval");
+        }
+
+        // Price Configuration (in cents)
+        const pricing = {
+            pro: { month: 4900, year: 49000, name: 'MasterPlan PRO' },
+            ai: { month: 9900, year: 99000, name: 'MasterPlan AI' },
+            ai_plus: { month: 34900, year: 349000, name: 'MasterPlan AI+' }
+        };
+
+        const selectedPlan = pricing[planType];
+        const unitAmount = selectedPlan[interval];
+
+        const priceData = {
+            currency: 'brl',
+            product_data: {
+                name: `${selectedPlan.name} (${interval === 'year' ? 'Anual' : 'Mensal'})`,
+                description: interval === 'year'
+                    ? 'Cobrança anual com desconto (equivalente a 2 meses grátis)'
+                    : 'Cobrança mensal recorrente',
+                metadata: {
+                    planType: planType,
+                    interval: interval
+                }
+            },
+            unit_amount: unitAmount,
+            recurring: { interval: interval === 'year' ? 'year' : 'month' },
+        };
 
         try {
-            const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                res.status(401).json({ error: 'Unauthorized - Missing token' });
-                return;
-            }
-
-            const idToken = authHeader.split('Bearer ')[1];
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            const uid = decodedToken.uid;
-            const userEmail = decodedToken.email;
-
-            const { plan: planType, interval = 'month' } = req.body; // interval: 'month' | 'year'
-
-            const allowedPlans = ['pro', 'ai', 'ai_plus'];
-            if (!allowedPlans.includes(planType)) {
-                res.status(400).json({ error: 'Invalid plan type' });
-                return;
-            }
-
-            // Price Configuration (in cents)
-            const pricing = {
-                pro: { month: 4900, year: 49000, name: 'MasterPlan PRO' },
-                ai: { month: 9900, year: 99000, name: 'MasterPlan AI' },
-                ai_plus: { month: 34900, year: 349000, name: 'MasterPlan AI+' }
-            };
-
-            const selectedPlan = pricing[planType];
-            const unitAmount = selectedPlan[interval];
-
-            if (!unitAmount) {
-                res.status(400).json({ error: 'Invalid interval' });
-                return;
-            }
-
-            const priceData = {
-                currency: 'brl',
-                product_data: {
-                    name: `${selectedPlan.name} (${interval === 'year' ? 'Anual' : 'Mensal'})`,
-                    description: interval === 'year'
-                        ? 'Cobrança anual com desconto (equivalente a 2 meses grátis)'
-                        : 'Cobrança mensal recorrente',
-                    metadata: {
-                        planType: planType,
-                        interval: interval
-                    }
-                },
-                unit_amount: unitAmount,
-                recurring: { interval: interval === 'year' ? 'year' : 'month' },
-            };
-
             const stripe = require("stripe")(stripeSecretKey.value());
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ["card"],
@@ -356,10 +336,10 @@ exports.createStripeCheckoutSession = functions
                 cancel_url: `https://app.masterplanai.com.br/?payment_cancelled=true`,
             });
 
-            res.status(200).json({ sessionId: session.id, url: session.url });
+            return { sessionId: session.id, url: session.url };
         } catch (error) {
             console.error("Stripe Error:", error);
-            res.status(500).json({ error: 'Unable to create checkout session', details: error.message });
+            throw new functions.https.HttpsError("internal", "Unable to create checkout session: " + error.message);
         }
     });
 
