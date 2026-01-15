@@ -18,6 +18,13 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
     
+    // Shared Plans collection - anyone can read, authenticated users can create
+    match /sharedPlans/{shareId} {
+      allow read: if true;  // Public read for share links
+      allow create: if request.auth != null;  // Only authenticated users can create
+      allow update, delete: if false;  // No updates or deletes allowed
+    }
+    
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
