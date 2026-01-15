@@ -1821,7 +1821,7 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                             >
                                 <Sparkles className="h-8 w-8 text-blue-400 mb-3" />
                                 <h3 className="font-semibold text-gray-100">{t('Criar com IA')}</h3>
-                                <p className="text-sm text-gray-400 mt-1">{t('Deixe a IA criar um plano completo')}</p>
+                                <p className="text-sm text-gray-400 mt-1">{t('Deixe o MasterPlan criar um plano completo')}</p>
                             </button>
                             <button
                                 onClick={() => handleCreateClick('template')}
