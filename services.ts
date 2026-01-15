@@ -393,75 +393,86 @@ export const createNewEmptyPlan = async (userId: string): Promise<PlanData> => {
         months: {},
         creatives: {},
         adGroups: []
+
     };
     await dbService.savePlan(userId, newPlan);
     return newPlan;
 };
+export type TemplateType = 'ecommerce' | 'services' | 'institutional';
 
-export const createNewPlanFromTemplate = async (userId: string): Promise<PlanData> => {
+export const createNewPlanFromTemplate = async (userId: string, type: TemplateType = 'ecommerce'): Promise<PlanData> => {
     const currentYear = new Date().getFullYear();
     const awarenessDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Awareness'];
     const leadsDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Geração de Leads'];
     const conversionDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Conversão'];
+    const trafficDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Tráfego'];
+
+    let initialData;
+
+    switch (type) {
+        case 'services': // Dental Clinic
+            initialData = {
+                name: 'Clínica Sorriso (Modelo)',
+                objective: 'Aumentar agendamentos de avaliação e implantes.',
+                audience: 'Mulheres e Homens 30-60 anos, classe AB, região metropolitana.',
+                logoKeyword: 'dental,clinic,doctor',
+                months: {
+                    [`${currentYear}-Julho`]: [
+                        calculateKPIs({ ...trafficDefaults, id: 'c_tpl_s1', tipoCampanha: 'Tráfego', canal: 'Meta Ads', formato: 'Carrossel', objetivo: 'Tráfego para Site', kpi: 'CPC e CTR', budget: 1500 }),
+                        calculateKPIs({ ...leadsDefaults, id: 'c_tpl_s2', tipoCampanha: 'Geração de Leads', canal: 'Google Ads', formato: 'Search', objetivo: 'Agendamento', kpi: 'CPL', budget: 3500 })
+                    ]
+                }
+            };
+            break;
+        case 'institutional': // NGO
+            initialData = {
+                name: 'ONG Verde Vida (Modelo)',
+                objective: 'Conscientização sobre preservação ambiental e atrair doadores recorrentes.',
+                audience: 'Pessoas com interesse em sustentabilidade, 18-45 anos.',
+                logoKeyword: 'nature,forest,ngo',
+                months: {
+                    [`${currentYear}-Julho`]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Video', objetivo: 'Alcance de Marca', kpi: 'CPM e View Rate', budget: 2000 }),
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i2', tipoCampanha: 'Alcance', canal: 'YouTube Pub', formato: 'Video', objetivo: 'Visualizações', kpi: 'CPV', budget: 3000 })
+                    ]
+                }
+            };
+            break;
+        case 'ecommerce': // Fashion/Skincare (Default)
+        default:
+            initialData = {
+                name: 'Moda & Estilo (Modelo)',
+                objective: 'Vendas online da nova coleção de verão.',
+                audience: 'Mulheres 20-40 anos, interesse em moda e tendências.',
+                logoKeyword: 'fashion,clothing,style',
+                months: {
+                    [`${currentYear}-Julho`]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_e1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Reels', objetivo: 'Brand Awareness', kpi: 'Alcance', budget: 2000 }),
+                        calculateKPIs({ ...conversionDefaults, id: 'c_tpl_e2', tipoCampanha: 'Conversão', canal: 'Google Ads', formato: 'Shopping', objetivo: 'Vendas', kpi: 'ROAS', budget: 8000 })
+                    ]
+                }
+            };
+            break;
+    }
 
     const newPlan: PlanData = {
         id: `plan_${new Date().getTime()}`,
-        campaignName: 'Plano de Lançamento (Modelo)',
-        objective: 'Lançar novo produto de skincare e gerar 100 vendas iniciais.',
-        targetAudience: 'Mulheres de 25-45 anos interessadas em beleza, bem-estar e produtos sustentáveis.',
+        campaignName: initialData.name,
+        objective: initialData.objective,
+        targetAudience: initialData.audience,
         location: 'Brasil',
         totalInvestment: 50000,
-        logoUrl: `https://loremflickr.com/400/400/beauty,skincare/all?lock=${Date.now()}`,
+        logoUrl: `https://loremflickr.com/400/400/${initialData.logoKeyword}/all?lock=${Date.now()}`,
         customFormats: [],
         utmLinks: [],
         creatives: {},
         adGroups: [],
-        months: {
-            [`${currentYear}-Julho`]: [
-                calculateKPIs({
-                    ...awarenessDefaults,
-                    id: 'c_template_1',
-                    tipoCampanha: 'Awareness',
-                    etapaFunil: 'Topo',
-                    canal: 'Meta Ads',
-                    formato: 'Stories/Reels',
-                    objetivo: 'Aumentar reconhecimento da marca',
-                    kpi: 'Alcance e Impressões',
-                    publicoAlvo: 'Público frio com interesse em skincare',
-                    budget: 5000,
-                })
-            ],
-            [`${currentYear}-Agosto`]: [
-                calculateKPIs({
-                    ...leadsDefaults,
-                    id: 'c_template_2',
-                    tipoCampanha: 'Geração de Leads',
-                    etapaFunil: 'Meio',
-                    canal: 'Google Ads',
-                    formato: 'Search',
-                    objetivo: 'Capturar leads qualificados',
-                    kpi: 'CPL e Taxa de Conversão de Landing Page',
-                    publicoAlvo: 'Pessoas buscando por "rotina de skincare"',
-                    budget: 15000,
-                }),
-                calculateKPIs({
-                    ...conversionDefaults,
-                    id: 'c_template_3',
-                    tipoCampanha: 'Conversão',
-                    etapaFunil: 'Fundo',
-                    canal: 'Meta Ads',
-                    formato: 'Carrossel',
-                    objetivo: 'Gerar vendas do novo produto',
-                    kpi: 'CPA e ROAS',
-                    publicoAlvo: 'Retargeting de visitantes do site e leads',
-                    budget: 10000,
-                })
-            ]
-        },
+        months: initialData.months
     };
-    await dbService.savePlan(userId, newPlan);
+
     return newPlan;
 };
+
 
 // --- DATA EXPORT ---
 const escapeCSV = (str: any): string => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon, Video } from 'lucide-react';
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
-import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF } from './services';
+import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF, TemplateType } from './services';
 import { httpsCallable } from 'firebase/functions';
 import { getAuth } from 'firebase/auth';
 import { PlanConfig, PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
@@ -23,7 +23,8 @@ import {
     ResetPasswordPage,
     LOGO_DARK,
     ICON_LOGO,
-    CustomAlertModal
+    CustomAlertModal,
+    TemplateSelectionModal
 } from './components';
 
 
@@ -688,6 +689,7 @@ export default function App() {
     const [isAddMonthModalOpen, setAddMonthModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isAIPlanCreationModalOpen, setAIPlanCreationModalOpen] = useState(false);
+    const [isTemplateModalOpen, setTemplateModalOpen] = useState(false);
     const [isRegeneratingPlan, setIsRegeneratingPlan] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [shareLink, setShareLink] = useState('');
@@ -791,14 +793,26 @@ export default function App() {
                 showAlert(t('Acesso Negado'), t('Seu plano atual não permite o uso de modelos. Faça Upgrade para desbloquear esta funcionalidade.'), 'warning');
                 return;
             }
+            setTemplateModalOpen(true);
+            return;
         }
 
-        const newPlan = type === 'blank' ? await createNewEmptyPlan(user.uid) : await createNewPlanFromTemplate(user.uid);
+        const newPlan = await createNewEmptyPlan(user.uid);
         // Save plan to Firestore immediately
         await dbService.savePlan(user.uid, newPlan);
         setAllPlans(prev => [...prev, newPlan]);
         setActivePlan(newPlan);
-        setActiveView('Overview');
+    };
+
+    const handleTemplateSelect = async (type: TemplateType) => {
+        if (!user) return;
+        setTemplateModalOpen(false);
+        const newPlan = await createNewPlanFromTemplate(user.uid, type);
+        await dbService.savePlan(user.uid, newPlan);
+        setAllPlans(prev => [...prev, newPlan]);
+        setActivePlan(newPlan);
+        setActiveView('overview');
+        showAlert(t('Plano Criado'), t('Seu plano baseado em modelo foi criado com sucesso.'), 'success');
     };
 
     const handlePlanCreatedOrSelected = (newPlanOrType: PlanData | 'ai' | 'blank' | 'template') => {
@@ -1112,6 +1126,11 @@ export default function App() {
                     onGenerate={handleAIPlanGenerated}
                     isLoading={isRegeneratingPlan}
                 />
+                <TemplateSelectionModal
+                    isOpen={isTemplateModalOpen}
+                    onClose={() => setTemplateModalOpen(false)}
+                    onSelect={handleTemplateSelect}
+                />
                 <CustomAlertModal
                     isOpen={alertState.isOpen}
                     title={alertState.title}
@@ -1135,6 +1154,11 @@ export default function App() {
                     onDeletePlan={handleDeletePlan}
                     onRenamePlan={handleRenamePlan}
                     onRenameRequest={handleRenameRequest}
+                />
+                <TemplateSelectionModal
+                    isOpen={isTemplateModalOpen}
+                    onClose={() => setTemplateModalOpen(false)}
+                    onSelect={handleTemplateSelect}
                 />
                 <AIPlanCreationModal
                     isOpen={isAIPlanCreationModalOpen}
@@ -1241,6 +1265,12 @@ export default function App() {
                 currentPlan={user?.subscription || 'free'}
             />
             <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
+
+            <TemplateSelectionModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setTemplateModalOpen(false)}
+                onSelect={handleTemplateSelect}
+            />
 
             {/* Global Alert Modal */}
             <CustomAlertModal

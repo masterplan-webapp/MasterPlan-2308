@@ -324,6 +324,12 @@ export interface PlanCreationChoiceModalProps {
     onPlanCreated: (type: 'ai' | 'blank' | 'template') => void;
 }
 
+export interface TemplateSelectionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelect: (type: 'ecommerce' | 'services' | 'institutional') => void;
+}
+
 // CHART PROPS
 export interface ChartCardProps {
     title: string;

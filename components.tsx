@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download, ShoppingBag, Users, Building2 } from 'lucide-react';
 import { useLanguage, useTheme, useAuth, useGlobalAlert } from './contexts';
 import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateAIVideo, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
 import { PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
 
-import { PlanData, PlanSelectorPageProps, CreativeBuilderPageProps, OnboardingPageProps, PricingModalProps, ChartCardProps, ChartsSectionProps, CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps, RenamePlanModalProps, AddMonthModalProps, AIPlanCreationModalProps, AISuggestionsModalProps, SidebarProps, HeaderProps, UserProfileModalProps, DashboardHeaderProps, DashboardPageProps, MonthlyPlanPageProps, CopyBuilderPageProps, CreativeGroupProps, UTMBuilderPageProps, KeywordBuilderPageProps, Campaign, CreativeTextData, UTMLink, AdGroup, KeywordSuggestion, GeneratedImage } from './types';
+import { PlanData, PlanSelectorPageProps, CreativeBuilderPageProps, OnboardingPageProps, PricingModalProps, ChartCardProps, ChartsSectionProps, CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps, RenamePlanModalProps, AddMonthModalProps, AIPlanCreationModalProps, AISuggestionsModalProps, SidebarProps, HeaderProps, UserProfileModalProps, DashboardHeaderProps, DashboardPageProps, MonthlyPlanPageProps, CopyBuilderPageProps, CreativeGroupProps, UTMBuilderPageProps, KeywordBuilderPageProps, Campaign, CreativeTextData, UTMLink, AdGroup, KeywordSuggestion, GeneratedImage, TemplateSelectionModalProps } from './types';
 
 // MasterPlan Logo URLs
 export const LOGO_LIGHT = '/logo-light.png';
@@ -832,8 +832,63 @@ export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
                     >
                         {isLoading ? <LoaderIcon className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                        {isLoading ? (loadingText || t('Gerando seu plano...')) : (buttonText || t('Gerar Plano'))}
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({ isOpen, onClose, onSelect }) => {
+    const { t } = useLanguage();
+
+    if (!isOpen) return null;
+
+    const templates = [
+        {
+            type: 'ecommerce',
+            icon: <ShoppingBag className="w-8 h-8 text-pink-400 mb-3" />,
+            title: t('E-commerce'),
+            description: t('Ideal para lojas virtuais focadas em vendas e ROAS. Inclui campanhas de Shopping e Catálogo.')
+        },
+        {
+            type: 'services',
+            icon: <Users className="w-8 h-8 text-blue-400 mb-3" />,
+            title: t('Serviços Locais'),
+            description: t('Perfeito para clínicas, consultórios e prestadores de serviço. Foco em geração de Leads e Agendamentos.')
+        },
+        {
+            type: 'institutional',
+            icon: <Building2 className="w-8 h-8 text-green-400 mb-3" />,
+            title: t('Institucional / ONG'),
+            description: t('Para marcas que buscam reconhecimento, alcance e branding. Foco em views e engajamento.')
+        }
+    ];
+
+    return (
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-xl max-w-4xl w-full border border-gray-700 animate-modalFadeIn shadow-2xl">
+                <div className="flex justify-between items-center p-6 border-b border-gray-700">
+                    <h2 className="text-xl font-bold text-gray-100">{t('Escolha um Modelo de Plano')}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {templates.map((template) => (
+                        <button
+                            key={template.type}
+                            onClick={() => onSelect(template.type as any)}
+                            className="bg-gray-700/50 hover:bg-gray-700 hover:scale-105 transition-all duration-200 rounded-lg p-6 flex flex-col items-center text-center border-2 border-transparent hover:border-blue-500/50 group h-full"
+                        >
+                            <div className="bg-gray-800 p-4 rounded-full mb-4 group-hover:shadow-lg transition-shadow">
+                                {template.icon}
+                            </div>
+                            <h3 className="text-lg font-semibold text-white mb-2">{template.title}</h3>
+                            <p className="text-sm text-gray-400 leading-relaxed">{template.description}</p>
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>
