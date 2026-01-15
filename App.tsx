@@ -232,12 +232,14 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                     >
                         {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
                     </button>
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 rounded-md">
-                        {planData.logoUrl ? (
-                            <img src={planData.logoUrl} alt="" className="h-5 w-5 rounded object-cover" />
-                        ) : null}
-                        <span className="text-sm text-gray-300 font-medium max-w-[150px] truncate">{planData.campaignName}</span>
-                    </div>
+                    {activePlan && (
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 rounded-md">
+                            {activePlan.logoUrl ? (
+                                <img src={activePlan.logoUrl} alt="" className="h-5 w-5 rounded object-cover" />
+                            ) : null}
+                            <span className="text-sm text-gray-300 font-medium max-w-[150px] truncate">{activePlan.campaignName}</span>
+                        </div>
+                    )}
                     <button
                         onClick={() => setPlanModalOpen(true)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 text-sm font-medium transition-colors"
