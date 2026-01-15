@@ -80,7 +80,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             aiPlanCreation: 0,
             aiImages: 0, // Manual usage allowed? Assuming no generative AI images
             aiVideos: 0,
-            aiTextGeneration: true,
+            aiTextGeneration: false,
             canUseTemplates: true,
             canExportPDF: true,
             canRemoveWatermark: true,
