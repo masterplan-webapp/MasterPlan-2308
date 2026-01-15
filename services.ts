@@ -411,7 +411,7 @@ export const createNewPlanFromTemplate = async (userId: string): Promise<PlanDat
         targetAudience: 'Mulheres de 25-45 anos interessadas em beleza, bem-estar e produtos sustentáveis.',
         location: 'Brasil',
         totalInvestment: 50000,
-        logoUrl: `https://source.unsplash.com/200x200/?beauty,cosmetics,skincare&sig=${Date.now()}`,
+        logoUrl: `https://image.pollinations.ai/prompt/logo%20for%20skincare%20brand%20minimalist%20elegant%20soft%20colors`,
         customFormats: [],
         utmLinks: [],
         creatives: {},
@@ -1308,7 +1308,7 @@ export const generateAIPlan = async (prompt: string, language: LanguageCode): Pr
           "targetAudience": "A detailed description of the main target audience from the prompt",
           "location": "The main location for the campaigns (e.g., Brazil, São Paulo), extracted from the prompt",
           ${totalInvestmentInstruction}
-          "logoUrl": "Use a random Unsplash image URL in format: https://source.unsplash.com/200x200/?business,logo,abstract (replace the keywords after ? with relevant terms for the business type)",
+          "logoUrl": "Use this format: https://image.pollinations.ai/prompt/logo%20for%20{BUSINESS_TYPE}%20minimalist%20style%20white%20background (replace {BUSINESS_TYPE} with the actual business type from prompt, URL encoded)",
           "aiImagePrompt": "A detailed, vivid DALL-E or Midjourney style prompt to generate a hero image for this campaign.",
           "months": {
             ${monthsJsonStructure}
