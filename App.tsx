@@ -811,7 +811,7 @@ export default function App() {
         await dbService.savePlan(user.uid, newPlan);
         setAllPlans(prev => [...prev, newPlan]);
         setActivePlan(newPlan);
-        setActiveView('overview');
+        setActiveView('Overview');
         showAlert(t('Plano Criado'), t('Seu plano baseado em modelo foi criado com sucesso.'), 'success');
     };
 
