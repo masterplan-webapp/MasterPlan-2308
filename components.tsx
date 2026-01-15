@@ -816,7 +816,7 @@ export const AIPlanCreationModal: React.FC<AIPlanCreationModalProps> = ({ isOpen
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                 </div>
                 <div className="p-6">
-                    <p className="text-gray-300 mb-4">{description || t('Descreva seu negócio, objetivos e público para a IA criar um plano de mídia inicial para você.')}</p>
+                    <p className="text-gray-300 mb-4">{description || t('Descreva seu negócio, objetivos e público para o MasterPlan criar um plano de mídia inicial para você.')}</p>
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
@@ -2272,7 +2272,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
                 isLoading={isRegenerating}
                 initialPrompt={currentAIPrompt}
                 title={t('Ajustar Prompt do Plano IA')}
-                description={t('Edite as instruções abaixo para refinar e regenerar seu plano de mídia com a IA.')}
+                description={t('Edite as instruções abaixo para refinar e regenerar seu plano de mídia com o MasterPlan.')}
                 buttonText={t('Regerar Plano')}
                 loadingText={t('Regerando plano...')}
             />
