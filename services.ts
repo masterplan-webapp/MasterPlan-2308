@@ -402,9 +402,18 @@ export type TemplateType = 'ecommerce' | 'services' | 'institutional';
 
 export const createNewPlanFromTemplate = async (userId: string, type: TemplateType = 'ecommerce'): Promise<PlanData> => {
     const today = new Date();
-    const currentMonthName = MONTHS_LIST[today.getMonth()];
+    const currentMonthIndex = today.getMonth();
     const currentYear = today.getFullYear();
-    const currentMonthKey = `${currentYear}-${currentMonthName}`;
+
+    const getMonthKey = (offset: number) => {
+        const d = new Date(currentYear, currentMonthIndex + offset, 1);
+        return `${d.getFullYear()}-${MONTHS_LIST[d.getMonth()]}`;
+    };
+
+    const m1Key = getMonthKey(0);
+    const m2Key = getMonthKey(1);
+    const m3Key = getMonthKey(2);
+    const currentMonthKey = m1Key;
 
     const awarenessDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Awareness'];
     const leadsDefaults = DEFAULT_METRICS_BY_OBJECTIVE['Geração de Leads'];
@@ -421,9 +430,17 @@ export const createNewPlanFromTemplate = async (userId: string, type: TemplateTy
                 audience: 'Mulheres e Homens 30-60 anos, classe AB, região metropolitana.',
                 logoKeyword: 'dental,clinic,doctor',
                 months: {
-                    [currentMonthKey]: [
-                        calculateKPIs({ ...trafficDefaults, id: 'c_tpl_s1', tipoCampanha: 'Tráfego', canal: 'Meta Ads', formato: 'Carrossel', objetivo: 'Tráfego para Site', kpi: 'CPC e CTR', budget: 1500 }),
-                        calculateKPIs({ ...leadsDefaults, id: 'c_tpl_s2', tipoCampanha: 'Geração de Leads', canal: 'Google Ads', formato: 'Search', objetivo: 'Agendamento', kpi: 'CPL', budget: 3500 })
+                    [m1Key]: [
+                        calculateKPIs({ ...trafficDefaults, id: 'c_tpl_s1_m1', tipoCampanha: 'Tráfego', canal: 'Meta Ads', formato: 'Carrossel', objetivo: 'Tráfego para Site', kpi: 'CPC e CTR', budget: 1500 }),
+                        calculateKPIs({ ...leadsDefaults, id: 'c_tpl_s2_m1', tipoCampanha: 'Geração de Leads', canal: 'Google Ads', formato: 'Search', objetivo: 'Agendamento', kpi: 'CPL', budget: 3500 })
+                    ],
+                    [m2Key]: [
+                        calculateKPIs({ ...trafficDefaults, id: 'c_tpl_s1_m2', tipoCampanha: 'Tráfego', canal: 'Meta Ads', formato: 'Carrossel', objetivo: 'Tráfego para Site', kpi: 'CPC e CTR', budget: 1500 }),
+                        calculateKPIs({ ...leadsDefaults, id: 'c_tpl_s2_m2', tipoCampanha: 'Geração de Leads', canal: 'Google Ads', formato: 'Search', objetivo: 'Agendamento', kpi: 'CPL', budget: 3500 })
+                    ],
+                    [m3Key]: [
+                        calculateKPIs({ ...trafficDefaults, id: 'c_tpl_s1_m3', tipoCampanha: 'Tráfego', canal: 'Meta Ads', formato: 'Carrossel', objetivo: 'Tráfego para Site', kpi: 'CPC e CTR', budget: 1500 }),
+                        calculateKPIs({ ...leadsDefaults, id: 'c_tpl_s2_m3', tipoCampanha: 'Geração de Leads', canal: 'Google Ads', formato: 'Search', objetivo: 'Agendamento', kpi: 'CPL', budget: 3500 })
                     ]
                 }
             };
@@ -435,9 +452,17 @@ export const createNewPlanFromTemplate = async (userId: string, type: TemplateTy
                 audience: 'Pessoas com interesse em sustentabilidade, 18-45 anos.',
                 logoKeyword: 'nature,forest,ngo',
                 months: {
-                    [currentMonthKey]: [
-                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Video', objetivo: 'Alcance de Marca', kpi: 'CPM e View Rate', budget: 2000 }),
-                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i2', tipoCampanha: 'Alcance', canal: 'YouTube Pub', formato: 'Video', objetivo: 'Visualizações', kpi: 'CPV', budget: 3000 })
+                    [m1Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i1_m1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Video', objetivo: 'Alcance de Marca', kpi: 'CPM e View Rate', budget: 2000 }),
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i2_m1', tipoCampanha: 'Alcance', canal: 'YouTube Pub', formato: 'Video', objetivo: 'Visualizações', kpi: 'CPV', budget: 3000 })
+                    ],
+                    [m2Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i1_m2', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Video', objetivo: 'Alcance de Marca', kpi: 'CPM e View Rate', budget: 2000 }),
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i2_m2', tipoCampanha: 'Alcance', canal: 'YouTube Pub', formato: 'Video', objetivo: 'Visualizações', kpi: 'CPV', budget: 3000 })
+                    ],
+                    [m3Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i1_m3', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Video', objetivo: 'Alcance de Marca', kpi: 'CPM e View Rate', budget: 2000 }),
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_i2_m3', tipoCampanha: 'Alcance', canal: 'YouTube Pub', formato: 'Video', objetivo: 'Visualizações', kpi: 'CPV', budget: 3000 })
                     ]
                 }
             };
@@ -450,9 +475,17 @@ export const createNewPlanFromTemplate = async (userId: string, type: TemplateTy
                 audience: 'Mulheres 20-40 anos, interesse em moda e tendências.',
                 logoKeyword: 'fashion,clothing,style',
                 months: {
-                    [currentMonthKey]: [
-                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_e1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Reels', objetivo: 'Brand Awareness', kpi: 'Alcance', budget: 2000 }),
-                        calculateKPIs({ ...conversionDefaults, id: 'c_tpl_e2', tipoCampanha: 'Conversão', canal: 'Google Ads', formato: 'Shopping', objetivo: 'Vendas', kpi: 'ROAS', budget: 8000 })
+                    [m1Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_e1_m1', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Reels', objetivo: 'Brand Awareness', kpi: 'Alcance', budget: 2000 }),
+                        calculateKPIs({ ...conversionDefaults, id: 'c_tpl_e2_m1', tipoCampanha: 'Conversão', canal: 'Google Ads', formato: 'Shopping', objetivo: 'Vendas', kpi: 'ROAS', budget: 8000 })
+                    ],
+                    [m2Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_e1_m2', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Reels', objetivo: 'Brand Awareness', kpi: 'Alcance', budget: 2000 }),
+                        calculateKPIs({ ...conversionDefaults, id: 'c_tpl_e2_m2', tipoCampanha: 'Conversão', canal: 'Google Ads', formato: 'Shopping', objetivo: 'Vendas', kpi: 'ROAS', budget: 8000 })
+                    ],
+                    [m3Key]: [
+                        calculateKPIs({ ...awarenessDefaults, id: 'c_tpl_e1_m3', tipoCampanha: 'Awareness', canal: 'Meta Ads', formato: 'Reels', objetivo: 'Brand Awareness', kpi: 'Alcance', budget: 2000 }),
+                        calculateKPIs({ ...conversionDefaults, id: 'c_tpl_e2_m3', tipoCampanha: 'Conversão', canal: 'Google Ads', formato: 'Shopping', objetivo: 'Vendas', kpi: 'ROAS', budget: 8000 })
                     ]
                 }
             };
