@@ -2049,7 +2049,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ campaigns, title }) => {
     );
 };
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNavigate, onAddMonthClick, onRegeneratePlan, isRegenerating, isReadOnly }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNavigate, onAddMonthClick, onRegeneratePlan, isRegenerating: propIsRegenerating, isReadOnly }) => {
     const { t } = useLanguage();
     const { summary, monthlySummary } = useMemo(() => calculatePlanSummary(planData), [planData]);
     const [isAIAnalysisModalOpen, setAIAnalysisModalOpen] = useState(false);
@@ -2057,6 +2057,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ planData, onNaviga
     const [aiAnalysisContent, setAIAnalysisContent] = useState('');
     const [isAIPlanAdjustModalOpen, setIsAIPlanAdjustModalOpen] = useState(false);
     const [currentAIPrompt, setCurrentAIPrompt] = useState(planData.aiPrompt || '');
+    const [isRegenerating, setIsRegenerating] = useState(false);
 
 
     const allCampaigns = Object.values(planData.months || {}).flat();
