@@ -130,7 +130,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
         price: { monthly: 349, annual: 3490 },
         features: [
             'Tudo do AI',
-            'Vídeos com Google Veo (Ilimitado)',
+            '30 Vídeos Google Veo / mês (1 por dia)',
             'Geração de Imagens Ilimitada',
             'Prioridade no Suporte'
         ],
@@ -138,7 +138,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             aiAnalysisCurrentPlan: 9999,
             aiPlanCreation: 9999,
             aiImages: 9999,
-            aiVideos: 9999, // SVD Unlimited, logic for Veo separate if implemented
+            aiVideos: 30, // 1 per day // SVD Unlimited, logic for Veo separate if implemented
             aiTextGeneration: true,
             canUseTemplates: true,
             canExportPDF: true,
