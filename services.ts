@@ -1475,15 +1475,15 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
 };
 
 /**
- * Generates a video using Replicate (Stable Video Diffusion) via Cloud Functions
- * @param prompt Text prompt (not used by SVD currently but good for future)
- * @param image Base64 image string (required for SVD)
+ * Generates a video using Google Veo (Vertex AI) via Cloud Functions
+ * @param prompt Text prompt (driving generation)
+ * @param image Base64 image string (optional/context)
  */
-export const generateAIVideo = async (prompt: string, image: string): Promise<{ success: boolean; videoUrl: any }> => {
+export const generateVeoVideo = async (prompt: string, image: string): Promise<{ success: boolean; videoUrl: any; response?: any }> => {
     if (!functions) throw new Error("Firebase Functions not initialized");
 
     try {
-        const generateVideoFn = httpsCallable(functions, 'generateAIVideo');
+        const generateVideoFn = httpsCallable(functions, 'generateVeoVideo');
         const result = await generateVideoFn({ prompt, image });
         const data = result.data as any;
 
@@ -1493,7 +1493,7 @@ export const generateAIVideo = async (prompt: string, image: string): Promise<{ 
             throw new Error("Failed to generate video response.");
         }
     } catch (error: any) {
-        console.error("Error calling generateAIVideo:", error);
+        console.error("Error calling generateVeoVideo:", error);
         throw new Error(error.message || "Video generation failed.");
     }
 };

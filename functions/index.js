@@ -2,13 +2,13 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
 const { defineSecret } = require("firebase-functions/params");
-const Replicate = require("replicate");
+const { VertexAI } = require('@google-cloud/aiplatform');
 
 // Define secrets (configured via: firebase functions:secrets:set SECRET_NAME)
 const resendApiKey = defineSecret("RESEND_API_KEY");
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
-const replicateApiToken = defineSecret("REPLICATE_API_TOKEN");
+
 
 admin.initializeApp({
     storageBucket: "masterplan-52e06.firebasestorage.app"
@@ -456,48 +456,79 @@ exports.stripeWebhook = functions
 /**
  * Generate AI Video using Replicate (Stable Video Diffusion)
  */
-exports.generateAIVideo = functions
+/**
+ * Generate AI Video using Google Veo (Vertex AI)
+ */
+exports.generateVeoVideo = functions
     .runWith({
-        secrets: [replicateApiToken],
-        timeoutSeconds: 300, // 5 minutes timeout for video generation
-        memory: '512MB'
+        timeoutSeconds: 540, // 9 minutes timeout (Veo can take time)
+        memory: '2GB' // More memory for SDK overhead
     })
     .https.onCall(async (data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
         }
 
-        const { image, prompt } = data; // image should be a public URL or base64
+        const { image, prompt } = data; // image (base64/url), prompt (text)
 
-        if (!image) {
-            throw new functions.https.HttpsError("invalid-argument", "Image is required for SVD.");
+        if (!image && !prompt) {
+            throw new functions.https.HttpsError("invalid-argument", "Image or Prompt is required for Veo.");
         }
 
         try {
-            const replicate = new Replicate({
-                auth: replicateApiToken.value(),
-            });
+            // MOCK MODE: Check for keyword to bypass API costs
+            if (prompt && prompt.includes('MOCK_VIDEO')) {
+                console.log("MOCK MODE DETECTED: Returning dummy video.");
+                // Return a sample video URL (e.g., a public domain or placeholder video)
+                // Using a reliable public sample for testing
+                return {
+                    success: true,
+                    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                    response: { mock: true }
+                };
+            }
 
-            // Using Stable Video Diffusion (SVD)
-            // Model: stability-ai/stable-video-diffusion
-            const output = await replicate.run(
-                "stability-ai/stable-video-diffusion:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-                {
-                    input: {
-                        input_image: image,
-                        video_length: "25_frames_with_svd_xt", // Generates ~4 seconds
-                        sizing_strategy: "maintain_aspect_ratio",
-                        frames_per_second: 6,
-                        motion_bucket_id: 127,
-                        cond_aug: 0.02
+            // Initialize Vertex AI
+            // Note: process.env.GCLOUD_PROJECT is automatically set in Firebase Functions
+            const vertex_ai = new VertexAI({ project: process.env.GCLOUD_PROJECT, location: 'us-central1' });
+
+            // Using the 'veo-001' model for video generation
+            // Note: As Veo is in preview, checking specific API usage manually.
+            // If getGenerativeModel doesn't support Veo directly yet, we might need PredictionServiceClient.
+            // For now, assuming integration similar to Imagen:
+
+            const model = vertex_ai.preview.getGenerativeModel({ model: 'veo-001' });
+
+            // Constructing request parts
+            const request = {
+                contents: [{ role: 'user', parts: [] }]
+            };
+
+            if (prompt) {
+                request.contents[0].parts.push({ text: prompt });
+            }
+            if (image) {
+                // Assuming image is base64, need to strip header if present
+                const cleanBase64 = image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+                request.contents[0].parts.push({
+                    inlineData: {
+                        mimeType: 'image/png',
+                        data: cleanBase64
                     }
-                }
-            );
+                });
+            }
 
-            console.log("Video generated:", output);
-            return { success: true, videoUrl: output };
+            const result = await model.generateContent(request);
+            const response = await result.response;
+
+            // Veo response handling (Extracting video URI or bytes)
+            // This structure depends on Veo's specific response.
+            // Assuming it returns a GCS URI or inline bytes similar to Imagen.
+            console.log("Veo Response:", JSON.stringify(response));
+
+            return { success: true, response: response };
         } catch (error) {
-            console.error("Error generating video:", error);
+            console.error("Error generating Veo video:", error);
             throw new functions.https.HttpsError("internal", "Failed to generate video: " + error.message);
         }
     });

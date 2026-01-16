@@ -116,7 +116,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canExportPDF: true,
             canRemoveWatermark: true,
             canSharePublicLink: true,
-            canUseVideoBuilder: true,
+            canUseVideoBuilder: false, // Moved to AI+ Exclusive (Veo)
             canUseCreativeBuilder: true,
             canUseAdvancedAI: false,
             maxUTMLinks: 9999,
