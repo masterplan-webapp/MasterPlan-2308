@@ -2,7 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
 const { defineSecret } = require("firebase-functions/params");
-const { VertexAI } = require('@google-cloud/aiplatform');
+const { VertexAI } = require('@google-cloud/vertexai');
 
 // Define secrets (configured via: firebase functions:secrets:set SECRET_NAME)
 const resendApiKey = defineSecret("RESEND_API_KEY");

@@ -103,14 +103,13 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             'Criação de Planos com IA',
             'Análises de Plano Ilimitadas',
             'Creative Builder com IA (200 imagens)',
-            'Video Builder (50 vídeos - SVD)',
             'Geração de Texto Ilimitada'
         ],
         limits: {
             aiAnalysisCurrentPlan: 9999,
             aiPlanCreation: 50, // Soft limit
             aiImages: 200,
-            aiVideos: 50,
+            aiVideos: 0,
             aiTextGeneration: true,
             canUseTemplates: true,
             canExportPDF: true,
@@ -131,9 +130,8 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
         price: { monthly: 349, annual: 3490 },
         features: [
             'Tudo do AI',
-            'Video Builder Premium (15 vídeos Veo)',
-            'Video Builder SVD Ilimitado',
-            'Imagens IA Ilimitadas',
+            'Vídeos com Google Veo (Ilimitado)',
+            'Geração de Imagens Ilimitada',
             'Prioridade no Suporte'
         ],
         limits: {
