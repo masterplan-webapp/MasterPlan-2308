@@ -1702,17 +1702,17 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
     return (
         <div className="h-screen w-full bg-[#111827] flex flex-col overflow-hidden relative">
             {/* Header */}
-            <div className="flex-none p-8 border-b border-gray-800 flex justify-between items-center bg-[#111827] z-10 relative">
+            <div className="flex-none p-4 md:p-8 border-b border-gray-800 flex justify-between items-center bg-[#111827] z-10 relative">
                 <div className="flex items-center gap-4">
                     <img src={LOGO_DARK} alt="MasterPlan" className="h-10" />
                     <div className="h-6 w-px bg-gray-700"></div>
-                    <span className="text-gray-400 text-sm font-medium tracking-wide">DASHBOARD</span>
+                    <span className="text-gray-400 text-sm font-medium tracking-wide hidden sm:inline">DASHBOARD</span>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3 px-4 py-2 bg-gray-800/50 rounded-full border border-gray-700/50 hover:bg-gray-800 transition-colors cursor-pointer group" onClick={() => setIsPricingModalOpen(true)}>
                         <div className={`w-2 h-2 rounded-full ${user.subscription === 'ai' || user.subscription === 'ai_plus' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]' : user.subscription === 'pro' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-green-500'}`}></div>
-                        <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                        <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors hidden sm:inline">
                             {user.subscription === 'ai_plus' ? 'Plano AI+' : user.subscription === 'ai' ? 'Plano AI' : user.subscription === 'pro' ? 'Plano PRO' : 'Plano Gratuito'}
                         </span>
                         <span className="text-xs text-blue-400 font-semibold group-hover:text-blue-300">Upgrade</span>
@@ -1742,31 +1742,31 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto p-8 relative">
+            <div className="flex-1 overflow-auto p-4 md:p-8 relative">
                 {/* Background Decorations */}
                 <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
 
                 <div className="max-w-7xl mx-auto relative z-0">
                     {/* Welcome Section */}
-                    <div className="mb-10 flex flex-col md:flex-row justify-between items-end gap-6">
+                    <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-white mb-2">{t('welcome_to_masterplan')}</h1>
-                            <p className="text-gray-400 max-w-xl">Gerencie suas campanhas, crie novos planos com IA e acompanhe seus resultados em um só lugar.</p>
+                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{t('welcome_to_masterplan')}</h1>
+                            <p className="text-gray-400 max-w-xl text-sm md:text-base">Gerencie suas campanhas, crie novos planos com IA e acompanhe seus resultados em um só lugar.</p>
                         </div>
-                        <div className="flex gap-3">
-                            <div className="relative group">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <div className="relative group w-full md:w-auto">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                                 <input
                                     type="text"
                                     placeholder="Buscar planos..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="bg-gray-800/50 border border-gray-700 text-gray-200 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all w-64"
+                                    className="bg-gray-800/50 border border-gray-700 text-gray-200 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all w-full sm:w-64"
                                 />
                             </div>
                             <button
                                 onClick={handleOpenCreationModal}
-                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+                                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all shadow-lg shadow-blue-900/20 active:scale-95"
                             >
                                 <Plus size={18} />
                                 {t('create_new_plan')}
