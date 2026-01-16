@@ -4249,6 +4249,36 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                 </div>
             </div>
 
+            {/* Credit Balance Display Banner */}
+            {canUseVideoBuilder && monthlyLimit > 0 && (
+                <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <div className="bg-purple-500/20 p-3 rounded-lg">
+                                <Video size={24} className="text-purple-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-400">Limite Mensal</p>
+                                <p className="text-lg font-bold text-white">{monthlyUsage}/{monthlyLimit} vídeos usados</p>
+                            </div>
+                            {videoCredits > 0 && (
+                                <div className="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-lg">
+                                    <Check size={18} className="text-green-400" />
+                                    <span className="text-green-300 font-semibold">{videoCredits} créditos extras</span>
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsPurchaseCreditsModalOpen(true)}
+                            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap"
+                        >
+                            <ShoppingBag size={18} />
+                            Comprar Créditos
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Input Section */}
                 <Card className="h-full">
