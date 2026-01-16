@@ -3985,13 +3985,11 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
     };
 
     const handleGenerateVideo = async () => {
-        if (!sourceImage) {
-            setError("Por favor, selecione uma imagem primeiro.");
-            return;
-        }
+        const hasImage = !!sourceImage;
+        const hasPrompt = !!prompt.trim();
 
-        if (!prompt.trim()) {
-            setError("Por favor, descreva como você quer animar a imagem.");
+        if (!hasImage && !hasPrompt) {
+            setError("Por favor, faça upload de uma imagem OU descreva o vídeo.");
             return;
         }
 
@@ -4119,8 +4117,8 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Input Section */}
                 <Card className="h-full">
-                    <h3 className="text-lg font-semibold text-gray-100 mb-4">1. Imagem de Referência</h3>
-                    <p className="text-gray-400 text-sm mb-4">Faça upload de uma imagem para animar com Inteligência Artificial Generativa.</p>
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4">1. Imagem de Referência (Opcional)</h3>
+                    <p className="text-gray-400 text-sm mb-4">Faça upload de uma imagem para animar <span className="text-blue-400 font-bold">OU</span> pule esta etapa para criar apenas com texto.</p>
 
                     <div
                         className={`aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors ${sourceImage ? 'border-blue-500 bg-gray-800' : 'border-gray-600 hover:border-blue-500 hover:bg-gray-700/30'}`}
@@ -4150,7 +4148,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                     )}
 
                     <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-400 mb-2">2. Descreva a animação</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">2. Prompt (Obrigatório se não houver imagem)</label>
                         <textarea
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
@@ -4162,7 +4160,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                     <div className="mt-6">
                         <button
                             onClick={handleGenerateVideo}
-                            disabled={isLoading || !sourceImage}
+                            disabled={isLoading || (!sourceImage && !prompt.trim())}
                             className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                         >
                             {isLoading ? (
