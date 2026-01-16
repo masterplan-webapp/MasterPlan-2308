@@ -3960,6 +3960,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
     const { user } = useAuth();
     const { showAlert } = useGlobalAlert();
     const [sourceImage, setSourceImage] = useState<string | null>(null);
+    const [prompt, setPrompt] = useState("");
     const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -3989,6 +3990,11 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
             return;
         }
 
+        if (!prompt.trim()) {
+            setError("Por favor, descreva como você quer animar a imagem.");
+            return;
+        }
+
         if (user) {
             const userSubscription = user.subscription || 'free';
             const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'aiVideos');
@@ -4003,7 +4009,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
 
         try {
             // Google Veo uses 'prompt' and 'image'
-            const prompt = "Cinematic slow motion animation, high quality, 4k";
+            // const prompt = "Cinematic slow motion animation, high quality, 4k";
             const result = await generateVeoVideo(prompt, sourceImage);
 
             if (result.success && result.videoUrl) {
@@ -4142,6 +4148,16 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                             </button>
                         </div>
                     )}
+
+                    <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">2. Descreva a animação</label>
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Ex: Uma movimentação lenta e cinemática de câmera, 4k, alta qualidade... (Ou digite MOCK_VIDEO para testar)"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none h-24"
+                        />
+                    </div>
 
                     <div className="mt-6">
                         <button
