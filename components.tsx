@@ -3912,6 +3912,10 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
                                     {billingInterval === 'year' && (
                                         <p className="text-xs text-green-400 mt-1">Faturado R$ {plan.price.annual}/ano</p>
                                     )}
+                                    <div className="mt-3 py-1.5 px-3 bg-green-500/10 border border-green-500/20 rounded-md flex items-center justify-center gap-2">
+                                        <Check className="w-3.5 h-3.5 text-green-400" />
+                                        <span className="text-xs font-bold text-green-400 uppercase tracking-wide">Testar Grátis (7 dias)</span>
+                                    </div>
                                 </div>
 
                                 <div className="border-t border-gray-700 my-4 pt-4">
@@ -3937,7 +3941,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
                                                 : 'bg-white text-gray-900 hover:bg-gray-100'
                                             }`}
                                     >
-                                        {isCurrent ? 'Plano Atual' : 'Assinar Agora'}
+                                        {isCurrent ? 'Plano Atual' : 'Começar Teste Grátis'}
                                     </button>
                                 </div>
                             </div>

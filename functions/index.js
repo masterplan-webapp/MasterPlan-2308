@@ -330,6 +330,14 @@ exports.createStripeCheckoutSession = functions
                 payment_method_types: ["card"],
                 mode: "subscription",
                 allow_promotion_codes: true,
+                subscription_data: {
+                    trial_period_days: 7,
+                    metadata: {
+                        firebaseUID: uid,
+                        targetPlan: planType,
+                        interval: interval
+                    }
+                },
                 line_items: [{ price_data: priceData, quantity: 1 }],
                 customer_email: userEmail,
                 metadata: { firebaseUID: uid, targetPlan: planType, interval: interval },
@@ -362,6 +370,7 @@ exports.stripeWebhook = functions
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
+        // EVENT 1: Checkout Completed (Initial Setup)
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             const uid = session.metadata.firebaseUID;
@@ -372,40 +381,72 @@ exports.stripeWebhook = functions
 
             if (uid && targetPlan) {
                 try {
-                    // Update Firestore
                     await db.collection("users").doc(uid).set({
                         subscription: targetPlan,
                         subscriptionInterval: interval,
-                        subscriptionStatus: 'active',
+                        subscriptionStatus: 'active', // Initially active/trialing
+                        stripeCustomerId: session.customer, // Save customer ID for future reference
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
 
-                    // Get user name from Firebase Auth
-                    let userName = null;
-                    try {
-                        const userRecord = await admin.auth().getUser(uid);
-                        userName = userRecord.displayName;
-                    } catch (e) {
-                        console.log("Could not get user name");
+                    // Send confirmation email only if paid (amount > 0)
+                    // If trial (amount=0), maybe send a different email? For now, we keep it simple.
+                    if (amountTotal > 0) {
+                        let userName = null;
+                        try {
+                            const userRecord = await admin.auth().getUser(uid);
+                            userName = userRecord.displayName;
+                        } catch (e) {
+                            console.log("Could not get user name");
+                        }
+
+                        const planNames = { 'pro': 'MasterPlan PRO', 'ai': 'MasterPlan AI', 'ai_plus': 'MasterPlan AI+' };
+                        const planName = planNames[targetPlan] || targetPlan;
+
+                        const resend = new Resend(resendApiKey.value());
+                        await resend.emails.send({
+                            from: "MasterPlan <noreply@masterplanai.com.br>",
+                            to: customerEmail,
+                            subject: `Pagamento Confirmado - ${planName} ✅`,
+                            html: getPaymentConfirmationHtml(userName, planName, amountTotal),
+                        });
+                        console.log(`User ${uid} upgraded to ${targetPlan}, email sent.`);
                     }
-
-                    // Send payment confirmation email
-                    const planNames = { 'pro': 'MasterPlan PRO', 'ai': 'MasterPlan AI', 'ai_plus': 'MasterPlan AI+' };
-                    const planName = planNames[targetPlan] || targetPlan;
-
-                    const resend = new Resend(resendApiKey.value());
-                    await resend.emails.send({
-                        from: "MasterPlan <noreply@masterplanai.com.br>",
-                        to: customerEmail,
-                        subject: `Pagamento Confirmado - ${planName} ✅`,
-                        html: getPaymentConfirmationHtml(userName, planName, amountTotal),
-                    });
-
-                    console.log(`User ${uid} upgraded to ${targetPlan} (${interval}), confirmation email sent`);
                 } catch (error) {
-                    console.error("Error processing webhook:", error);
+                    console.error("Error processing session completed:", error);
                     return res.status(500).send("Internal Server Error");
                 }
+            }
+        }
+
+        // EVENT 2: Subscription Updated (Status Change, Renewal, Payment Failure)
+        else if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object;
+            const uid = subscription.metadata.firebaseUID;
+            const status = subscription.status; // active, past_due, canceled, trialing, incomplete
+            const planType = subscription.metadata.targetPlan;
+
+            if (uid) {
+                console.log(`Subscription updated for user ${uid}: ${status}`);
+                await db.collection("users").doc(uid).set({
+                    subscriptionStatus: status,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+        }
+
+        // EVENT 3: Subscription Deleted (Canceled)
+        else if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object;
+            const uid = subscription.metadata.firebaseUID;
+
+            if (uid) {
+                console.log(`Subscription deleted for user ${uid}. Downgrading to free.`);
+                await db.collection("users").doc(uid).set({
+                    subscription: 'free',
+                    subscriptionStatus: 'canceled',
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
         }
 
