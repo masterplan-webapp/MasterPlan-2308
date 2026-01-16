@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download, ShoppingBag, Users, Building2 } from 'lucide-react';
 import { useLanguage, useTheme, useAuth, useGlobalAlert } from './contexts';
-import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateVeoVideo, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
+import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateVeoVideo, getUserVideoCredits, purchaseVideoCredits, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
 import { PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
 
@@ -3953,6 +3953,124 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onU
     );
 };
 
+// --- Video Credits Purchase Modal ---
+interface VideoCreditsPurchaseModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    currentCredits: number;
+}
+
+export const VideoCreditsPurchaseModal: React.FC<VideoCreditsPurchaseModalProps> = ({ isOpen, onClose, currentCredits }) => {
+    const { showAlert } = useGlobalAlert();
+    const [isPurchasing, setIsPurchasing] = useState(false);
+
+    const packages = [
+        { quantity: 1, price: 12, discount: 0, name: '1 Vídeo' },
+        { quantity: 5, price: 55, discount: 10, name: '5 Vídeos', popular: false },
+        { quantity: 10, price: 100, discount: 17, name: '10 Vídeos', popular: true }
+    ];
+
+    const handlePurchase = async (quantity: number) => {
+        setIsPurchasing(true);
+        try {
+            const { url } = await purchaseVideoCredits(quantity);
+            window.location.href = url;
+        } catch (error) {
+            console.error('Error purchasing credits:', error);
+            showAlert('Erro', 'Não foi possível iniciar a compra. Tente novamente.', 'error');
+            setIsPurchasing(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+                <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                            <ShoppingBag className="text-purple-400" />
+                            Comprar Créditos de Vídeo
+                        </h2>
+                        <p className="text-gray-400 text-sm mt-1">Você tem <span className="font-bold text-green-400">{currentCredits} créditos</span> disponíveis</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white">
+                        <X size={24} />
+                    </button>
+                </div>
+
+                <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {packages.map((pkg) => (
+                            <div
+                                key={pkg.quantity}
+                                className={`relative rounded-xl border-2 p-6 transition-all ${pkg.popular
+                                    ? 'border-purple-500 bg-gradient-to-br from-purple-900/30 to-blue-900/30'
+                                    : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                                    }`}
+                            >
+                                {pkg.popular && (
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                        MELHOR VALOR
+                                    </div>
+                                )}
+
+                                <div className="text-center mb-4">
+                                    <div className="inline-block bg-purple-500/20 p-4 rounded-full mb-3">
+                                        <Video size={32} className="text-purple-400" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-1">{pkg.name}</h3>
+                                    <p className="text-gray-400 text-sm">Google Veo</p>
+                                </div>
+
+                                <div className="text-center mb-6">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className="text-3xl font-bold text-white">R$ {pkg.price}</span>
+                                        {pkg.discount > 0 && (
+                                            <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                                                -{pkg.discount}%
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-gray-400 text-sm mt-1">
+                                        R$ {(pkg.price / pkg.quantity).toFixed(2)} por vídeo
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => handlePurchase(pkg.quantity)}
+                                    disabled={isPurchasing}
+                                    className={`w-full py-3 rounded-lg font-semibold transition-all ${pkg.popular
+                                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white'
+                                        : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    {isPurchasing ? 'Processando...' : 'Comprar Agora'}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-6 bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle size={20} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-blue-200">
+                                <p className="font-semibold mb-1">Como funcionam os créditos?</p>
+                                <ul className="space-y-1 text-blue-300">
+                                    <li>• Créditos avulsos são usados quando o limite mensal (30 vídeos) é atingido</li>
+                                    <li>• Não expiram - use quando quiser</li>
+                                    <li>• Pagamento único via cartão de crédito</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 // --- Video Builder Page ---
 export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData }) => {
@@ -3966,8 +4084,19 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+    const [videoCredits, setVideoCredits] = useState(0);
+    const [monthlyUsage, setMonthlyUsage] = useState(0);
+    const [isPurchaseCreditsModalOpen, setIsPurchaseCreditsModalOpen] = useState(false);
 
     const canUseVideoBuilder = getPlanCapability(user?.subscription, 'canUseVideoBuilder');
+    const monthlyLimit = user?.subscription === 'ai_plus' ? 30 : 0;
+
+    // Fetch video credits on mount and after generation
+    useEffect(() => {
+        if (user) {
+            getUserVideoCredits(user.uid).then(setVideoCredits);
+        }
+    }, [user, generatedVideoUrl]);
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -4102,6 +4231,12 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                     }
                 }}
                 currentPlan={user?.subscription || 'free'}
+            />
+
+            <VideoCreditsPurchaseModal
+                isOpen={isPurchaseCreditsModalOpen}
+                onClose={() => setIsPurchaseCreditsModalOpen(false)}
+                currentCredits={videoCredits}
             />
 
             <div className="flex justify-between items-center">

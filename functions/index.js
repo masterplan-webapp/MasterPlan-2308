@@ -353,6 +353,69 @@ exports.createStripeCheckoutSession = functions
     });
 
 /**
+ * Creates a Stripe Checkout Session for purchasing video credits (one-time payment).
+ */
+exports.purchaseVideoCredits = functions
+    .runWith({ secrets: [stripeSecretKey] })
+    .https.onCall(async (data, context) => {
+        // Verify the user is authenticated
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
+        }
+
+        const uid = context.auth.uid;
+        const userEmail = context.auth.token.email;
+        const { quantity } = data; // 1, 5, or 10
+
+        // Validate quantity
+        const validQuantities = [1, 5, 10];
+        if (!validQuantities.includes(quantity)) {
+            throw new functions.https.HttpsError("invalid-argument", "Invalid quantity. Must be 1, 5, or 10");
+        }
+
+        // Pricing in cents (BRL)
+        const pricing = {
+            1: { amount: 1200, name: '1 Vídeo Google Veo', description: 'Crédito avulso para geração de vídeo' },
+            5: { amount: 5500, name: '5 Vídeos Google Veo', description: 'Pacote de 5 vídeos (10% de desconto)' },
+            10: { amount: 10000, name: '10 Vídeos Google Veo', description: 'Pacote de 10 vídeos (17% de desconto)' }
+        };
+
+        const selectedPackage = pricing[quantity];
+
+        try {
+            const stripe = require("stripe")(stripeSecretKey.value());
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ["card"],
+                mode: "payment", // One-time payment, not subscription
+                line_items: [{
+                    price_data: {
+                        currency: 'brl',
+                        product_data: {
+                            name: selectedPackage.name,
+                            description: selectedPackage.description,
+                        },
+                        unit_amount: selectedPackage.amount,
+                    },
+                    quantity: 1
+                }],
+                customer_email: userEmail,
+                metadata: {
+                    firebaseUID: uid,
+                    productType: 'video_credits',
+                    quantity: quantity.toString()
+                },
+                success_url: `https://app.masterplanai.com.br/?credits_purchase_success=true`,
+                cancel_url: `https://app.masterplanai.com.br/?credits_purchase_cancelled=true`,
+            });
+
+            return { sessionId: session.id, url: session.url };
+        } catch (error) {
+            console.error("Stripe Error (Video Credits):", error);
+            throw new functions.https.HttpsError("internal", "Unable to create checkout session: " + error.message);
+        }
+    });
+
+/**
  * Webhook to handle Stripe events and send payment confirmation email
  */
 exports.stripeWebhook = functions
@@ -374,12 +437,27 @@ exports.stripeWebhook = functions
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
             const uid = session.metadata.firebaseUID;
+            const productType = session.metadata.productType;
             const targetPlan = session.metadata.targetPlan;
             const interval = session.metadata.interval || 'month';
             const customerEmail = session.customer_email;
             const amountTotal = session.amount_total;
 
-            if (uid && targetPlan) {
+            // Handle VIDEO CREDITS purchase
+            if (productType === 'video_credits' && uid) {
+                const quantity = parseInt(session.metadata.quantity);
+                try {
+                    await db.collection("users").doc(uid).set({
+                        videoCredits: admin.firestore.FieldValue.increment(quantity)
+                    }, { merge: true });
+                    console.log(`User ${uid} purchased ${quantity} video credits.`);
+                } catch (error) {
+                    console.error("Error adding video credits:", error);
+                    return res.status(500).send("Internal Server Error");
+                }
+            }
+            // Handle SUBSCRIPTION purchase
+            else if (uid && targetPlan) {
                 try {
                     await db.collection("users").doc(uid).set({
                         subscription: targetPlan,
@@ -475,6 +553,35 @@ exports.generateVeoVideo = functions
             throw new functions.https.HttpsError("invalid-argument", "Image or Prompt is required for Veo.");
         }
 
+        // Get user document for quota and credits check
+        const uid = context.auth.uid;
+        const userRef = db.collection('users').doc(uid);
+        const userDoc = await userRef.get();
+        const userData = userDoc.data();
+        const userSubscription = userData?.subscription || 'free';
+        const videoCredits = userData?.videoCredits || 0;
+
+        // Check monthly quota
+        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        const usageRef = db.collection('usage').doc(`${uid}_${currentMonth}`);
+        const usageDoc = await usageRef.get();
+        const currentUsage = usageDoc.data()?.aiVideos || 0;
+
+        // Get plan limits
+        const planLimits = { free: 0, pro: 0, ai: 0, ai_plus: 30 };
+        const monthlyLimit = planLimits[userSubscription] || 0;
+        const hasMonthlyQuota = currentUsage < monthlyLimit;
+        const usingPurchasedCredit = !hasMonthlyQuota;
+
+        // If no monthly quota AND no purchased credits, reject
+        if (!hasMonthlyQuota && videoCredits <= 0) {
+            throw new functions.https.HttpsError(
+                "resource-exhausted",
+                `Monthly limit reached (${currentUsage}/${monthlyLimit}). Purchase video credits to continue.`
+            );
+        }
+
+
         try {
             // MOCK MODE: Check for keyword to bypass API costs
             if (prompt && prompt.includes('MOCK_VIDEO')) {
@@ -526,7 +633,22 @@ exports.generateVeoVideo = functions
             // Assuming it returns a GCS URI or inline bytes similar to Imagen.
             console.log("Veo Response:", JSON.stringify(response));
 
-            return { success: true, response: response };
+            // Deduct from purchased credits OR increment monthly usage
+            if (usingPurchasedCredit) {
+                // Deduct from purchased credits
+                await userRef.update({
+                    videoCredits: admin.firestore.FieldValue.increment(-1)
+                });
+                console.log(`User ${uid} used 1 purchased video credit. Remaining: ${videoCredits - 1}`);
+            } else {
+                // Increment monthly usage
+                await usageRef.set({
+                    aiVideos: admin.firestore.FieldValue.increment(1)
+                }, { merge: true });
+                console.log(`User ${uid} used monthly quota. Usage: ${currentUsage + 1}/${monthlyLimit}`);
+            }
+
+            return { success: true, response: response, usedCredit: usingPurchasedCredit };
         } catch (error) {
             console.error("Error generating Veo video:", error);
             throw new functions.https.HttpsError("internal", "Failed to generate video: " + error.message);

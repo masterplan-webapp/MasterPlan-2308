@@ -1498,6 +1498,43 @@ export const generateVeoVideo = async (prompt: string, image: string): Promise<{
     }
 };
 
+/**
+ * Purchase video credits (one-time payment for additional videos beyond monthly quota)
+ * @param quantity Number of video credits to purchase (1, 5, or 10)
+ * @returns Stripe checkout session URL
+ */
+export const purchaseVideoCredits = async (quantity: number): Promise<{ url: string }> => {
+    if (!functions) throw new Error("Firebase Functions not initialized");
+
+    try {
+        const purchaseCreditsFunc = httpsCallable(functions, 'purchaseVideoCredits');
+        const result = await purchaseCreditsFunc({ quantity });
+        const data = result.data as any;
+        return { url: data.url };
+    } catch (error: any) {
+        console.error("Error purchasing video credits:", error);
+        throw new Error(error.message || "Failed to purchase video credits.");
+    }
+};
+
+/**
+ * Get user's current video credit balance
+ * @param uid User ID
+ * @returns Number of remaining video credits
+ */
+export const getUserVideoCredits = async (uid: string): Promise<number> => {
+    if (!db) throw new Error("Firestore not initialized");
+
+    try {
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        return userDoc.data()?.videoCredits || 0;
+    } catch (error) {
+        console.error("Error fetching video credits:", error);
+        return 0;
+    }
+};
+
+
 export const createCheckoutSession = async (planType: string, interval: 'month' | 'year') => {
     if (!functions) throw new Error("Firebase Functions not initialized");
     const createSession = httpsCallable(functions, 'createStripeCheckoutSession');
