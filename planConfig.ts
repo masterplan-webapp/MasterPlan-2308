@@ -103,7 +103,7 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             'Criação de Planos com IA',
             'Análises de Plano Ilimitadas',
             'Creative Builder com IA (200 imagens)',
-            'Geração de Texto Ilimitada'
+            'Geração de Texto com IA Ilimitada'
         ],
         limits: {
             aiAnalysisCurrentPlan: 9999,
