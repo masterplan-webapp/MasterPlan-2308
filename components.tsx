@@ -4124,29 +4124,19 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
             return;
         }
 
-        if (user) {
-            const userSubscription = user.subscription || 'free';
-            const hasLimit = await dbService.checkLimit(user.uid, userSubscription as SubscriptionTier, 'aiVideos');
-            if (!hasLimit) {
-                setError("Limite de vídeos atingido para seu plano. Faça upgrade para continuar.");
-                return;
-            }
-        }
+        // Note: Quota and credit checks are now handled by the Cloud Function
+        // No need for frontend validation - the backend will return proper errors
 
         setIsLoading(true);
         setError(null);
 
         try {
             // Google Veo uses 'prompt' and 'image'
-            // const prompt = "Cinematic slow motion animation, high quality, 4k";
             const result = await generateVeoVideo(prompt, sourceImage, aspectRatio);
 
             if (result.success && result.videoUrl) {
                 setGeneratedVideoUrl(result.videoUrl);
-
-                if (user) {
-                    await dbService.incrementUsage(user.uid, 'aiVideos');
-                }
+                // Note: Usage tracking is now handled by the Cloud Function
             } else {
                 throw new Error("Invalid response from video generation service.");
             }
