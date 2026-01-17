@@ -1637,6 +1637,8 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
     const [isPricingModalOpen, setIsPricingModalOpen] = React.useState(false);
     // Creation Choice Modal State
     const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
+    // Notifications State
+    const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
 
     const handleCreateClick = (type: 'ai' | 'blank' | 'template') => {
         setIsCreationModalOpen(false); // Close modal if open
@@ -1728,10 +1730,63 @@ export const PlanSelectorPage: React.FC<PlanSelectorPageProps> = ({ plans, onSel
                         <span className="text-xs text-blue-400 font-semibold group-hover:text-blue-300">Upgrade</span>
                     </div>
 
-                    <button className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-800">
-                        <Bell size={20} />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#111827]"></span>
-                    </button>
+                    {/* Notifications Dropdown */}
+                    <div className="relative">
+                        <button
+                            className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-800"
+                            onClick={(e) => { e.stopPropagation(); setIsNotificationsOpen(!isNotificationsOpen); }}
+                        >
+                            <Bell size={20} />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#111827]"></span>
+                        </button>
+
+                        {isNotificationsOpen && (
+                            <div className="absolute right-0 mt-2 w-80 bg-gray-900 rounded-xl border border-gray-700 shadow-2xl z-50 overflow-hidden">
+                                <div className="p-3 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+                                    <h4 className="text-sm font-semibold text-white">Novidades</h4>
+                                    <span className="text-[10px] text-blue-400 font-medium bg-blue-500/10 px-2 py-0.5 rounded-full">v2.1</span>
+                                </div>
+                                <div className="max-h-[300px] overflow-y-auto">
+                                    <div className="p-4 border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
+                                        <div className="flex gap-3">
+                                            <div className="mt-1 p-1.5 bg-purple-500/20 rounded-md h-fit">
+                                                <Video size={14} className="text-purple-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-200 mb-1">Novo: Criador de Vídeos</p>
+                                                <p className="text-xs text-gray-500 leading-relaxed">Gere vídeos otimizados para YouTube e Stories usando IA. Exclusivo plano AI+.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 border-b border-gray-800 hover:bg-gray-800/30 transition-colors">
+                                        <div className="flex gap-3">
+                                            <div className="mt-1 p-1.5 bg-green-500/20 rounded-md h-fit">
+                                                <KeyRound size={14} className="text-green-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-200 mb-1">Mais Segurança</p>
+                                                <p className="text-xs text-gray-500 leading-relaxed">Agora você pode redefinir sua senha e excluir sua conta com feedback instantâneo.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 hover:bg-gray-800/30 transition-colors">
+                                        <div className="flex gap-3">
+                                            <div className="mt-1 p-1.5 bg-blue-500/20 rounded-md h-fit">
+                                                <Sparkles size={14} className="text-blue-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-200 mb-1">Novos Modelos de Plano</p>
+                                                <p className="text-xs text-gray-500 leading-relaxed">Adicionamos templates para Ecommerce e Serviços para acelerar seu planejamento.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* <div className="p-2 border-t border-gray-800 bg-gray-900/50 text-center">
+                                    <button className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">Ver todas</button>
+                                </div> */}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex items-center gap-3 pl-4 border-l border-gray-700 cursor-pointer" onClick={onProfileClick}>
                         <div className="text-right hidden sm:block">
