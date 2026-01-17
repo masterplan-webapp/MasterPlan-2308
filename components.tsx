@@ -1100,12 +1100,6 @@ export const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    console.log('🔄 Render LoginPage | Error:', error, '| Loading:', isLoading);
-
-    useEffect(() => {
-        if (error) console.log('✅ Error state updated to:', error);
-    }, [error]);
-
     const validateForm = () => {
         if (isSignUp) {
             if (!displayName.trim()) {
@@ -1290,21 +1284,9 @@ export const LoginPage: React.FC = () => {
                     )}
 
                     {error && (
-                        <div
-                            className="p-4 rounded-lg flex items-start gap-3 border-2 border-red-500 bg-red-900/50"
-                            style={{
-                                backgroundColor: 'rgba(127, 29, 29, 0.8)',
-                                border: '2px solid #ef4444',
-                                marginTop: '1rem',
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                visibility: 'visible'
-                            }}
-                        >
-                            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" style={{ color: '#f87171' }} />
-                            <p className="text-red-100 text-sm font-medium" style={{ color: '#fee2e2' }}>
-                                {error}
-                            </p>
+                        <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3 mt-4 mb-4">
+                            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-red-200 text-sm font-medium">{error}</p>
                         </div>
                     )}
 
