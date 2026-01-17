@@ -1120,13 +1120,16 @@ export const LoginPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
+        // Don't clear error here - let it stay until we have a successful login or new error
 
         if (!validateForm()) return;
 
         setIsLoading(true);
 
         try {
+            // Clear error only when attempting login
+            setError('');
+
             if (isSignUp) {
                 await signUpWithEmail(email, password, displayName.trim());
                 // displayName is now set in signUpWithEmail, no need for separate updateUser call
@@ -1135,18 +1138,24 @@ export const LoginPage: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Login error:', err);
-            console.log('Error code:', err.code); // Debug
+            console.log('Error code:', err.code);
+
+            let errorMessage = '';
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                setError('❌ Email ou senha incorretos. Verifique suas credenciais e tente novamente.');
+                errorMessage = '❌ Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
             } else if (err.code === 'auth/email-already-in-use') {
-                setError('❌ Este email já está em uso. Tente fazer login.');
+                errorMessage = '❌ Este email já está em uso. Tente fazer login.';
             } else if (err.code === 'auth/weak-password') {
-                setError('❌ A senha deve ter pelo menos 6 caracteres.');
+                errorMessage = '❌ A senha deve ter pelo menos 6 caracteres.';
             } else if (err.code === 'auth/invalid-email') {
-                setError('❌ Email inválido.');
+                errorMessage = '❌ Email inválido.';
             } else {
-                setError('❌ Ocorreu um erro. Tente novamente.');
+                errorMessage = '❌ Ocorreu um erro. Tente novamente.';
             }
+
+            console.log('Setting error message:', errorMessage);
+            setError(errorMessage);
+            console.log('Error state should be set now');
         } finally {
             setIsLoading(false);
         }
