@@ -4088,6 +4088,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
     const [monthlyUsage, setMonthlyUsage] = useState(0);
     const [isPurchaseCreditsModalOpen, setIsPurchaseCreditsModalOpen] = useState(false);
     const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('9:16'); // Default to Stories format
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const canUseVideoBuilder = getPlanCapability(user?.subscription, 'canUseVideoBuilder');
     const monthlyLimit = user?.subscription === 'ai_plus' ? 30 : 0;
@@ -4184,10 +4185,12 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
             return;
         }
 
-        // Confirm with user
-        if (!confirm(`Isso vai gerar 2 vídeos (9:16 + 16:9) e custar ${requiredCredits} crédito(s). Continuar?`)) {
-            return;
-        }
+        // Show confirmation modal instead of native confirm
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmGenerate = async () => {
+        setShowConfirmModal(false);
 
         setIsLoading(true);
         setError(null);
@@ -4296,6 +4299,44 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                 onClose={() => setIsPurchaseCreditsModalOpen(false)}
                 currentCredits={videoCredits}
             />
+
+            {/* Custom Confirmation Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl shadow-2xl max-w-md w-full border-2 border-purple-500/30 p-6">
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="bg-purple-500/20 p-3 rounded-full">
+                                <AlertCircle size={28} className="text-purple-400" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-white mb-2">Gerar Ambos os Formatos?</h3>
+                                <p className="text-gray-300 text-sm leading-relaxed">Isso vai gerar <span className="font-bold text-purple-400">2 vídeos</span>:</p>
+                                <ul className="mt-3 space-y-2 text-sm text-gray-400">
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                                        📱 Stories/Reels (9:16)
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                                        🖥️ YouTube/Horizontal (16:9)
+                                    </li>
+                                </ul>
+                                <div className="mt-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                                    <p className="text-yellow-200 text-sm font-semibold">💳 Custo: 2 créditos</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => setShowConfirmModal(false)} className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all">
+                                Cancelar
+                            </button>
+                            <button onClick={handleConfirmGenerate} className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-lg shadow-lg transition-all">
+                                ⚡ Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex justify-between items-center">
                 <div>
