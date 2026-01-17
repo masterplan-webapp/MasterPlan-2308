@@ -547,7 +547,7 @@ exports.generateVeoVideo = functions
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
         }
 
-        const { image, prompt } = data; // image (base64/url), prompt (text)
+        const { image, prompt, aspectRatio = '16:9' } = data; // image (base64/url), prompt (text)
 
         if (!image && !prompt) {
             throw new functions.https.HttpsError("invalid-argument", "Image or Prompt is required for Veo.");
