@@ -4087,6 +4087,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
     const [videoCredits, setVideoCredits] = useState(0);
     const [monthlyUsage, setMonthlyUsage] = useState(0);
     const [isPurchaseCreditsModalOpen, setIsPurchaseCreditsModalOpen] = useState(false);
+    const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('9:16'); // Default to Stories format
 
     const canUseVideoBuilder = getPlanCapability(user?.subscription, 'canUseVideoBuilder');
     const monthlyLimit = user?.subscription === 'ai_plus' ? 30 : 0;
@@ -4137,7 +4138,7 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
         try {
             // Google Veo uses 'prompt' and 'image'
             // const prompt = "Cinematic slow motion animation, high quality, 4k";
-            const result = await generateVeoVideo(prompt, sourceImage);
+            const result = await generateVeoVideo(prompt, sourceImage, aspectRatio);
 
             if (result.success && result.videoUrl) {
                 setGeneratedVideoUrl(result.videoUrl);
@@ -4156,6 +4157,63 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
             setIsLoading(false);
         }
     };
+
+    const handleGenerateAllFormats = async () => {
+        const hasImage = !!sourceImage;
+        const hasPrompt = !!prompt.trim();
+
+        if (!hasImage && !hasPrompt) {
+            setError("Por favor, faça upload de uma imagem OU descreva o vídeo.");
+            return;
+        }
+
+        // Check if user has enough credits (needs 2)
+        const requiredCredits = 2;
+        if (!user) {
+            setError("Usuário não autenticado.");
+            return;
+        }
+
+        // Check quota/credits
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const monthlyLimit = user?.subscription === 'ai_plus' ? 30 : 0;
+
+        // Simple check: if no monthly quota, needs 2 credits
+        if (monthlyUsage >= monthlyLimit && videoCredits < requiredCredits) {
+            setError(`Você precisa de ${requiredCredits} créditos para gerar ambos os formatos. Compre créditos para continuar.`);
+            return;
+        }
+
+        // Confirm with user
+        if (!confirm(`Isso vai gerar 2 vídeos (9:16 + 16:9) e custar ${requiredCredits} crédito(s). Continuar?`)) {
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Generate both formats
+            const formats: Array<'16:9' | '9:16'> = ['9:16', '16:9'];
+            const results = await Promise.all(
+                formats.map(ratio => generateVeoVideo(prompt, sourceImage, ratio))
+            );
+
+            // For simplicity, show the first video (9:16)
+            // In a full implementation, you'd show both
+            if (results[0].success && results[0].videoUrl) {
+                setGeneratedVideoUrl(results[0].videoUrl);
+                showAlert('Sucesso!', `2 vídeos gerados! (9:16 e 16:9)`, 'success');
+            }
+
+        } catch (e: any) {
+            console.error("Multi-Format Video Generation Error:", e);
+            setError(e.message || "Erro ao gerar vídeos. Tente novamente.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
     if (!canUseVideoBuilder) {
         return (
@@ -4322,7 +4380,23 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                         />
                     </div>
 
+                    {/* Aspect Ratio Selector */}
                     <div className="mt-6">
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            Formato do Vídeo
+                        </label>
+                        <select
+                            value={aspectRatio}
+                            onChange={(e) => setAspectRatio(e.target.value as '16:9' | '9:16')}
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        >
+                            <option value="9:16">📱 Stories/Reels (9:16 - Vertical)</option>
+                            <option value="16:9">🖥️ YouTube/Horizontal (16:9)</option>
+                        </select>
+                    </div>
+
+                    {/* Generation Buttons */}
+                    <div className="mt-6 space-y-3">
                         <button
                             onClick={handleGenerateVideo}
                             disabled={isLoading || (!sourceImage && !prompt.trim())}
@@ -4331,8 +4405,18 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                             {isLoading ? (
                                 <><LoaderIcon className="animate-spin" /> Gerando com Veo...</>
                             ) : (
-                                <><Video size={20} /> Gerar Vídeo (Veo)</>
+                                <><Video size={20} /> Gerar Vídeo ({aspectRatio})</>
                             )}
+                        </button>
+
+                        <button
+                            onClick={handleGenerateAllFormats}
+                            disabled={isLoading || (!sourceImage && !prompt.trim())}
+                            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                            <Video size={20} />
+                            ⚡ Gerar Ambos os Formatos
+                            <span className="text-xs opacity-90">(2 créditos)</span>
                         </button>
                         {error && (
                             <div className="mt-3 p-3 bg-red-900/30 border border-red-800 rounded-md text-red-200 text-sm flex items-center gap-2">

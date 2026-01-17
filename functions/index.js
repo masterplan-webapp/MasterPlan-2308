@@ -553,6 +553,12 @@ exports.generateVeoVideo = functions
             throw new functions.https.HttpsError("invalid-argument", "Image or Prompt is required for Veo.");
         }
 
+        // Validate aspect ratio
+        const validRatios = ['16:9', '9:16'];
+        if (!validRatios.includes(aspectRatio)) {
+            throw new functions.https.HttpsError("invalid-argument", "Aspect ratio must be 16:9 or 9:16");
+        }
+
         // Get user document for quota and credits check
         const uid = context.auth.uid;
         const userRef = db.collection('users').doc(uid);
@@ -608,7 +614,10 @@ exports.generateVeoVideo = functions
 
             // Constructing request parts
             const request = {
-                contents: [{ role: 'user', parts: [] }]
+                contents: [{ role: 'user', parts: [] }],
+                generationConfig: {
+                    aspectRatio: aspectRatio
+                }
             };
 
             if (prompt) {

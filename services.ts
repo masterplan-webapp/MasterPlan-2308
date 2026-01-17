@@ -1479,12 +1479,16 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
  * @param prompt Text prompt (driving generation)
  * @param image Base64 image string (optional/context)
  */
-export const generateVeoVideo = async (prompt: string, image: string): Promise<{ success: boolean; videoUrl: any; response?: any }> => {
+export const generateVeoVideo = async (
+    prompt: string,
+    image: string,
+    aspectRatio: '16:9' | '9:16' = '16:9'
+): Promise<{ success: boolean; videoUrl: any; response?: any }> => {
     if (!functions) throw new Error("Firebase Functions not initialized");
 
     try {
         const generateVideoFn = httpsCallable(functions, 'generateVeoVideo');
-        const result = await generateVideoFn({ prompt, image });
+        const result = await generateVideoFn({ prompt, image, aspectRatio });
         const data = result.data as any;
 
         if (data.success) {
