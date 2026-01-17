@@ -1136,15 +1136,15 @@ export const LoginPage: React.FC = () => {
         } catch (err: any) {
             console.error(err);
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                setError(t('invalid_credentials'));
+                setError('❌ Email ou senha incorretos. Verifique suas credenciais e tente novamente.');
             } else if (err.code === 'auth/email-already-in-use') {
-                setError('Este email já está em uso. Tente fazer login.');
+                setError('❌ Este email já está em uso. Tente fazer login.');
             } else if (err.code === 'auth/weak-password') {
-                setError('A senha deve ter pelo menos 6 caracteres.');
+                setError('❌ A senha deve ter pelo menos 6 caracteres.');
             } else if (err.code === 'auth/invalid-email') {
-                setError('Email inválido.');
+                setError('❌ Email inválido.');
             } else {
-                setError('Ocorreu um erro. Tente novamente.');
+                setError('❌ Ocorreu um erro. Tente novamente.');
             }
         } finally {
             setIsLoading(false);
