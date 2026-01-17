@@ -1514,12 +1514,14 @@ export const ResetPasswordPage: React.FC = () => {
                             </button>
                         </div>
 
-                        <button
-                            onClick={handleGoToLogin}
-                            className="mt-4 text-sm text-gray-400 hover:text-gray-300 transition-colors"
-                        >
-                            Voltar ao Login
-                        </button>
+                        <div className="mt-6 text-center">
+                            <button
+                                onClick={handleGoToLogin}
+                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                            >
+                                Voltar ao Login
+                            </button>
+                        </div>
                     </>
                 )}
             </Card>

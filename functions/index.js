@@ -443,6 +443,8 @@ exports.stripeWebhook = functions
             const customerEmail = session.customer_email;
             const amountTotal = session.amount_total;
 
+            console.log(`Webhook: checkout.session.completed. UID: ${uid}, Plan: ${targetPlan}, Amount: ${amountTotal}, Email: ${customerEmail}`);
+
             // Handle VIDEO CREDITS purchase
             if (productType === 'video_credits' && uid) {
                 const quantity = parseInt(session.metadata.quantity);
@@ -467,29 +469,71 @@ exports.stripeWebhook = functions
                         updatedAt: admin.firestore.FieldValue.serverTimestamp()
                     }, { merge: true });
 
-                    // Send confirmation email only if paid (amount > 0)
-                    // If trial (amount=0), maybe send a different email? For now, we keep it simple.
-                    if (amountTotal > 0) {
+                    // Send confirmation email (even for trials where amount is 0)
+                    // We check if amountTotal is not null/undefined to be safe
+                    if (amountTotal !== undefined && amountTotal !== null) {
                         let userName = null;
                         try {
                             const userRecord = await admin.auth().getUser(uid);
                             userName = userRecord.displayName;
                         } catch (e) {
-                            console.log("Could not get user name");
+                            console.log("Could not get user name for email:", uid);
                         }
 
                         const planNames = { 'pro': 'MasterPlan PRO', 'ai': 'MasterPlan AI', 'ai_plus': 'MasterPlan AI+' };
                         const planName = planNames[targetPlan] || targetPlan;
 
-                        const resend = new Resend(resendApiKey.value());
-                        await resend.emails.send({
-                            from: "MasterPlan <noreply@masterplanai.com.br>",
-                            to: customerEmail,
-                            subject: `Pagamento Confirmado - ${planName} ✅`,
-                            html: getPaymentConfirmationHtml(userName, planName, amountTotal),
-                        });
-                        console.log(`User ${uid} upgraded to ${targetPlan}, email sent.`);
+                        // If amount is 0, it's a trial start
+                        const isTrial = amountTotal === 0;
+                        const emailSubject = isTrial
+                            ? `Seu Trial Começou! - ${planName} 🚀`
+                            : `Pagamento Confirmado - ${planName} ✅`;
+
+                        console.log(`Sending email to ${customerEmail}. Subject: ${emailSubject}. Amount: ${amountTotal}`);
+
+                        try {
+                            const resend = new Resend(resendApiKey.value());
+                            await resend.emails.send({
+                                from: "MasterPlan <noreply@masterplanai.com.br>",
+                                to: customerEmail,
+                                subject: emailSubject,
+                                html: getPaymentConfirmationHtml(userName, planName, amountTotal),
+                            });
+                            console.log(`Email successfully sent to ${customerEmail}`);
+                        } catch (emailError) {
+                            console.error("Failed to send confirmation email:", emailError);
+                        }
+                    } else {
+                        console.log("Skipping email: amountTotal is undefined/null");
                     }
+
+                    // --- DUPLICATE SUBSCRIPTION CHECK ---
+                    // Prevent user from having multiple active subscriptions (e.g. Pro + AI+)
+                    if (session.customer && session.subscription) {
+                        try {
+                            const stripe = require("stripe")(stripeSecretKey.value());
+
+                            // List ALL active subscriptions for this customer
+                            const subscriptions = await stripe.subscriptions.list({
+                                customer: session.customer,
+                                status: 'active',
+                            });
+
+                            const currentSubscriptionId = session.subscription;
+
+                            for (const sub of subscriptions.data) {
+                                // Cancel any subscription that is NOT the one just created
+                                if (sub.id !== currentSubscriptionId) {
+                                    console.log(`Cancelling old subscription ${sub.id} for user ${uid} (upgraded to ${currentSubscriptionId})`);
+                                    await stripe.subscriptions.cancel(sub.id);
+                                }
+                            }
+                        } catch (error) {
+                            console.error("Error cancelling old subscriptions:", error);
+                            // Non-critical error, proceed without failing the webhook
+                        }
+                    }
+                    // ------------------------------------
                 } catch (error) {
                     console.error("Error processing session completed:", error);
                     return res.status(500).send("Internal Server Error");

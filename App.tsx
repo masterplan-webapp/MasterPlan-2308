@@ -286,6 +286,7 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
 const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onUpgradeClick }) => {
     const { user, updateUser, signOut } = useAuth();
     const { t } = useLanguage();
+    const { showAlert } = useGlobalAlert();
     const [name, setName] = useState(user?.displayName || '');
     const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'account'>('profile');
@@ -379,7 +380,7 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
                                     }
                                 } catch (uploadError) {
                                     console.error("Upload failed:", uploadError);
-                                    alert("Erro ao fazer upload da imagem. Tente novamente.");
+                                    showAlert(t('Erro'), "Erro ao fazer upload da imagem. Tente novamente.", 'error');
                                 }
                             }
                         }, 'image/jpeg', 0.8);
@@ -406,7 +407,7 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
             }
         } catch (err) {
             console.error('Password reset error:', err);
-            alert('Erro ao enviar email. Tente novamente.');
+            showAlert(t('Erro'), 'Erro ao enviar email. Tente novamente.', 'error');
         } finally {
             setIsResetting(false);
         }
@@ -419,15 +420,22 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
             const { getAuth, deleteUser } = await import('firebase/auth');
             const auth = getAuth();
             if (auth.currentUser) {
+                // Set flag to show success message after redirect to login
+                localStorage.setItem('accountDeleted', 'true');
                 await deleteUser(auth.currentUser);
                 onClose();
             }
         } catch (err: any) {
             console.error('Delete account error:', err);
             if (err.code === 'auth/requires-recent-login') {
-                alert('Por segurança, faça logout e login novamente antes de excluir sua conta.');
+                console.log("TRIGGERING CUSTOM ALERT - Security Warning");
+                showAlert(
+                    t('Ação Necessária'),
+                    '⚠️ Por segurança, faça logout e login novamente antes de excluir sua conta permanetemente.',
+                    'warning'
+                );
             } else {
-                alert('Erro ao excluir conta. Tente novamente.');
+                showAlert(t('Erro'), 'Erro ao excluir conta. Tente novamente.', 'error');
             }
         } finally {
             setIsDeleting(false);
@@ -753,7 +761,7 @@ export default function App() {
             }
         } catch (error) {
             console.error("Erro ao iniciar checkout:", error);
-            alert("Erro ao iniciar pagamento. Tente novamente.");
+            showAlert(t('Erro'), "Erro ao iniciar pagamento. Tente novamente.", 'error');
             setIsLoading(false);
         }
     };
@@ -775,6 +783,21 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem('sidebarCollapsed', String(isSidebarCollapsed));
     }, [isSidebarCollapsed]);
+
+    useEffect(() => {
+        // Check for account deletion flag
+        if (!user && localStorage.getItem('accountDeleted') === 'true') {
+            localStorage.removeItem('accountDeleted');
+            // Small delay to ensure UI is ready
+            setTimeout(() => {
+                showAlert(
+                    t('Conta Excluída'),
+                    t('Sua conta foi excluída com sucesso. Esperamos vê-lo novamente em breve!'),
+                    'success'
+                );
+            }, 100);
+        }
+    }, [user, showAlert, t]);
 
     const handlePlanCreated = async (type: 'ai' | 'blank' | 'template') => {
         if (!user) return;
@@ -881,7 +904,7 @@ export default function App() {
             setActiveView('Overview');
         } catch (error) {
             console.error("Error generating AI plan:", error);
-            alert(t('Erro ao criar o plano com IA. Por favor, tente novamente.'));
+            showAlert(t('Erro'), t('Erro ao criar o plano com IA. Por favor, tente novamente.'), 'error');
         } finally {
             setIsRegeneratingPlan(false);
             setAIPlanCreationModalOpen(false);
@@ -1013,7 +1036,7 @@ export default function App() {
             updateActivePlan(updatedPlan);
         } catch (error) {
             console.error("Error regenerating AI plan:", error);
-            alert(t('Erro ao criar o plano com IA. Por favor, tente novamente.'));
+            showAlert(t('Erro'), t('Erro ao criar o plano com IA. Por favor, tente novamente.'), 'error');
         } finally {
             setIsRegeneratingPlan(false);
         }
@@ -1089,93 +1112,169 @@ export default function App() {
     }
 
 
-    if (loading) {
-        return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
-    }
+    // --- Render Logic ---
+    const renderContent = () => {
+        if (loading) {
+            return <div className="h-screen w-full flex items-center justify-center bg-gray-900"><LoaderIcon className="animate-spin text-blue-600" size={48} /></div>;
+        }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedPlanData = urlParams.get('plan_data');
-    const shareId = urlParams.get('share');
-    const authMode = urlParams.get('mode');
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedPlanData = urlParams.get('plan_data');
+        const shareId = urlParams.get('share');
+        const authMode = urlParams.get('mode');
 
-    // Handle shared plan via Firestore ID
-    if (shareId) {
-        return <ShareablePlanViewer shareId={shareId} />;
-    }
+        // Handle shared plan via Firestore ID
+        if (shareId) {
+            return <ShareablePlanViewer shareId={shareId} />;
+        }
 
-    // Legacy: Handle shared plan via URL-encoded data
-    if (encodedPlanData) {
-        return <ShareablePlanViewer encodedPlanData={encodedPlanData} />;
-    }
+        // Legacy: Handle shared plan via URL-encoded data
+        if (encodedPlanData) {
+            return <ShareablePlanViewer encodedPlanData={encodedPlanData} />;
+        }
 
-    // Handle Firebase Auth action URLs (password reset, email verification, etc.)
-    if (authMode === 'resetPassword') {
-        return <ResetPasswordPage />;
-    }
+        // Handle Firebase Auth action URLs (password reset, email verification, etc.)
+        if (authMode === 'resetPassword') {
+            return <ResetPasswordPage />;
+        }
 
-    if (!user) {
-        return <LoginPage />;
-    }
+        if (!user) {
+            return <LoginPage />;
+        }
 
-    // Show loading while fetching plans
-    if (plansLoading) {
+        // Show loading while fetching plans
+        if (plansLoading) {
+            return (
+                <div className="h-screen w-full flex items-center justify-center bg-gray-900">
+                    <LoaderIcon className="animate-spin text-blue-500" size={48} />
+                </div>
+            );
+        }
+
+        if (allPlans.length === 0 && !activePlan) {
+            return (
+                <>
+                    <OnboardingPage onPlanCreated={handlePlanCreated} />
+                    <AIPlanCreationModal
+                        isOpen={isAIPlanCreationModalOpen}
+                        onClose={() => setAIPlanCreationModalOpen(false)}
+                        onGenerate={handleAIPlanGenerated}
+                        isLoading={isRegeneratingPlan}
+                    />
+                    <TemplateSelectionModal
+                        isOpen={isTemplateModalOpen}
+                        onClose={() => setTemplateModalOpen(false)}
+                        onSelect={handleTemplateSelect}
+                    />
+                </>
+            );
+        }
+
+        if (!activePlan) {
+            return (
+                <>
+                    <PlanSelectorPageComponent
+                        plans={allPlans}
+                        onSelectPlan={handleSelectPlan}
+                        onPlanCreated={handlePlanCreatedOrSelected}
+                        user={user}
+                        onProfileClick={() => setIsProfileModalOpen(true)}
+                        onDeletePlan={handleDeletePlan}
+                        onRenamePlan={handleRenamePlan}
+                        onRenameRequest={handleRenameRequest}
+                    />
+                    <TemplateSelectionModal
+                        isOpen={isTemplateModalOpen}
+                        onClose={() => setTemplateModalOpen(false)}
+                        onSelect={handleTemplateSelect}
+                    />
+                    <AIPlanCreationModal
+                        isOpen={isAIPlanCreationModalOpen}
+                        onClose={() => setAIPlanCreationModalOpen(false)}
+                        onGenerate={handleAIPlanGenerated}
+                        isLoading={isRegeneratingPlan}
+                    />
+                    {isRenameModalOpen && planToRename && (
+                        <RenamePlanModal
+                            isOpen={isRenameModalOpen}
+                            onClose={() => { setRenameModalOpen(false); setPlanToRename(null); }}
+                            plan={planToRename}
+                            onSave={handleRenamePlan}
+                        />
+                    )}
+                    <UserProfileModalInternal
+                        isOpen={isProfileModalOpen}
+                        onClose={() => setIsProfileModalOpen(false)}
+                        onUpgradeClick={() => {
+                            setIsPricingModalOpen(true);
+                        }}
+                    />
+                    <PricingModal
+                        isOpen={isPricingModalOpen}
+                        onClose={() => setIsPricingModalOpen(false)}
+                        onUpgrade={handleUpgrade}
+                        currentPlan={user?.subscription || 'free'}
+                    />
+                </>
+            );
+        }
+
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-gray-900">
-                <LoaderIcon className="animate-spin text-blue-500" size={48} />
-            </div>
-        );
-    }
-
-    if (allPlans.length === 0 && !activePlan) {
-        return (
-            <>
-                <OnboardingPage onPlanCreated={handlePlanCreated} />
-                <AIPlanCreationModal
-                    isOpen={isAIPlanCreationModalOpen}
-                    onClose={() => setAIPlanCreationModalOpen(false)}
-                    onGenerate={handleAIPlanGenerated}
-                    isLoading={isRegeneratingPlan}
-                />
-                <TemplateSelectionModal
-                    isOpen={isTemplateModalOpen}
-                    onClose={() => setTemplateModalOpen(false)}
-                    onSelect={handleTemplateSelect}
-                />
-                <CustomAlertModal
-                    isOpen={alertState.isOpen}
-                    title={alertState.title}
-                    message={alertState.message}
-                    type={alertState.type}
-                    onClose={hideAlert}
-                />
-            </>
-        );
-    }
-
-    if (!activePlan) {
-        return (
-            <>
-                <PlanSelectorPageComponent
-                    plans={allPlans}
-                    onSelectPlan={handleSelectPlan}
-                    onPlanCreated={handlePlanCreatedOrSelected}
+            <div className={`flex h-screen bg-gray-900 font-sans`}>
+                <Sidebar
+                    isCollapsed={isSidebarCollapsed}
+                    isMobileOpen={isMobileSidebarOpen}
+                    activePlan={activePlan}
+                    activeView={activeView}
+                    handleNavigate={handleNavigate}
+                    handleBackToDashboard={handleBackToDashboard}
+                    setAddMonthModalOpen={setAddMonthModalOpen}
+                    setIsProfileModalOpen={setIsProfileModalOpen}
+                    onUpgradeClick={() => setIsPricingModalOpen(true)}
                     user={user}
-                    onProfileClick={() => setIsProfileModalOpen(true)}
-                    onDeletePlan={handleDeletePlan}
-                    onRenamePlan={handleRenamePlan}
-                    onRenameRequest={handleRenameRequest}
+                    signOut={signOut}
                 />
-                <TemplateSelectionModal
-                    isOpen={isTemplateModalOpen}
-                    onClose={() => setTemplateModalOpen(false)}
-                    onSelect={handleTemplateSelect}
-                />
-                <AIPlanCreationModal
-                    isOpen={isAIPlanCreationModalOpen}
-                    onClose={() => setAIPlanCreationModalOpen(false)}
-                    onGenerate={handleAIPlanGenerated}
-                    isLoading={isRegeneratingPlan}
-                />
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header
+                        activeView={activeView}
+                        toggleSidebar={toggleSidebar}
+                        setPlanModalOpen={setPlanDetailsModalOpen}
+                        activePlan={activePlan}
+                        isExporting={isExporting}
+                        onExportPDF={handleExportPDF}
+                        onGetShareLink={handleGetShareLink}
+                    />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
+                        {activeView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
+                        {Object.keys(activePlan.months || {}).includes(activeView) && (
+                            <MonthlyPlanPage
+                                month={activeView}
+                                campaigns={activePlan.months[activeView]}
+                                onSave={handleSaveCampaign}
+                                onDelete={handleDeleteCampaign}
+                                planObjective={activePlan.objective}
+                                customFormats={activePlan.customFormats || []}
+                                onAddFormat={handleAddFormat}
+                                totalInvestment={activePlan.totalInvestment}
+                            />
+                        )}
+                        {activeView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                        {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                        {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
+                        {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
+                        {activeView === 'Video_Builder' && <VideoBuilderPage planData={activePlan} />}
+                    </main>
+                </div>
+                {isPlanDetailsModalOpen && (
+                    <PlanDetailsModal
+                        isOpen={isPlanDetailsModalOpen}
+                        onClose={() => setPlanDetailsModalOpen(false)}
+                        onSave={handleSavePlanDetails}
+                        planData={activePlan}
+                        onRename={handleRenameRequest}
+                        onDuplicate={handleDuplicatePlan}
+                    />
+                )}
                 {isRenameModalOpen && planToRename && (
                     <RenamePlanModal
                         isOpen={isRenameModalOpen}
@@ -1184,6 +1283,12 @@ export default function App() {
                         onSave={handleRenamePlan}
                     />
                 )}
+                <AddMonthModal
+                    isOpen={isAddMonthModalOpen}
+                    onClose={() => setAddMonthModalOpen(false)}
+                    onAddMonth={handleAddMonth}
+                    existingMonths={Object.keys(activePlan.months || {})}
+                />
                 <UserProfileModalInternal
                     isOpen={isProfileModalOpen}
                     onClose={() => setIsProfileModalOpen(false)}
@@ -1191,116 +1296,27 @@ export default function App() {
                         setIsPricingModalOpen(true);
                     }}
                 />
-                <CustomAlertModal
-                    isOpen={alertState.isOpen}
-                    title={alertState.title}
-                    message={alertState.message}
-                    type={alertState.type}
-                    onClose={hideAlert}
-                />
                 <PricingModal
                     isOpen={isPricingModalOpen}
                     onClose={() => setIsPricingModalOpen(false)}
                     onUpgrade={handleUpgrade}
                     currentPlan={user?.subscription || 'free'}
                 />
-            </>
-        );
-    }
+                <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
 
+                <TemplateSelectionModal
+                    isOpen={isTemplateModalOpen}
+                    onClose={() => setTemplateModalOpen(false)}
+                    onSelect={handleTemplateSelect}
+                />
+            </div>
+        );
+    };
 
     return (
-        <div className={`flex h-screen bg-gray-900 font-sans`}>
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                isMobileOpen={isMobileSidebarOpen}
-                activePlan={activePlan}
-                activeView={activeView}
-                handleNavigate={handleNavigate}
-                handleBackToDashboard={handleBackToDashboard}
-                setAddMonthModalOpen={setAddMonthModalOpen}
-                setIsProfileModalOpen={setIsProfileModalOpen}
-                onUpgradeClick={() => setIsPricingModalOpen(true)}
-                user={user}
-                signOut={signOut}
-            />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header
-                    activeView={activeView}
-                    toggleSidebar={toggleSidebar}
-                    setPlanModalOpen={setPlanDetailsModalOpen}
-                    activePlan={activePlan}
-                    isExporting={isExporting}
-                    onExportPDF={handleExportPDF}
-                    onGetShareLink={handleGetShareLink}
-                />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    {activeView === 'Overview' && <DashboardPage planData={activePlan} onNavigate={handleNavigate} onAddMonthClick={() => setAddMonthModalOpen(true)} onRegeneratePlan={handleRegeneratePlan} isRegenerating={isRegeneratingPlan} />}
-                    {Object.keys(activePlan.months || {}).includes(activeView) && (
-                        <MonthlyPlanPage
-                            month={activeView}
-                            campaigns={activePlan.months[activeView]}
-                            onSave={handleSaveCampaign}
-                            onDelete={handleDeleteCampaign}
-                            planObjective={activePlan.objective}
-                            customFormats={activePlan.customFormats || []}
-                            onAddFormat={handleAddFormat}
-                            totalInvestment={activePlan.totalInvestment}
-                        />
-                    )}
-                    {activeView === 'Copy_builder' && <CopyBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                    {activeView === 'UTM_Builder' && <UTMBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                    {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
-                    {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
-                    {activeView === 'Video_Builder' && <VideoBuilderPage planData={activePlan} />}
-                </main>
-            </div>
-            {isPlanDetailsModalOpen && (
-                <PlanDetailsModal
-                    isOpen={isPlanDetailsModalOpen}
-                    onClose={() => setPlanDetailsModalOpen(false)}
-                    onSave={handleSavePlanDetails}
-                    planData={activePlan}
-                    onRename={handleRenameRequest}
-                    onDuplicate={handleDuplicatePlan}
-                />
-            )}
-            {isRenameModalOpen && planToRename && (
-                <RenamePlanModal
-                    isOpen={isRenameModalOpen}
-                    onClose={() => { setRenameModalOpen(false); setPlanToRename(null); }}
-                    plan={planToRename}
-                    onSave={handleRenamePlan}
-                />
-            )}
-            <AddMonthModal
-                isOpen={isAddMonthModalOpen}
-                onClose={() => setAddMonthModalOpen(false)}
-                onAddMonth={handleAddMonth}
-                existingMonths={Object.keys(activePlan.months || {})}
-            />
-            <UserProfileModalInternal
-                isOpen={isProfileModalOpen}
-                onClose={() => setIsProfileModalOpen(false)}
-                onUpgradeClick={() => {
-                    setIsPricingModalOpen(true);
-                }}
-            />
-            <PricingModal
-                isOpen={isPricingModalOpen}
-                onClose={() => setIsPricingModalOpen(false)}
-                onUpgrade={handleUpgrade}
-                currentPlan={user?.subscription || 'free'}
-            />
-            <ShareLinkModal isOpen={isShareLinkModalOpen} onClose={() => setIsShareLinkModalOpen(false)} link={shareLink} />
-
-            <TemplateSelectionModal
-                isOpen={isTemplateModalOpen}
-                onClose={() => setTemplateModalOpen(false)}
-                onSelect={handleTemplateSelect}
-            />
-
-            {/* Global Alert Modal */}
+        <>
+            {renderContent()}
+            {/* Global Alert Modal - Always rendered to ensure state persistence across view transitions */}
             <CustomAlertModal
                 isOpen={alertState.isOpen}
                 title={alertState.title}
@@ -1308,7 +1324,6 @@ export default function App() {
                 type={alertState.type}
                 onClose={hideAlert}
             />
-
-        </div>
+        </>
     );
 }
