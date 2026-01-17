@@ -248,6 +248,7 @@ export interface HeaderProps {
 export interface UserProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onUpgradeClick?: () => void;
 }
 
 export interface DashboardHeaderProps {

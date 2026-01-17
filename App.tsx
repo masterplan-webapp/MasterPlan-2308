@@ -283,7 +283,7 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
     );
 };
 
-const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
+const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, onUpgradeClick }) => {
     const { user, updateUser, signOut } = useAuth();
     const { t } = useLanguage();
     const [name, setName] = useState(user?.displayName || '');
@@ -590,6 +590,16 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
                                             {user?.subscription === 'free' ? 'Limite de 1 plano' : 'Planos ilimitados'}
                                         </span>
                                     </div>
+                                    {onUpgradeClick && (
+                                        <button
+                                            onClick={onUpgradeClick}
+                                            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1"
+                                        >
+                                            <Sparkles size={12} />
+                                            {user?.subscription === 'free' ? 'Fazer Upgrade' : 'Alterar Plano'}
+                                        </button>
+                                    )}
+
                                 </div>
                             </div>
 
@@ -1174,7 +1184,7 @@ export default function App() {
                         onSave={handleRenamePlan}
                     />
                 )}
-                <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+                <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} onUpgradeClick={() => { setIsProfileModalOpen(false); setIsPricingModalOpen(true); }} />
                 <CustomAlertModal
                     isOpen={alertState.isOpen}
                     title={alertState.title}
@@ -1257,7 +1267,7 @@ export default function App() {
                 onAddMonth={handleAddMonth}
                 existingMonths={Object.keys(activePlan.months || {})}
             />
-            <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
+            <UserProfileModalInternal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} onUpgradeClick={() => { setIsProfileModalOpen(false); setIsPricingModalOpen(true); }} />
             <PricingModal
                 isOpen={isPricingModalOpen}
                 onClose={() => setIsPricingModalOpen(false)}
