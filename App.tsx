@@ -592,10 +592,7 @@ const UserProfileModalInternal: React.FC<UserProfileModalProps> = ({ isOpen, onC
                                     </div>
                                     {onUpgradeClick && (
                                         <button
-                                            onClick={() => {
-                                                console.log("Upgrade button clicked in UserProfileModalInternal");
-                                                onUpgradeClick();
-                                            }}
+                                            onClick={onUpgradeClick}
                                             className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded transition-colors font-medium flex items-center gap-1"
                                         >
                                             <Sparkles size={12} />
@@ -1191,9 +1188,7 @@ export default function App() {
                     isOpen={isProfileModalOpen}
                     onClose={() => setIsProfileModalOpen(false)}
                     onUpgradeClick={() => {
-                        console.log("Upgrade handler called in App (Sidebar context)");
                         setIsPricingModalOpen(true);
-                        // setIsProfileModalOpen(false); // Mantendo aberto para evitar race condition
                     }}
                 />
                 <CustomAlertModal
@@ -1202,6 +1197,12 @@ export default function App() {
                     message={alertState.message}
                     type={alertState.type}
                     onClose={hideAlert}
+                />
+                <PricingModal
+                    isOpen={isPricingModalOpen}
+                    onClose={() => setIsPricingModalOpen(false)}
+                    onUpgrade={handleUpgrade}
+                    currentPlan={user?.subscription || 'free'}
                 />
             </>
         );
@@ -1282,9 +1283,7 @@ export default function App() {
                 isOpen={isProfileModalOpen}
                 onClose={() => setIsProfileModalOpen(false)}
                 onUpgradeClick={() => {
-                    console.log("Upgrade handler called in App (Main context)");
                     setIsPricingModalOpen(true);
-                    // setIsProfileModalOpen(false); // Mantendo aberto para evitar race condition
                 }}
             />
             <PricingModal
