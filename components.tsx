@@ -1100,6 +1100,14 @@ export const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Debug: Monitor error state changes
+    useEffect(() => {
+        if (error) {
+            console.log('Error state changed:', error);
+            console.log('Error exists, should be visible now');
+        }
+    }, [error]);
+
     const validateForm = () => {
         if (isSignUp) {
             if (!displayName.trim()) {
@@ -1156,6 +1164,10 @@ export const LoginPage: React.FC = () => {
             console.log('Setting error message:', errorMessage);
             setError(errorMessage);
             console.log('Error state should be set now');
+            // Temporary debug alert
+            setTimeout(() => {
+                alert(`DEBUG: Error definido como: "${errorMessage}". Veja se aparece box vermelho acima.`);
+            }, 200);
         } finally {
             setIsLoading(false);
         }
