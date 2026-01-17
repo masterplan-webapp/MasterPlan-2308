@@ -1100,14 +1100,6 @@ export const LoginPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // Debug: Monitor error state changes
-    useEffect(() => {
-        if (error) {
-            console.log('Error state changed:', error);
-            console.log('Error exists, should be visible now');
-        }
-    }, [error]);
-
     const validateForm = () => {
         if (isSignUp) {
             if (!displayName.trim()) {
@@ -1146,7 +1138,6 @@ export const LoginPage: React.FC = () => {
             }
         } catch (err: any) {
             console.error('Login error:', err);
-            console.log('Error code:', err.code);
 
             let errorMessage = '';
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
@@ -1161,13 +1152,7 @@ export const LoginPage: React.FC = () => {
                 errorMessage = '❌ Ocorreu um erro. Tente novamente.';
             }
 
-            console.log('Setting error message:', errorMessage);
             setError(errorMessage);
-            console.log('Error state should be set now');
-            // Temporary debug alert
-            setTimeout(() => {
-                alert(`DEBUG: Error definido como: "${errorMessage}". Veja se aparece box vermelho acima.`);
-            }, 200);
         } finally {
             setIsLoading(false);
         }
@@ -1298,11 +1283,12 @@ export const LoginPage: React.FC = () => {
                         </div>
                     )}
 
-                    {/* FORCED ERROR DISPLAY FOR DEBUG */}
-                    <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3 mb-4">
-                        <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-red-200 text-sm font-medium">{error || "TEST ERROR MESSAGE - Se você vê isso, o CSS funciona!"}</p>
-                    </div>
+                    {error && (
+                        <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3">
+                            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-red-200 text-sm font-medium">{error}</p>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
