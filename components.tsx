@@ -1298,12 +1298,11 @@ export const LoginPage: React.FC = () => {
                         </div>
                     )}
 
-                    {error && (
-                        <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3">
-                            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-red-200 text-sm font-medium">{error}</p>
-                        </div>
-                    )}
+                    {/* FORCED ERROR DISPLAY FOR DEBUG */}
+                    <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3 mb-4">
+                        <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-red-200 text-sm font-medium">{error || "TEST ERROR MESSAGE - Se você vê isso, o CSS funciona!"}</p>
+                    </div>
 
                     <button
                         type="submit"
