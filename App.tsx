@@ -1192,8 +1192,8 @@ export default function App() {
                     onClose={() => setIsProfileModalOpen(false)}
                     onUpgradeClick={() => {
                         console.log("Upgrade handler called in App (Sidebar context)");
-                        setIsProfileModalOpen(false);
-                        setTimeout(() => setIsPricingModalOpen(true), 100);
+                        setIsPricingModalOpen(true);
+                        // setIsProfileModalOpen(false); // Mantendo aberto para evitar race condition
                     }}
                 />
                 <CustomAlertModal
@@ -1283,8 +1283,8 @@ export default function App() {
                 onClose={() => setIsProfileModalOpen(false)}
                 onUpgradeClick={() => {
                     console.log("Upgrade handler called in App (Main context)");
-                    setIsProfileModalOpen(false);
-                    setTimeout(() => setIsPricingModalOpen(true), 100);
+                    setIsPricingModalOpen(true);
+                    // setIsProfileModalOpen(false); // Mantendo aberto para evitar race condition
                 }}
             />
             <PricingModal
