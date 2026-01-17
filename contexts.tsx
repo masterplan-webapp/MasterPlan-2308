@@ -141,13 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             alert("Authentication service is not available.");
             return;
         }
-        setLoading(true);
+        // setLoading(true); // Don't trigger global loading - let component handle it
         try {
             const provider = new GoogleAuthProvider();
             await signInWithPopup(auth, provider);
         } catch (error) {
             console.error("Error signing in with Google:", error);
-            setLoading(false);
+            // setLoading(false);
         }
     }, []);
 
@@ -155,12 +155,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!auth) {
             throw new Error("Authentication service is not available.");
         }
-        setLoading(true);
+        // setLoading(true); // Don't trigger global loading - let component handle it
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
             console.error("Error signing in with email:", error);
-            setLoading(false);
+            // setLoading(false);
             throw error;
         }
     }, []);
@@ -169,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!auth || !functions) {
             throw new Error("Authentication service is not available.");
         }
-        setLoading(true);
+        // setLoading(true); // Don't trigger global loading - let component handle it
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         } catch (error) {
             console.error("Error signing up with email:", error);
-            setLoading(false);
+            // setLoading(false);
             throw error;
         }
     }, [functions]);
