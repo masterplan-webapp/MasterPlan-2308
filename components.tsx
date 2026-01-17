@@ -1134,7 +1134,8 @@ export const LoginPage: React.FC = () => {
                 await signInWithEmail(email, password);
             }
         } catch (err: any) {
-            console.error(err);
+            console.error('Login error:', err);
+            console.log('Error code:', err.code); // Debug
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
                 setError('❌ Email ou senha incorretos. Verifique suas credenciais e tente novamente.');
             } else if (err.code === 'auth/email-already-in-use') {
@@ -1277,8 +1278,9 @@ export const LoginPage: React.FC = () => {
                     )}
 
                     {error && (
-                        <div className="p-3 bg-red-900/30 border border-red-700 rounded-md">
-                            <p className="text-red-400 text-sm">{error}</p>
+                        <div className="p-4 bg-red-900/40 border-2 border-red-500 rounded-lg flex items-start gap-3">
+                            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-red-200 text-sm font-medium">{error}</p>
                         </div>
                     )}
 
