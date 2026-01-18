@@ -188,12 +188,17 @@ interface CustomHeaderProps {
 const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPlanModalOpen, activePlan, isExporting, onExportPDF, onGetShareLink }) => {
     const { language, setLang, t } = useLanguage();
     const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+    const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const languageMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
                 setIsExportMenuOpen(false);
+            }
+            if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+                setIsLanguageMenuOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -228,13 +233,34 @@ const Header: React.FC<CustomHeaderProps> = ({ activeView, toggleSidebar, setPla
                     <h1 className="text-xl font-semibold text-gray-200">{getHeaderTitle()}</h1>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <button
-                        onClick={toggleLanguage}
-                        className="p-2 text-2xl rounded-full text-gray-400 hover:bg-gray-700/70 transition-colors"
-                        title={t('language')}
-                    >
-                        {language === 'pt-BR' ? '🇧🇷' : '🇺🇸'}
-                    </button>
+                    <div className="relative" ref={languageMenuRef}>
+                        <button
+                            onClick={() => setIsLanguageMenuOpen(!isLanguageMenuOpen)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-600 bg-gray-800/50 text-gray-300 hover:bg-gray-700 hover:border-gray-500 transition-all text-xs font-semibold"
+                            title={t('language')}
+                        >
+                            {language === 'pt-BR' ? 'PT' : 'EN'}
+                            <ChevronDown size={14} className={`text-gray-500 transition-transform duration-200 ${isLanguageMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isLanguageMenuOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-32 bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden z-50">
+                                <button
+                                    onClick={() => { setLang('pt-BR'); setIsLanguageMenuOpen(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-700/50 transition-colors ${language === 'pt-BR' ? 'text-blue-400 font-medium' : 'text-gray-300'}`}
+                                >
+                                    <span>Português</span>
+                                    {language === 'pt-BR' && <Check size={14} />}
+                                </button>
+                                <button
+                                    onClick={() => { setLang('en-US'); setIsLanguageMenuOpen(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-700/50 transition-colors ${language === 'en-US' ? 'text-blue-400 font-medium' : 'text-gray-300'}`}
+                                >
+                                    <span>English</span>
+                                    {language === 'en-US' && <Check size={14} />}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     {activePlan && (
                         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 rounded-md">
                             {activePlan.logoUrl ? (
