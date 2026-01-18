@@ -24,10 +24,12 @@ export interface PlanConfig {
         canSharePublicLink: boolean;
         canUseVideoBuilder: boolean;
         canUseCreativeBuilder: boolean;
+        canUseContentCalendar: boolean;
         canUseAdvancedAI: boolean; // e.g. Veo or GPT-4o specific
         maxUTMLinks: number;
         maxKeywords: number;
         maxCopyVersions: number;
+        maxCalendarDays: number;
     };
 }
 
@@ -56,10 +58,12 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canSharePublicLink: false,
             canUseVideoBuilder: false,
             canUseCreativeBuilder: false,
+            canUseContentCalendar: false,
             canUseAdvancedAI: false,
             maxUTMLinks: 10,
             maxKeywords: 50,
-            maxCopyVersions: 5
+            maxCopyVersions: 5,
+            maxCalendarDays: 0
         }
     },
     pro: {
@@ -87,10 +91,12 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canSharePublicLink: true,
             canUseVideoBuilder: false,
             canUseCreativeBuilder: false,
+            canUseContentCalendar: false,
             canUseAdvancedAI: false,
             maxUTMLinks: 9999,
             maxKeywords: 9999,
-            maxCopyVersions: 9999
+            maxCopyVersions: 9999,
+            maxCalendarDays: 0
         }
     },
     ai: {
@@ -103,7 +109,8 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             'Criação de Planos com IA',
             'Análises de Plano Ilimitadas',
             'Creative Builder com IA (200 imagens)',
-            'Geração de Texto com IA Ilimitada'
+            'Geração de Texto com IA Ilimitada',
+            'Calendar Builder (7 dias)'
         ],
         limits: {
             aiAnalysisCurrentPlan: 9999,
@@ -117,10 +124,12 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canSharePublicLink: true,
             canUseVideoBuilder: false, // Moved to AI+ Exclusive (Veo)
             canUseCreativeBuilder: true,
+            canUseContentCalendar: true,
             canUseAdvancedAI: false,
             maxUTMLinks: 9999,
             maxKeywords: 9999,
-            maxCopyVersions: 9999
+            maxCopyVersions: 9999,
+            maxCalendarDays: 7
         }
     },
     ai_plus: {
@@ -146,10 +155,12 @@ export const PLANS: Record<SubscriptionTier, PlanConfig> = {
             canSharePublicLink: true,
             canUseVideoBuilder: true,
             canUseCreativeBuilder: true,
+            canUseContentCalendar: true,
             canUseAdvancedAI: true,
             maxUTMLinks: 9999,
             maxKeywords: 9999,
-            maxCopyVersions: 9999
+            maxCopyVersions: 9999,
+            maxCalendarDays: 30
         }
     }
 };

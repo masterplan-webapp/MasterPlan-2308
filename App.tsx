@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon, Video } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, KeyRound, ImageIcon, Video, Calendar } from 'lucide-react';
 
 import { MONTHS_LIST, DEFAULT_METRICS_BY_OBJECTIVE } from './constants';
 import { dbService, createNewEmptyPlan, createNewPlanFromTemplate, generateAIPlan, calculateKPIs, sortMonthKeys, exportPlanAsPDF, TemplateType } from './services';
@@ -24,7 +24,8 @@ import {
     LOGO_DARK,
     ICON_LOGO,
     CustomAlertModal,
-    TemplateSelectionModal
+    TemplateSelectionModal,
+    ContentCalendarPage
 } from './components';
 
 
@@ -121,6 +122,7 @@ const Sidebar: React.FC<CustomSidebarProps> = ({ isCollapsed, isMobileOpen, acti
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Copy_builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Copy_builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('copy_builder') : undefined}><PencilRuler size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('copy_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Creative_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Creative_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('creative_builder') : undefined}><ImageIcon size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('creative_builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('Video_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'Video_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('video_builder') : undefined}><Video size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('video_builder')}</span></a></li>
+                        <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('ContentCalendar'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'ContentCalendar' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('Calendar Builder') : undefined}><Calendar size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('Calendar Builder')}</span></a></li>
                         <li><a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('UTM_Builder'); }} className={`flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors ${isCollapsed ? 'justify-center' : 'px-4'} ${activeView === 'UTM_Builder' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-300 hover:bg-gray-700/70 hover:text-white'}`} title={isCollapsed ? t('utm_builder') : undefined}><Link2 size={18} /> <span className={isCollapsed ? 'hidden' : 'inline'}>{t('utm_builder')}</span></a></li>
                     </ul>
                 </nav>
@@ -1263,6 +1265,7 @@ export default function App() {
                         {activeView === 'Keyword_Builder' && <KeywordBuilderPage planData={activePlan} setPlanData={updateActivePlan as any} />}
                         {activeView === 'Creative_Builder' && <CreativeBuilderPage planData={activePlan} />}
                         {activeView === 'Video_Builder' && <VideoBuilderPage planData={activePlan} />}
+                        {activeView === 'ContentCalendar' && <ContentCalendarPage planData={activePlan} setPlanData={setActivePlan} onUpgrade={() => setIsPricingModalOpen(true)} />}
                     </main>
                 </div>
                 {isPlanDetailsModalOpen && (

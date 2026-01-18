@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download, ShoppingBag, Users, Building2 } from 'lucide-react';
+import { ChevronDown, PlusCircle, Trash2, Edit, Save, X, Menu, FileDown, Settings, Sparkles, Loader as LoaderIcon, Copy as CopyIcon, Check, Upload, Link2, LayoutDashboard, List, PencilRuler, FileText, Sheet, LogOut, Wand2, FilePlus2, ArrowLeft, MoreVertical, User as UserIcon, LucideProps, AlertTriangle, KeyRound, Tags, Tag, ImageIcon, Video, ExternalLink, HelpCircle, Bell, Search, Plus, Layout, AlertCircle, Download, ShoppingBag, Users, Building2, Calendar } from 'lucide-react';
 import { useLanguage, useTheme, useAuth, useGlobalAlert } from './contexts';
-import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateVeoVideo, getUserVideoCredits, purchaseVideoCredits, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary } from './services';
+import { createCheckoutSession, dbService, getAuth, signInWithEmail, signUpWithEmail, logout, callGeminiAPI, formatCurrency, formatPercentage, formatNumber, recalculateCampaignMetrics, calculateKPIs, sortMonthKeys, generateAIKeywords, generateAIImages, generateVeoVideo, getUserVideoCredits, purchaseVideoCredits, exportCreativesAsCSV, exportCreativesAsTXT, exportUTMLinksAsCSV, exportUTMLinksAsTXT, exportGroupedKeywordsAsCSV, exportGroupedKeywordsAsTXT, exportGroupedKeywordsToPDF, calculatePlanSummary, generateContentCalendar } from './services';
 import { TRANSLATIONS, OPTIONS, COLORS, MONTHS_LIST, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE, CHANNEL_METRIC_ADJUSTMENTS, FORMAT_METRIC_ADJUSTMENTS } from './constants';
 import { PLANS, SubscriptionTier, getPlanCapability } from './planConfig';
 
-import { PlanData, PlanSelectorPageProps, CreativeBuilderPageProps, OnboardingPageProps, PricingModalProps, ChartCardProps, ChartsSectionProps, CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps, RenamePlanModalProps, AddMonthModalProps, AIPlanCreationModalProps, AISuggestionsModalProps, SidebarProps, HeaderProps, UserProfileModalProps, DashboardHeaderProps, DashboardPageProps, MonthlyPlanPageProps, CopyBuilderPageProps, CreativeGroupProps, UTMBuilderPageProps, KeywordBuilderPageProps, Campaign, CreativeTextData, UTMLink, AdGroup, KeywordSuggestion, GeneratedImage, TemplateSelectionModalProps } from './types';
+import { PlanData, PlanSelectorPageProps, CreativeBuilderPageProps, OnboardingPageProps, PricingModalProps, ChartCardProps, ChartsSectionProps, CardProps, CharacterCountInputProps, AIResponseModalProps, CampaignModalProps, PlanDetailsModalProps, RenamePlanModalProps, AddMonthModalProps, AIPlanCreationModalProps, AISuggestionsModalProps, SidebarProps, HeaderProps, UserProfileModalProps, DashboardHeaderProps, DashboardPageProps, MonthlyPlanPageProps, CopyBuilderPageProps, CreativeGroupProps, UTMBuilderPageProps, KeywordBuilderPageProps, Campaign, CreativeTextData, UTMLink, AdGroup, KeywordSuggestion, GeneratedImage, TemplateSelectionModalProps, ContentCalendarPageProps, CalendarPost, SocialPlatform, SocialFormat, CalendarPreferences, ContentCalendarData } from './types';
 
 // MasterPlan Logo URLs
 export const LOGO_LIGHT = '/logo-light.png';
@@ -4566,6 +4566,271 @@ export const VideoBuilderPage: React.FC<CreativeBuilderPageProps> = ({ planData 
                     </div>
                 </Card>
             </div>
+        </div>
+    );
+};
+
+export const ContentCalendarPage: React.FC<ContentCalendarPageProps> = ({ planData, setPlanData, onUpgrade }) => {
+    const { t } = useLanguage();
+    const { user } = useAuth();
+    const canUseCalendar = getPlanCapability(user?.subscription as SubscriptionTier, 'canUseContentCalendar');
+
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [viewMode, setViewMode] = React.useState<'list' | 'grid'>('grid');
+    const [preferences, setPreferences] = React.useState<CalendarPreferences>({
+        month: new Date().toISOString().slice(0, 7), // YYYY-MM
+        platforms: ['Instagram', 'LinkedIn'],
+        tone: 'Profissional e Engajador'
+    });
+
+    const limitDays = PLANS[user?.subscription as SubscriptionTier]?.limits?.maxCalendarDays || 30; // Default 30 if not found
+
+    const handleGenerate = async () => {
+        setIsLoading(true);
+        try {
+            const posts = await generateContentCalendar(planData, preferences, limitDays);
+
+            const newCalendarData: ContentCalendarData = {
+                month: preferences.month,
+                posts: posts,
+                createdAt: new Date().toISOString()
+            };
+
+            // Update local state and planData
+            const updatedPlan = { ...planData, contentCalendar: newCalendarData };
+            setPlanData(updatedPlan);
+
+            // Save to DB
+            if (user) {
+                await dbService.savePlan(user.uid, updatedPlan);
+                // Track usage? Maybe reuse 'aiTextGeneration' or add new metric?
+                // For now, assume it falls under unlimited text gen for AI/AI+
+            }
+
+        } catch (error) {
+            console.error("Failed to generate calendar", error);
+            alert("Erro ao gerar calendário. Tente novamente.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleExportCSV = () => {
+        // Forcing AI+ for Export could be another upsell strategy.
+        // Currently keeping it open based on recent changes.
+
+        if (!planData.contentCalendar?.posts) return;
+
+        const posts = planData.contentCalendar.posts;
+        const headers = ['Dia', 'Plataforma', 'Formato', 'Hook', 'Legenda', 'Ideia Visual', 'Hashtags'];
+        const rows = posts.map(p => [
+            p.day,
+            p.platform,
+            p.format,
+            `"${p.hook.replace(/"/g, '""')}"`,
+            `"${p.caption.replace(/"/g, '""')}"`,
+            `"${p.imageIdea.replace(/"/g, '""')}"`,
+            `"${(p.hashtags || []).join(' ')}"`
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `calendario_${preferences.month}.csv`);
+        link.click();
+    };
+
+
+    if (!canUseCalendar) {
+        return (
+            <div className="relative overflow-hidden rounded-xl border border-gray-700 bg-gray-800 p-8 text-center min-h-[600px] flex flex-col items-center justify-center">
+                <div className="absolute inset-0 opacity-10 pointer-events-none blur-sm flex items-center justify-center overflow-hidden">
+                    <div className="grid grid-cols-7 gap-2 w-full max-w-4xl opacity-50">
+                        {Array.from({ length: 28 }).map((_, i) => (
+                            <div key={i} className="h-24 bg-gray-600 rounded-lg"></div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="relative z-10 max-w-lg bg-gray-900/90 p-8 rounded-2xl shadow-2xl border border-blue-500/30 backdrop-blur-md">
+                    <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <Calendar size={32} className="text-white" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-white mb-3">Calendar Builder</h2>
+                    <p className="text-gray-300 mb-6 text-lg">
+                        Planeje 30 dias de conteúdo para suas redes sociais em segundos. A IA cria legendas, ganchos e ideias visuais.
+                    </p>
+
+                    <div className="bg-gray-800/80 rounded-lg p-4 mb-6 border border-gray-700">
+
+                        <p className="text-sm font-semibold text-blue-400 uppercase tracking-wide mb-2">Disponível nos Planos AI e AI+</p>
+                        <ul className="text-left space-y-2 text-gray-300">
+                            <li className="flex items-center gap-2"><Check size={16} className="text-green-400" /> 30 Dias de Conteúdo Pronto</li>
+                            <li className="flex items-center gap-2"><Check size={16} className="text-green-400" /> Exportação para Excel/CSV</li>
+                        </ul>
+                    </div>
+
+                    <button
+                        onClick={onUpgrade}
+                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-blue-500/30"
+                    >
+                        Fazer Upgrade Agora
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 animate-fadeIn">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-3">
+                        <Calendar size={32} className="text-blue-400" />
+                        Calendar Builder
+                    </h1>
+                    <p className="text-gray-400 mt-1">Gere 30 dias de ideias estratégicas para suas redes sociais.</p>
+                </div>
+                <div className="flex gap-2">
+                    {limitDays < 30 && (
+                        <div className="bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-lg border border-yellow-500/30 flex items-center gap-2 text-sm font-semibold">
+                            <Sparkles size={16} />
+                            <span>Preview: {limitDays} dias. <button className="underline hover:text-white" onClick={onUpgrade}>Upgrade para 30 dias</button></span>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        title="Visualização em Grade"
+                    >
+                        <LayoutDashboard size={20} />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                        title="Visualização em Lista"
+                    >
+                        <List size={20} />
+                    </button>
+                    {planData.contentCalendar && (
+                        <button
+                            onClick={handleExportCSV}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition-colors"
+                        >
+                            <FileDown size={18} />
+                            Exportar CSV
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Configuration Card */}
+            <Card>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div className="col-span-1">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">Tom de Voz</label>
+                        <select
+                            value={preferences.tone}
+                            onChange={(e) => setPreferences({ ...preferences, tone: e.target.value })}
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option>Profissional e Engajador</option>
+                            <option>Divertido e Descontraído</option>
+                            <option>Educativo e Autoritário</option>
+                            <option>Inspirador e Emocional</option>
+                        </select>
+                    </div>
+                    <div className="col-span-1 md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">Plataformas</label>
+                        <div className="flex flex-wrap gap-2">
+                            {['Instagram', 'LinkedIn', 'TikTok', 'Blog', 'Facebook'].map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => {
+                                        const newPlatforms = preferences.platforms.includes(p as SocialPlatform)
+                                            ? preferences.platforms.filter(pl => pl !== p)
+                                            : [...preferences.platforms, p as SocialPlatform];
+                                        setPreferences({ ...preferences, platforms: newPlatforms });
+                                    }}
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${preferences.platforms.includes(p as SocialPlatform) ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'}`}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="col-span-1">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isLoading || preferences.platforms.length === 0}
+                            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? <LoaderIcon className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                            {planData.contentCalendar ? 'Regerar Calendário' : 'Gerar Calendário'}
+                        </button>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Results Display */}
+            {planData.contentCalendar ? (
+                <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "space-y-4"}>
+                    {planData.contentCalendar.posts.map((post) => (
+                        <div
+                            key={post.day}
+                            className={`bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-colors ${viewMode === 'list' ? 'flex gap-6 p-6' : 'flex flex-col'}`}
+                        >
+                            <div className={`${viewMode === 'list' ? 'w-24 flex-shrink-0 flex flex-col items-center justify-center bg-gray-900/50 rounded-lg' : 'p-4 bg-gray-900/50 border-b border-gray-700 flex justify-between items-center'}`}>
+                                <div className="text-center">
+                                    <span className="block text-xs uppercase tracking-wider text-gray-500">Dia</span>
+                                    <span className="block text-2xl font-bold text-white">{post.day}</span>
+                                </div>
+                                <div className={`flex flex-col items-end ${viewMode === 'list' ? 'mt-2' : ''}`}>
+                                    <span className="text-xs font-medium px-2 py-1 rounded bg-blue-900/30 text-blue-300 border border-blue-800 mb-1">{post.platform}</span>
+                                    <span className="text-[10px] text-gray-400 uppercase">{post.format}</span>
+                                </div>
+                            </div>
+
+                            <div className="p-4 flex-grow space-y-3">
+                                <div>
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-1">🪝 Gancho (Hook)</h4>
+                                    <p className="text-gray-100 font-medium italic">"{post.hook}"</p>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-sm font-semibold text-gray-300 mb-1">📝 Legenda Sugerida</h4>
+                                    <p className="text-sm text-gray-400 line-clamp-4 hover:line-clamp-none transition-all cursor-help">{post.caption}</p>
+                                </div>
+
+                                <div className="pt-2 border-t border-gray-700 mt-2">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1"><ImageIcon size={12} /> Ideia Visual</h4>
+                                    <p className="text-xs text-gray-400">{post.imageIdea}</p>
+                                </div>
+
+                                {post.hashtags && (
+                                    <div className="text-xs text-blue-400/80">
+                                        {post.hashtags.join(' ')}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                !isLoading && (
+                    <div className="text-center py-20 bg-gray-800/30 rounded-xl border border-gray-700 border-dashed">
+                        <Calendar size={48} className="mx-auto text-gray-600 mb-4" />
+                        <h3 className="text-xl font-medium text-gray-300 mb-2">Seu calendário está vazio</h3>
+                        <p className="text-gray-500 max-w-md mx-auto">Configure suas preferências acima e clique em "Gerar Calendário" para criar 30 dias de conteúdo com IA.</p>
+                    </div>
+                )
+            )}
         </div>
     );
 };

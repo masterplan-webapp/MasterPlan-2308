@@ -74,6 +74,7 @@ export interface PlanData {
     adGroups: AdGroup[];
     aiPrompt?: string;
     aiImagePrompt?: string;
+    contentCalendar?: ContentCalendarData;
 }
 
 export interface UTMLink {
@@ -114,6 +115,33 @@ export interface SummaryData {
 }
 
 export type MonthlySummary = Record<string, SummaryData>;
+
+// SOCIAL CONTENT CALENDAR TYPES
+export type SocialPlatform = 'Instagram' | 'LinkedIn' | 'TikTok' | 'Blog' | 'Facebook';
+export type SocialFormat = 'Reels' | 'Carousel' | 'Static Image' | 'Text' | 'Story' | 'Article';
+
+export interface CalendarPost {
+    day: number; // 1-30
+    date?: string; // YYYY-MM-DD (calculated on frontend)
+    platform: SocialPlatform;
+    format: SocialFormat;
+    hook: string;
+    caption: string;
+    imageIdea: string;
+    hashtags?: string[];
+}
+
+export interface ContentCalendarData {
+    month: string; // YYYY-MM
+    posts: CalendarPost[];
+    createdAt: string;
+}
+
+export interface CalendarPreferences {
+    month: string;
+    platforms: SocialPlatform[];
+    tone: string;
+}
 
 // CONTEXT & PROVIDER TYPES
 export type LanguageCode = 'pt-BR' | 'en-US';
@@ -296,6 +324,11 @@ export interface UTMBuilderPageProps {
 }
 
 export interface KeywordBuilderPageProps {
+    planData: PlanData;
+    setPlanData: React.Dispatch<React.SetStateAction<PlanData | null>>;
+}
+
+export interface ContentCalendarPageProps {
     planData: PlanData;
     setPlanData: React.Dispatch<React.SetStateAction<PlanData | null>>;
 }

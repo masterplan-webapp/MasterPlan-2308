@@ -3,7 +3,7 @@
 import { GoogleGenAI, GenerateContentResponse, Type, Modality } from "@google/genai";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeTextData, AdGroup, UTMLink, GeneratedImage, AspectRatio, SummaryData, MonthlySummary } from './types';
+import { PlanData, Campaign, User, LanguageCode, KeywordSuggestion, CreativeTextData, AdGroup, UTMLink, GeneratedImage, AspectRatio, SummaryData, MonthlySummary, CalendarPost, CalendarPreferences, SocialPlatform, SocialFormat } from './types';
 import { getAuth as firebaseGetAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, updateProfile as firebaseUpdateProfile } from "firebase/auth";
 import { PLANS, SubscriptionTier, getPlanCapability, PlanConfig } from './planConfig';
 import { MONTHS_LIST, OPTIONS, CHANNEL_FORMATS, DEFAULT_METRICS_BY_OBJECTIVE } from "./constants";
@@ -1471,6 +1471,117 @@ export const generateAIImages = async (prompt: string, images?: { base64: string
         // Preserve the original error message for quota detection in UI
         const errorMessage = error?.message || error?.toString() || 'Image generation failed.';
         throw new Error(errorMessage);
+    }
+};
+
+export const generateContentCalendar = async (
+    plan: PlanData,
+    preferences: CalendarPreferences,
+    limitDays: number = 30 // Default to 30 for backward compatibility or unlimited
+): Promise<CalendarPost[]> => {
+    // 1. Initial Prompt Construction
+    const prompt = `
+    Role: Expert Social Media Manager.
+    Task: Create a ${limitDays}-day social media content calendar for a client.
+    
+    Client Info:
+    - Name: ${plan.campaignName}
+    - Objective: ${plan.objective}
+    - Audience: ${plan.targetAudience}
+    - Business Description/Context: ${plan.aiPrompt || 'Consider the business context implied by the campaign name and objective.'}
+    - Tone: ${preferences.tone}
+    
+    Output Requirements:
+    - Generate exactly ${limitDays} posts (Day 1 to ${limitDays}).
+    - Platforms: Mix of ${preferences.platforms.join(', ')}.
+    - Formats: Mix of formats relevant to the platform (e.g. Reels for Insta, Articles for LinkedIn).
+    - Language: Portuguese (Brazil).
+    
+    Return ONLY valid JSON array with objects matching this interface:
+    {
+      "day": number,
+      "platform": "Instagram" | "LinkedIn" | "TikTok" | "Blog" | "Facebook",
+      "format": "Reels" | "Carousel" | "Static Image" | "Text" | "Story" | "Article",
+      "hook": "string (catchy first line)",
+      "caption": "string (engaging body text, max 300 chars)",
+      "imageIdea": "string (visual description for the designer)",
+      "hashtags": ["string"]
+    }
+    `;
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.0-flash-exp",
+            contents: {
+                parts: [{ text: prompt }]
+            },
+            config: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        // The response structure for @google/genai might differ slightly, let's treat it carefully.
+        // Based on generateAIImages, it seems to return a response object.
+        // response.candidates[0].content.parts[0].text
+
+        const candidate = response.candidates?.[0];
+        const textPart = candidate?.content?.parts?.find(p => p.text);
+
+        if (!textPart || !textPart.text) {
+            throw new Error("No text returned from AI");
+        }
+
+        let responseText = textPart.text;
+
+        // Try to find a JSON array within the text using Regex
+        const jsonArrayMatch = responseText.match(/\[[\s\S]*\]/);
+
+        if (jsonArrayMatch) {
+            responseText = jsonArrayMatch[0];
+        } else {
+            // If no array found, try to clean markdown as a fallback
+            if (responseText.includes('```json')) {
+                responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            } else if (responseText.includes('```')) {
+                responseText = responseText.replace(/```/g, '').trim();
+            }
+        }
+
+        let posts: CalendarPost[];
+        try {
+            posts = JSON.parse(responseText) as CalendarPost[];
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError);
+            console.error("Failed Text:", responseText);
+            throw new Error("Failed to parse AI response as JSON");
+        }
+
+        // Basic validation
+        if (Array.isArray(posts) && posts.length > 0) {
+            return posts.slice(0, limitDays); // Ensure max matches limit
+        } else {
+            console.error("Invalid JSON format from AI: Not an array or empty", responseText);
+            throw new Error("Invalid AI Response: Expected an array of posts");
+        }
+
+    } catch (error) {
+        console.error("Error generating calendar:", error);
+        if (error instanceof Error) {
+            console.error(error.message);
+            console.error(error.stack);
+        }
+        // Fallback Mock Data for Demo/Error handling
+        return Array.from({ length: limitDays }, (_, i) => ({
+            day: i + 1,
+            platform: 'Instagram' as SocialPlatform,
+            format: (i % 3 === 0 ? 'Reels' : 'Static Image') as SocialFormat,
+            hook: `Ideia Incrível para o Dia ${i + 1}`,
+            caption: `Legenda de exemplo gerada automaticamente. #exemplo`,
+            imageIdea: "Uma foto profissional mostrando o produto.",
+            hashtags: ["#exemplo", "#teste"]
+        }));
     }
 };
 
